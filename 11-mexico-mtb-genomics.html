@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mexico Mtb Genomics · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn active">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html" class="active">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#why-this-paper">1. Why this paper matters</a></li>
+    <li><a href="#methods">2. Methods decoder</a></li>
+    <li><a href="#results">3. Results &amp; Lineages</a></li>
+    <li><a href="#discordance">4. Phenotype/genotype discordance</a></li>
+    <li><a href="#talk-track">5. Talk track</a></li>
+    <li><a href="#limitations">6. What not to overclaim</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Paper reading order">
+  <a class="step done" href="10-tandem-tb-diabetes.html">TANDEM</a>
+  <span class="sep">→</span>
+  <span class="step here">Mexico genomics</span>
+  <span class="sep">→</span>
+  <a class="step" href="12-bayesian-inference.html">Bayesian inference</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Paper 7 · Mejia-Ponce et al. 2023 · Mexico WGS context</div>
+  <h1>Genomic epidemiology of drug-resistant M. tuberculosis in Mexico</h1>
+  <p class="lede">
+    This paper provides the whole-genome sequencing background for the Mexican isolates in our project.
+    It explains the lineage structure (dominated by L4 Haarlem/X-type), the high rate of drug resistance, and the problem of genotype-phenotype discordance.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#methods">Methods</a>
+    <a class="qpill" href="#results">Lineages</a>
+    <a class="qpill" href="#discordance">Discordance</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">Read this first — in plain English</span>
+  If you pull 85 clinical TB genomes from Mexico, what do they look like? This paper shows they are almost entirely "Lineage 4" (the Euro-American lineage), heavily skewed toward Haarlem and X-type sublineages, and frequently drug-resistant. It also notes that type 2 diabetes was the most common comorbidity in the sampled patients. For our GenomegaMap project, this paper is a giant warning sign: if we find a "diabetes-specific" mutation, we must be absolutely certain it isn't just a Haarlem-specific lineage marker or an uncharacterized drug-resistance mutation.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Lineage 4, Haarlem/X-type, resistance, diabetes comorbidity.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Confounding: lineage/resistance can mimic diabetes effects.</td></tr>
+      <tr><th>Use this for</th><td>Use before interpreting any diabetes-specific hit.</td></tr>
+      <tr><th>Defer for now</th><td>Do not call a hit diabetes-related without metadata checks.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="why-this-paper">
+<h2>1. Why this paper matters
+  <button class="section-complete" data-section="why-this-paper">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Use it for cohort background</span>
+  <p>
+    This is not the actual isolate-filtering authority for the current project. Use it to understand
+    Mexico WGS context, lineage distribution, drug-resistance background, and the BioProject source.
+    It highlights the risk of confounding variables like drug resistance and lineage bias.
+  </p>
+</div>
+
+<div class="metric-strip">
+  <div class="metric-tile good">
+    <span class="kicker">Clinical strains</span>
+    <span class="big">85</span>
+    <span class="caption">High-quality WGS samples (PRJNA824124).</span>
+  </div>
+  <div class="metric-tile note">
+    <span class="kicker">Lineage 4</span>
+    <span class="big">94%</span>
+    <span class="caption">Vast majority belong to the Euro-American lineage.</span>
+  </div>
+  <div class="metric-tile warn">
+    <span class="kicker">Resistant</span>
+    <span class="big">34</span>
+    <span class="caption">Phenotypically resistant to at least one first-line drug.</span>
+  </div>
+</div>
+</section>
+
+<section id="methods" class="detail-section" data-summary="Open WGS and profiling methods" data-tag="Reference">
+<h2>2. Methods decoder: WGS and Profiling
+  <button class="section-complete" data-section="methods">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">How they analyzed the genomes</span>
+  <p>The paper combines phenotypic lab testing with whole-genome sequencing to classify lineages, build phylogenetic trees, and predict drug resistance.</p>
+</div>
+
+<table>
+  <thead><tr><th>Method step</th><th>What it does</th><th>Why it matters for us</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Phenotypic DST</strong></td>
+      <td>Lab tests exposing bacteria to first-line drugs (H, R, E, S, Z) to see if they grow.</td>
+      <td>This is the "ground truth" phenotype that the genomic predictions are judged against.</td>
+    </tr>
+    <tr>
+      <td><strong>WGS Pipeline</strong></td>
+      <td>Illumina sequencing achieving high mean coverage (~93.8X).</td>
+      <td>High coverage ensures the variant calls are trustworthy, which GenomegaMap relies on.</td>
+    </tr>
+    <tr>
+      <td><strong>TBProfiler</strong></td>
+      <td>A software tool that scans a TB genome and assigns a lineage and predicts drug resistance based on known mutations.</td>
+      <td>We use TBProfiler outputs in our own pipeline to verify lineage and exclude mixed isolates.</td>
+    </tr>
+    <tr>
+      <td><strong>Phylogeny</strong></td>
+      <td>Building an evolutionary tree from SNPs, excluding repetitive regions (PE/PPE) and known resistance genes.</td>
+      <td>Excluding resistance genes prevents the tree from artificially clustering unrelated resistant strains together.</td>
+    </tr>
+  </tbody>
+</table>
+
+</section>
+
+<section id="results" class="detail-section" data-summary="Open lineage-result details" data-tag="Cohort detail">
+<h2>3. Results &amp; Lineages
+  <button class="section-complete" data-section="results">Mark complete</button>
+</h2>
+
+<p>
+  The dominant lineage was Euro-American <strong>L4</strong>, representing about 94% of the dataset.
+  Two common sublineages were especially prominent: Haarlem 4.1.2.1 and X-type 4.1.1.3.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>L4 Dominance</h3>
+    <p>80 of 85 samples were Lineage 4. This reflects historical colonization and global TB distribution patterns.</p>
+  </div>
+  <div class="card">
+    <h3>Haarlem (4.1.2.1)</h3>
+    <p>A major sublineage (n=32). Highly prevalent in this Mexican cohort.</p>
+  </div>
+  <div class="card">
+    <h3>X-type (4.1.1.3)</h3>
+    <p>Another major sublineage (n=34). The paper notes it as endemic to Mexico.</p>
+  </div>
+  <div class="card">
+    <h3>Comorbidity</h3>
+    <p>Type 2 diabetes was the most common comorbidity, reported for 29 of the patients.</p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: Lineage Confounding</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>Scenario:</strong> GenomegaMap flags an unknown gene as highly selected in our diabetes cohort compared to the non-diabetes cohort.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>The lineage check:</strong> You look at the metadata for the two cohorts. You realize the diabetes cohort is 90% Haarlem lineage, while the non-diabetes cohort is 90% X-type lineage.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>The risk:</strong> The gene might not have anything to do with diabetes. It might just be a standard genetic difference that separates the Haarlem evolutionary branch from the X-type branch.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">4</span>
+    <div class="we-body">
+      <strong>The solution:</strong> This is why the paper's lineage breakdown matters. If we don't balance lineages across our clinical groups (using TBProfiler sublineage outputs), we will report false positives driven by evolutionary history, not host environment.
+    </div>
+  </div>
+</div>
+
+</section>
+
+
+<section id="discordance" class="detail-section" data-summary="Open phenotype/genotype discordance details" data-tag="Caution">
+<h2>4. Phenotype/genotype discordance
+  <button class="section-complete" data-section="discordance">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">When the lab and the computer disagree</span>
+  <p>Phenotypic testing found 34 resistant strains, but the canonical genotype predictions didn't always match the lab results.</p>
+</div>
+
+<div class="concept-bridge">
+  <div class="concept-side warn">
+    <h3>Phenotype (Lab)</h3>
+    <p>The bacteria grew in the presence of the drug. We know it's resistant, but we don't necessarily know *why*.</p>
+  </div>
+  <div class="concept-side good">
+    <h3>Genotype (Computer)</h3>
+    <p>Software like TBProfiler looks for known mutations (e.g., in *katG* or *rpoB*). If it finds them, it predicts resistance.</p>
+  </div>
+</div>
+
+<p>
+  The paper notes discrepancies—for example, pyrazinamide-monoresistant strains that lacked known resistance mutations in the <code>pncA</code> gene. This means there are unknown resistance mechanisms at play in this population.
+</p>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: The Uncharacterized Resistance Trap</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>Scenario:</strong> GenomegaMap flags a hypothetical gene as positively selected in our diabetes cohort.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>The discordance context:</strong> Ballell taught us that cell-wall targets are key, and this paper shows that uncharacterized drug resistance exists in this specific Mexican population.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>The risk:</strong> If diabetic patients in this cohort received different drug regimens (or had worse adherence leading to resistance), our "diabetes" selection hit might actually be a novel, uncharacterized drug resistance mutation.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">4</span>
+    <div class="we-body">
+      <strong>The check:</strong> We must cross-reference the phenotypic DST data in the metadata to ensure the diabetes cohort isn't heavily skewed with resistant isolates.
+    </div>
+  </div>
+</div>
+
+</section>
+
+<section id="talk-track">
+<h2>5. Talk Track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What to say in a meeting</h3>
+  <p>"Our Mexican cohort, originally detailed by Mejia-Ponce, is heavily skewed toward the L4 Euro-American lineage, specifically the Haarlem and X-type sublineages. Furthermore, almost 40% of the isolates showed phenotypic drug resistance. Therefore, any diabetes-specific selection hits we find must be rigorously cross-checked to ensure we aren't just accidentally detecting an L4-specific SNP or an uncharacterized drug resistance mutation masquerading as a metabolic adaptation."</p>
+</div>
+</section>
+
+<section id="limitations">
+<h2>6. What not to overclaim
+  <button class="section-complete" data-section="limitations">Mark complete</button>
+</h2>
+
+<div class="callout warn">
+  <div class="callout-title">What NOT to overclaim</div>
+  <ul style="margin:6px 0 0">
+    <li><strong>Haarlem != Diabetes:</strong> Do not use this paper to claim that Haarlem is *the* diabetes-causing strain. Lineage prevalence is driven by geography and history, not just host comorbidity.</li>
+    <li><strong>Isolate lists:</strong> Do not use the raw isolate list from this paper directly—always use our filtered `samplestatus=good` workbook to avoid poor-quality genomes.</li>
+  </ul>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Built as preparation material · Texas A&amp;M Computer Science · Ioerger Lab
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

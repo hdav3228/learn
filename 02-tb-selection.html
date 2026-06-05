@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ioerger Lab: TB Selection Scans (2025) · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html" class="active">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#why-tb">1. Why M. tuberculosis</a></li>
+    <li><a href="#datasets">2. The datasets</a></li>
+    <li><a href="#three-scales">3. Three scales of selection</a></li>
+    <li><a href="#false-positives">4. The false‑positive problem</a></li>
+    <li><a href="#drug-resistance">5. Drug resistance signatures</a></li>
+    <li><a href="#rdr">6. The RpoB RDR story</a></li>
+    <li><a href="#diabetes">7. Diabetes &amp; comorbidity selection</a></li>
+    <li><a href="#functional">8. Functional categories</a></li>
+    <li><a href="#workflow">9. End‑to‑end workflow</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where you are in the five-piece pipeline">
+  <a class="step done" href="01-dnds-bayesian.html">✓ Foundation · GenomegaMap</a>
+  <span class="sep">→</span>
+  <span class="step here">📍 Ioerger Lab · TB Scans</span>
+  <span class="sep">→</span>
+  <a class="step" href="03-boltz2.html">Latest Method · Boltz‑2</a>
+  <span class="sep">→</span>
+  <a class="step" href="04-keras-cheminformatics.html">Hands‑on · Keras MPNN</a>
+  <span class="sep">→</span>
+  <a class="step" href="05-smiles-permeability.html">SMILES · permeability</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Ioerger Lab · most recent paper · Ioerger &amp; Shatby 2025</div>
+  <h1>TB Selection Scans: applying GenomegaMap to clinical M.&nbsp;tuberculosis</h1>
+  <p class="lede">
+    Tuberculosis kills ~1.25 M people a year and infects a quarter of the planet. Two large clinical
+    isolate collections — Moldova and the CRyPTIC consortium — give us tens of thousands of fully
+    sequenced TB genomes. Run GenomegaMap across them at three different spatial resolutions and you
+    can read off, gene by gene and codon by codon, where the bug is being pushed by drug pressure,
+    host immunity, and metabolic stress.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#why-tb">Why TB?</a>
+    <a class="qpill" href="#three-scales">3 scales of selection</a>
+    <a class="qpill" href="#rdr">The RpoB story</a>
+    <a class="qpill" href="#diabetes">Diabetes finding</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  The <strong>foundational paper (GenomegaMap)</strong> gave you a microscope. <strong>This Ioerger
+  lab paper</strong> is what happens when you point that microscope at <strong>thousands of real
+  TB genomes</strong> from sick patients around the world. The output is a ranked list of "which
+  proteins is TB actively reshaping" — most obviously, the targets of antibiotics (drug‑resistance
+  hotspots), but also surprising hits in metabolism and stress response. Each hit is a candidate
+  drug target.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>TB lineage, resistance, diabetes context are interpretation risks.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Big-screen false positives, multiple testing, cohort design.</td></tr>
+      <tr><th>Use this for</th><td>Use this to avoid overcalling diabetes-specific hits.</td></tr>
+      <tr><th>Defer for now</th><td>Do not memorize every resistance gene immediately.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="why-tb" class="detail-section" data-summary="Open TB organism background" data-tag="Biology">
+<h2>1. Why M. tuberculosis is the perfect test case
+  <button class="section-complete" data-section="why-tb">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Selection analysis works <em>much</em> better on some organisms than others. Before
+    we apply GenomegaMap to TB, you need to understand the four reasons TB is the ideal
+    organism for this method — they're also the four assumptions you'll later have to
+    check before applying selection scans elsewhere (HIV, malaria, etc.).
+  </p>
+</div>
+
+<p>
+  M.tb has a genetic personality that makes selection analysis unusually clean — and unusually
+  important.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+    </div>
+    <h3>Clonal, not recombining</h3>
+    <p>Almost no horizontal gene transfer. SNPs accumulate vertically — every isolate is an independent draw from the same evolutionary process.</p>
+  </div>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    </div>
+    <h3>Slow mutation rate</h3>
+    <p>~0.5 SNPs/genome/year. Most pairwise differences between isolates are tiny (often &lt; 100 SNPs). Phylogenies are nearly star‑shaped.</p>
+  </div>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l4 4 14-14"/><path d="M3 18h18"/></svg>
+    </div>
+    <h3>Compact genome</h3>
+    <p>~4,400 genes, ~4.4 Mb, only 10% non‑coding. Almost everything you look at is a protein‑coding region.</p>
+  </div>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+    </div>
+    <h3>Massive sequencing</h3>
+    <p>Tens of thousands of WGS isolates exist worldwide. Power to detect ω &gt; 1 even at single‑codon resolution.</p>
+  </div>
+</div>
+
+<p>
+  Crucially, M.tb has known biology — we already <em>know</em> rpoB / katG / gyrA / pncA / embB
+  carry drug‑resistance mutations. So when you sweep an unbiased selection scan over the genome and
+  those genes light up, that's not a discovery — it's a <strong>positive control</strong>. It's how
+  Ioerger &amp; Shatby validate the method, then look at what else lights up.
+</p>
+
+<div class="callout good">
+  <div class="callout-title">Mental model</div>
+  Think of M.tb as a <em>laboratory of natural selection</em> running in human populations. Patients
+  are the test tubes; antibiotics are the selection pressures; whole‑genome sequencing is the
+  readout. GenomegaMap converts that readout into a Manhattan plot of evolutionary signal.
+</div>
+</section>
+
+<section id="datasets">
+<h2>2. The two big datasets
+  <button class="section-complete" data-section="datasets">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Every selection analysis you'll see in TB papers is run on one of two collections —
+    or both. This section explains what those collections are, why they matter, and how
+    dataset choice affects generalizability.
+  </p>
+</div>
+
+<p>
+  The <a href="01-dnds-bayesian.html">foundational paper</a> explained <em>how</em> GenomegaMap works.
+  Now we apply it. Two clinical isolate collections dominate the M.tb selection literature:
+</p>
+
+<div class="two-col">
+  <div class="demo">
+    <div class="demo-header">
+      <div class="demo-title">Moldova (NCBI BioProject)</div>
+      <span class="demo-tag">2057 isolates</span>
+    </div>
+    <p class="muted">
+      A near‑exhaustive sample of TB cases from a single country with a high MDR/XDR burden.
+      Genetically diverse — Lineage 2 (Beijing) is dominant, Lineage 4 also present. Drug‑resistance
+      phenotypes documented for most isolates.
+    </p>
+    <ul>
+      <li><strong>Genes flagged with ω &gt; 1:</strong> 53</li>
+      <li><strong>Drug‑resistance overlap:</strong> rpoB, gyrA, embB, pncA, gidB, rpoC, katG</li>
+      <li><strong>Use case in the paper:</strong> primary scan, hypothesis generation</li>
+    </ul>
+  </div>
+
+  <div class="demo">
+    <div class="demo-header">
+      <div class="demo-title">CRyPTIC consortium</div>
+      <span class="demo-tag">5195 isolates</span>
+    </div>
+    <p class="muted">
+      A globally diverse, internationally curated collection (Comprehensive Resistance Prediction
+      for Tuberculosis: an International Consortium). Larger, more lineages, broader geography.
+      MIC measurements for 13 antibiotics on every isolate.
+    </p>
+    <ul>
+      <li><strong>Genes flagged with ω &gt; 1:</strong> 173</li>
+      <li><strong>Overlap with Moldova hits:</strong> ~36% (≈19 genes shared)</li>
+      <li><strong>Use case in the paper:</strong> replication, broader sweep, drug‑specific subsets</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Why two datasets?</h3>
+<p>
+  The same way you wouldn't trust a GWAS hit that only replicated in one cohort, a selection signal
+  that only appears in one isolate collection is suspect. Genes that show up in <em>both</em> have
+  weathered different sampling biases, different lineage compositions, different drug‑use histories
+  — they're the credible discoveries.
+</p>
+
+<div class="callout warn">
+  <div class="callout-title">Why only ~36% overlap?</div>
+  Three big reasons: (1) Moldova is dominated by Lineage 2 (Beijing) — selection signals there
+  reflect Beijing‑specific adaptive landscape; (2) different drugs are used at different rates in
+  different regions; (3) statistical power scales with sample size — CRyPTIC's 5195 isolates can see
+  weaker signals invisible at n=2057. The overlap genes are the <em>core</em> M.tb adaptive genes,
+  the non‑overlap are dataset‑specific or lower‑confidence.
+</div>
+
+<h3>Lineage structure matters</h3>
+
+<div class="diagram">
+<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .lin-label { font: 600 12px sans-serif; fill: var(--text); }
+    .lin-name { font: 11px sans-serif; fill: var(--text-muted); }
+    .lin-bar { stroke-width: 0; }
+  </style>
+  <text x="20" y="28" class="lin-label">Moldova (n=2057)</text>
+  <rect x="20" y="40" width="540" height="30" fill="#0b5cd6" class="lin-bar"/>
+  <rect x="560" y="40" width="120" height="30" fill="#7c3aed" class="lin-bar"/>
+  <rect x="680" y="40" width="20" height="30" fill="#10b981" class="lin-bar"/>
+  <text x="290" y="60" text-anchor="middle" fill="white" class="lin-label">Lineage 2 (Beijing) ~75%</text>
+  <text x="620" y="60" text-anchor="middle" fill="white" class="lin-label">L4 ~17%</text>
+
+  <text x="20" y="118" class="lin-label">CRyPTIC (n=5195)</text>
+  <rect x="20" y="130" width="190" height="30" fill="#0b5cd6" class="lin-bar"/>
+  <rect x="210" y="130" width="290" height="30" fill="#7c3aed" class="lin-bar"/>
+  <rect x="500" y="130" width="100" height="30" fill="#10b981" class="lin-bar"/>
+  <rect x="600" y="130" width="60" height="30" fill="#f59e0b" class="lin-bar"/>
+  <rect x="660" y="130" width="40" height="30" fill="#ec4899" class="lin-bar"/>
+  <text x="115" y="150" text-anchor="middle" fill="white" class="lin-label">L2 ~28%</text>
+  <text x="355" y="150" text-anchor="middle" fill="white" class="lin-label">Lineage 4 ~46%</text>
+  <text x="550" y="150" text-anchor="middle" fill="white" class="lin-label">L1 ~14%</text>
+  <text x="630" y="150" text-anchor="middle" fill="white" class="lin-label">L3</text>
+
+  <g transform="translate(20,185)">
+    <rect width="14" height="14" fill="#0b5cd6"/><text x="20" y="11" class="lin-name">L2 (Beijing)</text>
+    <rect x="120" width="14" height="14" fill="#7c3aed"/><text x="140" y="11" class="lin-name">L4 (Euro‑American)</text>
+    <rect x="280" width="14" height="14" fill="#10b981"/><text x="300" y="11" class="lin-name">L1 (Indo‑Oceanic)</text>
+    <rect x="420" width="14" height="14" fill="#f59e0b"/><text x="440" y="11" class="lin-name">L3 (East‑African Indian)</text>
+    <rect x="600" width="14" height="14" fill="#ec4899"/><text x="620" y="11" class="lin-name">L5/L6/animal</text>
+  </g>
+</svg>
+<div class="caption">Schematic lineage composition. Beijing‑dominated Moldova will detect different adaptive signals than the more cosmopolitan CRyPTIC.</div>
+</div>
+</section>
+
+<section id="three-scales" class="detail-section" data-summary="Open constant/independent/window scale details" data-tag="Method depth">
+<h2>3. Three scales of selection
+  <button class="section-complete" data-section="three-scales">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    This is the headline finding of Ioerger &amp; Shatby 2025: <strong>using all three
+    GenomegaMap scales together</strong> recovers far more real selection signal than
+    any single scale alone. The same data, three views, three different answers.
+  </p>
+</div>
+
+<p>
+  The <a href="01-dnds-bayesian.html">foundational paper</a> introduced GenomegaMap's three model
+  variants. The Ioerger lab's TB scans are what those variants buy you in practice. The same genome,
+  run three different ways, tells three different stories.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Interactive: see a gene at three scales</div>
+    <span class="demo-tag">switch model</span>
+  </div>
+  <div class="controls">
+    <div class="control">
+      <label>Gene</label>
+      <select id="geneSel">
+        <option value="rpoB" selected>rpoB (RNA polymerase β, rifampicin target)</option>
+        <option value="katG">katG (catalase, isoniazid activator)</option>
+        <option value="gyrA">gyrA (DNA gyrase, fluoroquinolone target)</option>
+        <option value="ftsZ">ftsZ (cell division, essential housekeeping)</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Model</label>
+      <select id="modelSel">
+        <option value="constant">Constant (gene‑level ω)</option>
+        <option value="independent" selected>Independent (per‑codon ω)</option>
+        <option value="window">Sliding window (~30 codons)</option>
+      </select>
+    </div>
+  </div>
+  <div class="canvas-wrap"><canvas id="geneCanvas" width="900" height="240"></canvas></div>
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Mean ω</div><div class="stat-value mono" id="statMean">—</div></div>
+    <div class="stat"><div class="stat-label">Codons ω &gt; 1</div><div class="stat-value mono" id="statSig">—</div></div>
+    <div class="stat"><div class="stat-label">Hot region</div><div class="stat-value mono" id="statHot">—</div></div>
+  </div>
+  <p class="muted" style="font-size:13px;margin-top:10px">
+    Simulated posterior means. Real GenomegaMap output looks structurally identical — points are
+    posterior means, error bars are 95% CrIs, the dashed line is ω=1.
+  </p>
+</div>
+
+<h3>How to read each scale</h3>
+<table>
+  <thead><tr><th>Scale</th><th>What you see</th><th>Best for</th><th>Pitfall</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Constant</strong></td><td>One number per gene</td><td>Genome‑wide screens, ranking, FDR control</td><td>Dilutes a few sites of strong selection in a large gene</td></tr>
+    <tr><td><strong>Independent</strong></td><td>One ω per codon</td><td>Pinpointing individual residues under selection</td><td>Wide CrIs at most codons; multiple‑testing burden</td></tr>
+    <tr><td><strong>Sliding window</strong></td><td>Smoothed ω over local stretches</td><td>Finding domains / structural regions under selection</td><td>Window size is a tuning knob; smears boundaries</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">The Ioerger / Shatby workflow</div>
+  Run all three. Use <strong>Constant</strong> to triage genes (~50–200 candidates). Use
+  <strong>Independent</strong> to localize specific residues within those candidates. Use the
+  <strong>sliding window</strong> to identify spatial regions / domains. Each view answers a
+  different question; you don't pick one.
+</div>
+</section>
+
+<section id="false-positives">
+<h2>4. The false‑positive problem in big screens
+  <button class="section-complete" data-section="false-positives">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Test 4,400 genes and your hit list will include things that aren't really under
+    selection. Knowing the two main failure modes (and how to filter them out) is the
+    difference between a credible paper and an embarrassing one.
+  </p>
+</div>
+
+<div class="watch-out">
+  <strong>Heads up:</strong> Most selection scans you'll see in the wild over‑report.
+  Many published "positively selected gene" lists from earlier methods are 30–50% false
+  positives once size and lineage filters are applied. The principles in this section
+  are why GenomegaMap‑era results are more trustworthy.
+</div>
+
+<p>
+  Run a Bayesian selection test on 4,400 genes and you'll get hits. The question is which are real.
+  Two failure modes dominate:
+</p>
+
+<h3>Failure mode 1: tiny genes</h3>
+<p>
+  A gene with 30 codons and a single nonsynonymous mutation can post a 95% CrI for ω that just
+  barely excludes 1 — but the data is sparse and the prior is doing most of the work. These false
+  positives correlate strongly with <strong>gene size</strong>.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Interactive: posterior CrI width vs gene size</div>
+    <span class="demo-tag">simulation</span>
+  </div>
+  <div class="controls">
+    <div class="control">
+      <label>True ω</label>
+      <input type="range" id="trueOmega" min="0.3" max="3.0" step="0.05" value="1.5"/>
+      <span class="mono" id="trueOmegaVal">1.50</span>
+    </div>
+    <div class="control">
+      <label>SNP density (per codon)</label>
+      <input type="range" id="snpDens" min="0.005" max="0.08" step="0.005" value="0.03"/>
+      <span class="mono" id="snpDensVal">0.030</span>
+    </div>
+  </div>
+  <div class="canvas-wrap"><canvas id="fpCanvas" width="900" height="280"></canvas></div>
+  <p class="muted" style="font-size:13px;margin-top:8px">
+    Each dot is a simulated gene with the chosen true ω. X = gene length (codons), Y = posterior
+    mean ω with 95% CrI bars. Blue = CrI excludes 1 (a "hit"). The lesson: at short gene lengths the
+    bars are huge — even a true ω of 1 frequently produces apparent hits. This is exactly why short
+    genes need stricter thresholds, larger sample sizes, or are filtered out entirely.
+  </p>
+</div>
+
+<h3>Failure mode 2: lineage‑specific drift fixed in the sample</h3>
+<p>
+  If your dataset is dominated by Lineage 2 and a few nonsynonymous mutations got fixed early in
+  the L2 ancestor by drift, every L2 isolate carries them. The naive count looks like strong
+  selection but the actual evolutionary event happened once. GenomegaMap's parent‑dependent
+  mutation model + the Wilson 2020 paper's careful frequency weighting partially correct for this,
+  but it's the reason replication across lineages and across datasets matters.
+</p>
+
+<div class="callout warn">
+  <div class="callout-title">Heuristic the paper uses</div>
+  Genes flagged in <em>both</em> Moldova and CRyPTIC, with ω &gt; 1 supported across multiple codons
+  (not just one), in genes &gt; 100 codons long, ideally with biological plausibility (known target
+  of drug, immune evasion, stress response) → high confidence. Anything failing two of those criteria
+  is at best a hypothesis to revisit.
+</div>
+
+<div class="checkpoint">
+  <h4>Recognize → Act · Triaging a candidate gene list</h4>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If:</strong> Hit appears in only one dataset (say, Moldova) but not the other</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Flag as low‑confidence. Could be lineage‑specific, sample‑bias artifact. Replication is the credibility filter.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If:</strong> Gene is &lt; 100 codons long with one or two SNPs and a wide CrI just barely above 1</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Drop it. Too little data; the prior is doing the work, not the evidence.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If:</strong> Gene is in PE/PPE family (e.g., PE_PGRS or PPE)</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Re‑align with paralog‑aware tool, or drop. Repetitive families inflate ω whether or not selection is real.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If:</strong> Gene replicates in both datasets, &gt; 200 codons, ≥3 hot codons, biology is plausible</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Promote to "high confidence." Move to Boltz‑2 — predict its 3D structure.</div>
+  </div>
+</div>
+</section>
+
+<section id="drug-resistance" class="detail-section" data-summary="Open drug-resistance positive-control details" data-tag="Biology">
+<h2>5. Drug resistance signatures
+  <button class="section-complete" data-section="drug-resistance">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    These are the <strong>positive controls</strong>. We already know which genes carry
+    resistance mutations — they were discovered the hard way (drug development + clinical
+    sequencing) over decades. If GenomegaMap can rediscover them automatically, it works.
+  </p>
+</div>
+
+<p>
+  The cleanest, easiest‑to‑interpret signal in the M.tb selection scan: drug resistance genes light
+  up with ω &gt; 1, often spectacularly so. This is a sanity check that the method works — and
+  because we know which residues confer resistance to which antibiotic, we can validate the
+  method's <em>spatial precision</em>, not just its gene‑level accuracy.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Interactive: drug‑resistance hotspot map</div>
+    <span class="demo-tag">click a gene</span>
+  </div>
+  <div class="controls">
+    <div class="control">
+      <label>Drug class</label>
+      <select id="drugSel">
+        <option value="all" selected>All first‑line drugs</option>
+        <option value="rif">Rifampicin (rpoB / rpoC)</option>
+        <option value="inh">Isoniazid (katG / inhA)</option>
+        <option value="emb">Ethambutol (embB)</option>
+        <option value="pza">Pyrazinamide (pncA)</option>
+        <option value="fq">Fluoroquinolones (gyrA / gyrB)</option>
+        <option value="str">Streptomycin (gidB / rpsL / rrs)</option>
+      </select>
+    </div>
+  </div>
+  <div id="drugList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
+</div>
+
+<h3>The drug‑resistance gene catalog</h3>
+
+<table>
+  <thead><tr><th>Gene</th><th>Drug</th><th>Function</th><th>Hot codons</th><th>Mechanism</th></tr></thead>
+  <tbody>
+    <tr><td><code>rpoB</code></td><td>Rifampicin</td><td>RNA polymerase β subunit</td><td>S450L, H445D, D435V <em>(81‑bp RDR)</em></td><td>RIF binds to RpoB; mutations in the rifampicin‑binding pocket prevent binding</td></tr>
+    <tr><td><code>katG</code></td><td>Isoniazid</td><td>Catalase‑peroxidase</td><td>S315T (≈80% of INH‑R)</td><td>KatG activates the INH prodrug; loss‑of‑function or weakened activation → resistance</td></tr>
+    <tr><td><code>inhA</code></td><td>Isoniazid, ethionamide</td><td>Enoyl‑ACP reductase (mycolic acid synth)</td><td>I21T, S94A; promoter ‑15</td><td>Direct INH target; promoter mutations overexpress, residue mutations reduce affinity</td></tr>
+    <tr><td><code>gyrA</code></td><td>Fluoroquinolones</td><td>DNA gyrase α subunit</td><td>D94G/N/Y, A90V (QRDR)</td><td>FQ traps GyrA‑DNA complex; QRDR mutations prevent drug binding</td></tr>
+    <tr><td><code>embB</code></td><td>Ethambutol</td><td>Arabinosyl transferase</td><td>M306V/I/L, M421T, G406</td><td>EMB inhibits cell wall arabinan synthesis; substrate‑binding pocket mutations</td></tr>
+    <tr><td><code>pncA</code></td><td>Pyrazinamide</td><td>Pyrazinamidase (prodrug activation)</td><td>Scattered loss‑of‑function</td><td>Unusual: PZA‑R driven by random LOF, so signal is gene‑wide, not focal</td></tr>
+    <tr><td><code>gidB</code></td><td>Streptomycin</td><td>16S rRNA methyltransferase</td><td>L16R, A80P, others</td><td>LOF → undermethylated 16S → reduced STR binding</td></tr>
+    <tr><td><code>rpoC</code></td><td>Rifampicin (compensatory)</td><td>RNA polymerase β' subunit</td><td>V483G, I491F, others</td><td>Doesn't <em>cause</em> resistance — restores fitness lost from rpoB mutation</td></tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">Why pncA is a special case</div>
+  PZA resistance is unusual because almost any mutation that breaks PncA function works — premature
+  stops, frameshifts, missense across the whole gene. So pncA's signal in GenomegaMap is
+  <em>flat ω &gt; 1 across the gene</em>, not focal hotspots. This is genuinely diagnostic: focal
+  hotspot vs whole‑gene flat distribution tell you which mode of resistance evolution is operating.
+</div>
+</section>
+
+<section id="rdr" class="detail-section" data-summary="Open RpoB RDR worked example" data-tag="Worked example">
+<h2>6. The RpoB RDR story (a worked example)
+  <button class="section-complete" data-section="rdr">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    This is <em>the</em> textbook story for selection analysis in TB. If you only
+    remember one worked example from this whole site, make it this one — it shows the
+    method working end‑to‑end at single‑codon resolution on a famous, biologically
+    well‑understood gene.
+  </p>
+</div>
+
+<p>
+  The 81‑bp <strong>Rifampicin Resistance‑Determining Region</strong> (RDR) of <code>rpoB</code> is
+  the classical example. ~95% of all rifampicin‑resistant clinical M.tb isolates worldwide carry
+  one of a small handful of mutations within codons 426–452 of rpoB. If GenomegaMap can't pick out
+  this region, it can't pick out anything.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">RpoB ω profile (simulated; based on Moldova‑like data)</div>
+    <span class="demo-tag">independent‑codon model</span>
+  </div>
+  <div class="canvas-wrap"><canvas id="rdrCanvas" width="900" height="280"></canvas></div>
+  <p class="muted" style="font-size:13px;margin-top:8px">
+    Posterior mean ω at each codon of RpoB (~1178 codons). The clear spike at codons ~430–450
+    corresponds to the RDR. A second weaker peak at ~488–496 corresponds to "Cluster II" RDR
+    mutations. The rest of the gene is heavily purifying (ω ≈ 0.1) — RpoB is essential, and most of
+    it is intolerant to change.
+  </p>
+</div>
+
+<h3>What this teaches you about the method</h3>
+<ol>
+  <li><strong>Spatial precision is real.</strong> The peak is genuinely localized to the RDR — not
+    smeared across the gene. The independent‑codon model has codon‑level resolution.</li>
+  <li><strong>Background matters.</strong> Most of the gene sits at ω ≈ 0.1, not ω ≈ 1. A flat
+    prior anchored at 1 would inflate ω at the RDR. Hierarchical priors learn the gene‑wide
+    distribution and compare each codon to <em>that</em> baseline.</li>
+  <li><strong>Compensatory signal.</strong> rpoC also lights up — but its peaks are at residues
+    physically interacting with RpoB in the polymerase complex. That's how you tell compensatory
+    from primary resistance.</li>
+</ol>
+
+<div class="diagram">
+<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .rdr-rect { stroke: var(--border-strong); stroke-width: 1; }
+    .rdr-text { font: 11px sans-serif; fill: var(--text); }
+    .rdr-mut { font: 600 11px sans-serif; fill: var(--bad); }
+  </style>
+  <text x="360" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">RpoB primary structure (1178 aa)</text>
+  <rect x="20" y="40" width="680" height="32" fill="#cbd5e1" class="rdr-rect"/>
+  <rect x="20" y="40" width="170" height="32" fill="#94a3b8" class="rdr-rect"/>
+  <rect x="190" y="40" width="200" height="32" fill="#cbd5e1" class="rdr-rect"/>
+  <rect x="240" y="40" width="50" height="32" fill="#ef4444" class="rdr-rect"/>
+  <rect x="285" y="40" width="40" height="32" fill="#f59e0b" class="rdr-rect"/>
+  <rect x="390" y="40" width="200" height="32" fill="#cbd5e1" class="rdr-rect"/>
+  <rect x="590" y="40" width="110" height="32" fill="#94a3b8" class="rdr-rect"/>
+
+  <text x="105" y="60" text-anchor="middle" class="rdr-text">N‑term</text>
+  <text x="265" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="white">RDR I (435‑451)</text>
+  <text x="305" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="white">RDR II</text>
+  <text x="490" y="60" text-anchor="middle" class="rdr-text">"funnel" / β‑clamp</text>
+  <text x="645" y="60" text-anchor="middle" class="rdr-text">C‑term</text>
+
+  <line x1="240" y1="72" x2="240" y2="100" stroke="var(--bad)" stroke-width="1"/>
+  <line x1="265" y1="72" x2="265" y2="120" stroke="var(--bad)" stroke-width="1"/>
+  <line x1="290" y1="72" x2="290" y2="100" stroke="var(--bad)" stroke-width="1"/>
+  <text x="240" y="115" text-anchor="middle" class="rdr-mut">D435V</text>
+  <text x="265" y="135" text-anchor="middle" class="rdr-mut">H445Y</text>
+  <text x="295" y="115" text-anchor="middle" class="rdr-mut">S450L</text>
+
+  <text x="20" y="170" font-size="11" fill="var(--text-muted)">Spatial selection peak from GenomegaMap localizes to the canonical RDR — confirming residue‑level resolution.</text>
+</svg>
+<div class="caption">RpoB anatomy with hot codons. S450L alone accounts for ~50% of all clinical rifampicin resistance.</div>
+</div>
+</section>
+
+<section id="diabetes">
+<h2>7. Diabetes &amp; comorbidity selection (Shatby thesis)
+  <button class="section-complete" data-section="diabetes">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    This is the <em>most likely topic</em> for your summer project — Shatby's thesis is
+    the lab's most recent fully worked comparative analysis, and it sets the template
+    for asking "do pathogen genomes evolve differently in [host condition X] vs not?"
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  TB doesn't evolve in a vacuum — it evolves <em>inside a person</em>. If that person has
+  diabetes, the lung environment is different (more sugar, more acid, more oxidative
+  stress). Maybe TB picks up different mutations in diabetic hosts than in non‑diabetic
+  hosts? Shatby compared 189+189 isolates and found yes, several specific genes look
+  different. Three of them are uncharacterized — discovery targets for follow‑up.
+</div>
+
+<p>
+  Anthony Shatby's undergraduate thesis (the Shatby in "Ioerger &amp; Shatby 2025") asks a
+  different, sharper question: do M.tb genomes evolve <em>differently</em> in diabetic vs
+  non‑diabetic hosts? Diabetes is the single largest comorbidity for active TB worldwide — patients
+  with type‑2 diabetes are ~3× more likely to develop active TB and tend to fare worse on standard
+  treatment. If TB is feeling a different selective regime inside a diabetic host, we should be able
+  to read it from comparative GenomegaMap.
+</p>
+
+<div class="callout">
+  <div class="callout-title">The experimental design</div>
+  189 M.tb isolates from diabetic patients vs 189 from non‑diabetics, balanced across three
+  countries (Indonesia, Mexico, Peru). Run GenomegaMap independently on each subset. Compare
+  per‑codon ω profiles. Genes whose selection signal is <em>different</em> between subsets are
+  candidates for diabetes‑specific adaptation.
+</div>
+
+<h3>The candidate genes</h3>
+
+<table>
+  <thead><tr><th>Gene</th><th>Function</th><th>Why it matters in diabetic hosts</th></tr></thead>
+  <tbody>
+    <tr><td><code>tal</code> (Rv1449c)</td><td>Transaldolase, pentose phosphate pathway</td><td>The diabetic environment is hyperglycemic; TB rewires central carbon metabolism. Tal sits at the PPP/glycolysis branch point.</td></tr>
+    <tr><td><code>otsB2</code> (Rv2006)</td><td>Trehalose‑6‑phosphate phosphatase</td><td>Trehalose is M.tb's osmoprotectant and a cell‑wall component. Hyperglycemia → osmotic stress.</td></tr>
+    <tr><td><code>rplS</code></td><td>50S ribosomal protein L19</td><td>Translation machinery — adapting to a metabolically perturbed host environment.</td></tr>
+    <tr><td><code>lldD1</code> (Rv0694)</td><td>L‑lactate dehydrogenase</td><td>Diabetic lung is more acidic / lactic. M.tb may be importing host lactate as a carbon source.</td></tr>
+    <tr><td><code>Rv1490</code></td><td>Conserved hypothetical, possible transporter</td><td>Unknown function — flagged by selection analysis, awaiting experimental follow‑up. Discovery target.</td></tr>
+    <tr><td><code>Rv3104c</code></td><td>Conserved hypothetical</td><td>Same — uncharacterized, but selection signal in diabetics is robust.</td></tr>
+    <tr><td><code>Rv3635</code></td><td>Conserved hypothetical, membrane protein</td><td>Same — possibly involved in host‑pathogen interface.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">The intellectual win</div>
+  Three of the seven hits (Rv1490, Rv3104c, Rv3635) are <em>conserved hypotheticals</em> — genes
+  with no known function. Selection analysis identifies them as biologically important <em>before</em>
+  any biochemistry has been done. This is the single most attractive thing about an unbiased
+  selection scan: it can prioritize a "known unknown" for experimental follow‑up.
+</div>
+
+<h3>Why ROS and hypoxia are the leading hypotheses</h3>
+<p>
+  Diabetic granulomas are <em>different</em> in a few specific, measurable ways: higher reactive
+  oxygen species (ROS) burden from neutrophils, more hypoxic cores, altered lipid composition
+  (FFAs, cholesterol), and a metabolite milieu shifted toward glucose / lactate excess. The Shatby
+  hits map cleanly onto adaptations to those stresses:
+</p>
+
+<ul>
+  <li><strong>tal, lldD1</strong>: rerouted carbon metabolism for a high‑sugar / high‑lactate
+  environment.</li>
+  <li><strong>otsB2</strong>: trehalose system, both for osmotic protection and cell wall remodelling
+  under stress.</li>
+  <li><strong>katG and ahpC</strong> (broader literature): canonical ROS defenses — these don't
+  always reach significance but are biologically expected.</li>
+</ul>
+</section>
+
+<section id="functional" class="detail-section" data-summary="Open functional category background" data-tag="Biology">
+<h2>8. Functional categories of selected genes
+  <button class="section-complete" data-section="functional">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Individual gene hits are stories. Categories are <em>themes</em>. Once you've seen
+    the four big themes (drug response, cell wall, stress, PE/PPE), you'll recognize
+    them in any new pathogen scan.
+  </p>
+</div>
+
+<p>
+  Pull back from individual genes and look at the categories. Across the Moldova + CRyPTIC scans,
+  the top‑level functional bins of genes with ω &gt; 1 cluster into a small number of themes:
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Functional category breakdown (combined hits)</div>
+    <span class="demo-tag">summary</span>
+  </div>
+  <div class="canvas-wrap"><canvas id="catCanvas" width="900" height="300"></canvas></div>
+  <p class="muted" style="font-size:13px;margin-top:8px">
+    Bars show approximate count of selected genes per Mycobrowser/TubercuList functional category,
+    combined across both datasets after filtering for replication.
+  </p>
+</div>
+
+<h3>The four big themes</h3>
+<ol>
+  <li><strong>Drug response and resistance.</strong> Direct targets (rpoB, gyrA, katG, embB, pncA),
+  efflux pumps, compensatory partners (rpoC). Largest, easiest‑to‑interpret bin.</li>
+  <li><strong>Cell wall and lipid metabolism.</strong> M.tb has the most complex cell envelope of
+  any pathogen — mycolic acids, sulfolipids, PDIM. Many ω &gt; 1 genes sit here. Cell wall is the
+  primary host‑pathogen interface, so it's under constant selection.</li>
+  <li><strong>Stress response.</strong> Hypoxia (DosR regulon), oxidative stress (KatG, AhpC), pH
+  (Mbt iron acquisition). M.tb experiences a stress gradient inside the granuloma; selection there
+  is constant.</li>
+  <li><strong>PE/PPE family.</strong> A weird M.tb‑specific gene family with hundreds of paralogs,
+  thought to be involved in immune modulation / antigenic variation. Notoriously hard to align,
+  notoriously polymorphic — so it shows up in selection scans both because it's genuinely
+  fast‑evolving and because alignment artifacts inflate ω. Treat with caution.</li>
+</ol>
+
+<div class="callout warn">
+  <div class="callout-title">Watch for alignment artifacts</div>
+  PE/PPE genes are repetitive and highly polymorphic. If your alignment includes paralogs or
+  misalignments, ω will look inflated. The standard remedy is to drop PE/PPE from the analysis or
+  re‑align them with a paralog‑aware aligner before running GenomegaMap. The Wilson 2020 paper
+  explicitly notes this caveat.
+</div>
+</section>
+
+<section id="workflow">
+<h2>9. End‑to‑end workflow
+  <button class="section-complete" data-section="workflow">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    GenomegaMap is just one rule in a 9‑step pipeline. To work in the lab you need to
+    know the whole pipeline — what comes in (raw reads), what comes out (codon counts),
+    and how the candidate gene list flows out the other end into Topics 3 and 4.
+  </p>
+</div>
+
+<p>
+  What does the actual pipeline look like, from raw FASTQ files to a list of selected genes?
+</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .wf-box { fill: var(--bg-elev-1); stroke: var(--border-strong); stroke-width: 1.5; rx: 8; }
+    .wf-title { font: 700 13px sans-serif; fill: var(--text); }
+    .wf-sub { font: 11px sans-serif; fill: var(--text-muted); }
+    .wf-arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#wf-ah); }
+    .wf-num { font: 700 12px sans-serif; fill: white; }
+  </style>
+  <defs>
+    <marker id="wf-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <g>
+    <rect class="wf-box" x="20" y="20" width="220" height="60"/>
+    <circle cx="40" cy="40" r="13" fill="var(--accent)"/><text x="40" y="44" text-anchor="middle" class="wf-num">1</text>
+    <text x="60" y="40" class="wf-title">Raw WGS reads (FASTQ)</text>
+    <text x="60" y="58" class="wf-sub">Moldova ~2057 isolates / CRyPTIC ~5195</text>
+    <text x="60" y="72" class="wf-sub">Illumina paired‑end short reads</text>
+  </g>
+  <g>
+    <rect class="wf-box" x="280" y="20" width="220" height="60"/>
+    <circle cx="300" cy="40" r="13" fill="var(--accent)"/><text x="300" y="44" text-anchor="middle" class="wf-num">2</text>
+    <text x="320" y="40" class="wf-title">QC + map to H37Rv</text>
+    <text x="320" y="58" class="wf-sub">trim → BWA → samtools → GATK</text>
+    <text x="320" y="72" class="wf-sub">filter low coverage / mixed / contam.</text>
+  </g>
+  <g>
+    <rect class="wf-box" x="540" y="20" width="200" height="60"/>
+    <circle cx="560" cy="40" r="13" fill="var(--accent)"/><text x="560" y="44" text-anchor="middle" class="wf-num">3</text>
+    <text x="580" y="40" class="wf-title">Variant calling → SNP table</text>
+    <text x="580" y="58" class="wf-sub">per‑isolate VCF</text>
+    <text x="580" y="72" class="wf-sub">aggregate → site × isolate matrix</text>
+  </g>
+
+  <g>
+    <rect class="wf-box" x="20" y="120" width="220" height="60"/>
+    <circle cx="40" cy="140" r="13" fill="var(--accent)"/><text x="40" y="144" text-anchor="middle" class="wf-num">4</text>
+    <text x="60" y="140" class="wf-title">Codon alignment per gene</text>
+    <text x="60" y="158" class="wf-sub">use H37Rv CDS annotation</text>
+    <text x="60" y="172" class="wf-sub">drop PE/PPE if paranoid</text>
+  </g>
+  <g>
+    <rect class="wf-box" x="280" y="120" width="220" height="60"/>
+    <circle cx="300" cy="140" r="13" fill="var(--accent)"/><text x="300" y="144" text-anchor="middle" class="wf-num">5</text>
+    <text x="320" y="140" class="wf-title">Run GenomegaMap</text>
+    <text x="320" y="158" class="wf-sub">3 models × 4400 genes</text>
+    <text x="320" y="172" class="wf-sub">~hours on a workstation</text>
+  </g>
+  <g>
+    <rect class="wf-box" x="540" y="120" width="200" height="60"/>
+    <circle cx="560" cy="140" r="13" fill="var(--accent)"/><text x="560" y="144" text-anchor="middle" class="wf-num">6</text>
+    <text x="580" y="140" class="wf-title">Posterior summaries</text>
+    <text x="580" y="158" class="wf-sub">95% CrIs, posterior P(ω &gt; 1)</text>
+    <text x="580" y="172" class="wf-sub">FDR control across genes</text>
+  </g>
+
+  <g>
+    <rect class="wf-box" x="20" y="220" width="220" height="60"/>
+    <circle cx="40" cy="240" r="13" fill="var(--good)"/><text x="40" y="244" text-anchor="middle" class="wf-num">7</text>
+    <text x="60" y="240" class="wf-title">Triage genes</text>
+    <text x="60" y="258" class="wf-sub">replication: Moldova ∩ CRyPTIC</text>
+    <text x="60" y="272" class="wf-sub">filter by gene length &amp; SNP density</text>
+  </g>
+  <g>
+    <rect class="wf-box" x="280" y="220" width="220" height="60"/>
+    <circle cx="300" cy="240" r="13" fill="var(--good)"/><text x="300" y="244" text-anchor="middle" class="wf-num">8</text>
+    <text x="320" y="240" class="wf-title">Localize residues</text>
+    <text x="320" y="258" class="wf-sub">independent‑codon model</text>
+    <text x="320" y="272" class="wf-sub">map to 3D structure if available</text>
+  </g>
+  <g>
+    <rect class="wf-box" x="540" y="220" width="200" height="60"/>
+    <circle cx="560" cy="240" r="13" fill="var(--good)"/><text x="560" y="244" text-anchor="middle" class="wf-num">9</text>
+    <text x="580" y="240" class="wf-title">Functional follow‑up</text>
+    <text x="580" y="258" class="wf-sub">structural docking (Boltz‑2!)</text>
+    <text x="580" y="272" class="wf-sub">CRISPRi / TraSH knockouts</text>
+  </g>
+
+  <g>
+    <rect class="wf-box" x="280" y="310" width="220" height="40" fill="var(--accent-glow)"/>
+    <text x="390" y="335" text-anchor="middle" class="wf-title">→ candidate drug targets / virulence factors</text>
+  </g>
+
+  <path class="wf-arrow" d="M240,50 L280,50"/>
+  <path class="wf-arrow" d="M500,50 L540,50"/>
+  <path class="wf-arrow" d="M620,80 L620,100 L130,100 L130,120"/>
+  <path class="wf-arrow" d="M240,150 L280,150"/>
+  <path class="wf-arrow" d="M500,150 L540,150"/>
+  <path class="wf-arrow" d="M620,180 L620,200 L130,200 L130,220"/>
+  <path class="wf-arrow" d="M240,250 L280,250"/>
+  <path class="wf-arrow" d="M500,250 L540,250"/>
+  <path class="wf-arrow" d="M390,280 L390,310"/>
+</svg>
+<div class="caption">Full pipeline. The red‑hot box (5) is GenomegaMap; everything else is upstream/downstream plumbing.</div>
+</div>
+
+<h3>What you'd actually run</h3>
+
+<div class="tab-group">
+  <div class="tabs">
+    <button class="tab active">Snakemake pipeline</button>
+    <button class="tab">GenomegaMap call</button>
+    <button class="tab">Posterior summary</button>
+  </div>
+  <div class="tabpanel active">
+<pre><code><span class="tok-c"># Snakefile (sketch). Each rule is one step in the diagram above.</span>
+
+<span class="tok-k">rule</span> <span class="tok-f">trim</span>:
+    input:  <span class="tok-s">"raw/{sample}_{1,2}.fq.gz"</span>
+    output: <span class="tok-s">"trim/{sample}_{1,2}.fq.gz"</span>
+    shell:  <span class="tok-s">"fastp -i {input[0]} -I {input[1]} -o {output[0]} -O {output[1]}"</span>
+
+<span class="tok-k">rule</span> <span class="tok-f">map_to_h37rv</span>:
+    input:  trim=<span class="tok-s">"trim/{sample}_1.fq.gz"</span>, ref=<span class="tok-s">"ref/H37Rv.fasta"</span>
+    output: <span class="tok-s">"bam/{sample}.bam"</span>
+    shell:  <span class="tok-s">"bwa mem {input.ref} {input.trim} | samtools sort -o {output}"</span>
+
+<span class="tok-k">rule</span> <span class="tok-f">call_variants</span>:
+    input:  bam=<span class="tok-s">"bam/{sample}.bam"</span>, ref=<span class="tok-s">"ref/H37Rv.fasta"</span>
+    output: <span class="tok-s">"vcf/{sample}.vcf.gz"</span>
+    shell:  <span class="tok-s">"bcftools mpileup -f {input.ref} {input.bam} | bcftools call -mv -Oz -o {output}"</span>
+
+<span class="tok-k">rule</span> <span class="tok-f">codon_align</span>:
+    input:  vcfs=expand(<span class="tok-s">"vcf/{sample}.vcf.gz"</span>, sample=SAMPLES),
+            gff=<span class="tok-s">"ref/H37Rv.gff"</span>
+    output: <span class="tok-s">"alignments/{gene}.codonaln.fasta"</span>
+    script: <span class="tok-s">"scripts/build_codon_alignment.py"</span>
+
+<span class="tok-k">rule</span> <span class="tok-f">genomegamap</span>:
+    input:  <span class="tok-s">"alignments/{gene}.codonaln.fasta"</span>
+    output: <span class="tok-s">"posterior/{gene}.{model}.tsv"</span>
+    shell:  <span class="tok-s">"genomegamap --model {wildcards.model} -i {input} -o {output}"</span>
+</code></pre>
+  </div>
+  <div class="tabpanel">
+<pre><code><span class="tok-c"># Constant model: one ω for the whole gene</span>
+genomegamap --model constant \
+    -i alignments/rpoB.codonaln.fasta \
+    -o posterior/rpoB.constant.tsv \
+    --iters 50000 --burnin 10000 --thin 10 \
+    --prior-mu 0.001 --prior-kappa 2.0
+
+<span class="tok-c"># Independent model: per‑codon ω, hierarchical Dirichlet prior</span>
+genomegamap --model independent \
+    -i alignments/rpoB.codonaln.fasta \
+    -o posterior/rpoB.independent.tsv \
+    --iters 100000 --burnin 25000 --thin 25 \
+    --hyperprior-alpha 1.0
+
+<span class="tok-c"># Sliding window: ~30 codon windows</span>
+genomegamap --model window \
+    -i alignments/rpoB.codonaln.fasta \
+    -o posterior/rpoB.window.tsv \
+    --window-size 30 --window-step 1 \
+    --iters 50000 --burnin 10000
+</code></pre>
+  </div>
+  <div class="tabpanel">
+<pre><code><span class="tok-k">import</span> pandas <span class="tok-k">as</span> pd, numpy <span class="tok-k">as</span> np
+
+<span class="tok-c"># Load posterior samples for one gene/model</span>
+post = pd.read_table(<span class="tok-s">"posterior/rpoB.independent.tsv"</span>)
+<span class="tok-c"># columns: codon, sample_idx, omega</span>
+
+summary = (
+    post.groupby(<span class="tok-s">"codon"</span>)[<span class="tok-s">"omega"</span>]
+        .agg(mean=<span class="tok-s">"mean"</span>,
+             lo=<span class="tok-k">lambda</span> x: np.quantile(x, <span class="tok-n">0.025</span>),
+             hi=<span class="tok-k">lambda</span> x: np.quantile(x, <span class="tok-n">0.975</span>),
+             p_pos=<span class="tok-k">lambda</span> x: (x &gt; <span class="tok-n">1</span>).mean())
+        .reset_index()
+)
+
+<span class="tok-c"># A "hit" codon: posterior P(ω &gt; 1) &gt; 0.95</span>
+hits = summary[summary.p_pos &gt; <span class="tok-n">0.95</span>]
+<span class="tok-f">print</span>(<span class="tok-s">f"RpoB has {len(hits)} hot codons:"</span>)
+<span class="tok-f">print</span>(hits[[<span class="tok-s">"codon"</span>, <span class="tok-s">"mean"</span>, <span class="tok-s">"lo"</span>, <span class="tok-s">"hi"</span>, <span class="tok-s">"p_pos"</span>]])
+
+<span class="tok-c"># Across genes, do FDR / Bayesian decision rule</span>
+<span class="tok-c"># Standard: report genes where (post.constant.mean &gt; 1) &amp; (95% CrI excludes 1)</span>
+<span class="tok-c"># Replicate: keep only hits also flagged in CRyPTIC dataset</span>
+</code></pre>
+  </div>
+</div>
+
+</section>
+
+</main>
+</div>
+
+<footer>
+  Ioerger Lab paper (2 of 5) · <a href="01-dnds-bayesian.html">← back: Foundation · GenomegaMap</a> · <a href="index.html">overview</a> · <a href="03-boltz2.html">next: Latest Method · Boltz‑2 →</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+<script>
+/* ===== Demo 1: Three‑scale gene visualization ===== */
+(function () {
+  const canvas = document.getElementById('geneCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const geneSel = document.getElementById('geneSel');
+  const modelSel = document.getElementById('modelSel');
+  const sMean = document.getElementById('statMean');
+  const sSig = document.getElementById('statSig');
+  const sHot = document.getElementById('statHot');
+
+  // gene definitions: length, hot regions [start, end, omega_peak], baseline omega
+  const GENES = {
+    rpoB: { len: 1178, baseline: 0.10, hot: [[430, 451, 8.2, 'RDR I'], [488, 496, 4.5, 'RDR II']] },
+    katG: { len: 740, baseline: 0.18, hot: [[310, 320, 9.0, 'S315 hotspot']] },
+    gyrA: { len: 838, baseline: 0.13, hot: [[88, 95, 6.5, 'QRDR']] },
+    ftsZ: { len: 379, baseline: 0.08, hot: [] }, // essential housekeeping, no positive
+  };
+
+  // deterministic pseudo-random for reproducibility
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function generateOmega(gene, codon, model, rng) {
+    const g = GENES[gene];
+    let omega = g.baseline;
+    for (const [s, e, peak, _] of g.hot) {
+      if (codon >= s && codon <= e) {
+        const center = (s + e) / 2;
+        const halfWidth = (e - s) / 2;
+        const dist = Math.abs(codon - center) / Math.max(halfWidth, 1);
+        omega = Math.max(omega, peak * Math.exp(-dist * dist * 0.7));
+      }
+    }
+    omega *= 0.7 + 0.6 * rng();
+    return omega;
+  }
+
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const gene = GENES[geneSel.value];
+    const model = modelSel.value;
+    const rng = mulberry32(geneSel.value.charCodeAt(0) * 1000 + model.charCodeAt(0));
+
+    const M = { L: 60, R: 30, T: 30, B: 50 };
+    const plotW = W - M.L - M.R, plotH = H - M.T - M.B;
+    const yMax = 10, yLog = (v) => Math.max(0.05, v);
+    const ymap = (v) => M.T + plotH - (Math.log(yLog(v)) - Math.log(0.05)) / (Math.log(yMax) - Math.log(0.05)) * plotH;
+    const xmap = (c) => M.L + (c / gene.len) * plotW;
+
+    // axes / grid
+    ctx.fillStyle = themeColor('text');
+    ctx.font = '12px sans-serif';
+    ctx.fillText('ω', M.L - 25, M.T + 4);
+    ctx.fillText('codon', W / 2, H - 14);
+    [0.05, 0.1, 0.5, 1, 5, 10].forEach(v => {
+      const y = ymap(v);
+      ctx.strokeStyle = themeColor('border');
+      ctx.beginPath(); ctx.moveTo(M.L, y); ctx.lineTo(W - M.R, y); ctx.stroke();
+      ctx.fillStyle = themeColor('text-muted');
+      ctx.fillText(v.toString(), 8, y + 4);
+    });
+
+    // omega = 1 reference
+    const y1 = ymap(1);
+    ctx.strokeStyle = themeColor('warn');
+    ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M.L, y1); ctx.lineTo(W - M.R, y1); ctx.stroke();
+    ctx.setLineDash([]);
+
+    let nSig = 0, sumOmega = 0, count = 0, hotName = '—';
+
+    if (model === 'constant') {
+      // Single horizontal line for the gene-level ω
+      let avg = 0;
+      for (let c = 0; c < gene.len; c++) avg += generateOmega(geneSel.value, c, model, mulberry32(c));
+      avg /= gene.len;
+      // Hot regions usually drown out at gene level
+      ctx.strokeStyle = themeColor('accent'); ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(xmap(0), ymap(avg)); ctx.lineTo(xmap(gene.len), ymap(avg));
+      ctx.stroke();
+      // CrI ribbon
+      ctx.fillStyle = themeColor('accent') + '40';
+      ctx.beginPath();
+      ctx.moveTo(xmap(0), ymap(avg * 0.75));
+      ctx.lineTo(xmap(gene.len), ymap(avg * 0.75));
+      ctx.lineTo(xmap(gene.len), ymap(avg * 1.30));
+      ctx.lineTo(xmap(0), ymap(avg * 1.30));
+      ctx.closePath(); ctx.fill();
+      sumOmega = avg; count = 1;
+      nSig = avg > 1 ? 1 : 0;
+      hotName = avg > 1 ? 'whole gene' : 'none';
+    } else if (model === 'independent') {
+      // dot per codon w/ small CrI bar
+      ctx.fillStyle = themeColor('accent');
+      for (let c = 0; c < gene.len; c++) {
+        const om = generateOmega(geneSel.value, c, model, mulberry32(c * 7919));
+        const x = xmap(c), y = ymap(om);
+        ctx.fillStyle = om > 1 ? themeColor('bad') : themeColor('accent');
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill();
+        sumOmega += om; count++;
+        if (om > 1) nSig++;
+      }
+      ctx.globalAlpha = 1;
+      const hotPeaks = gene.hot.filter(h => h[2] > 1);
+      hotName = hotPeaks.length ? hotPeaks.map(h => h[3]).join(', ') : 'none';
+    } else { // window
+      const win = 30;
+      ctx.strokeStyle = themeColor('accent'); ctx.lineWidth = 2;
+      ctx.beginPath();
+      let firstPt = true;
+      for (let c = 0; c < gene.len; c += 1) {
+        let acc = 0, n = 0;
+        for (let k = Math.max(0, c - win / 2); k < Math.min(gene.len, c + win / 2); k++) {
+          acc += generateOmega(geneSel.value, k, 'independent', mulberry32(k * 7919));
+          n++;
+        }
+        const sm = acc / Math.max(n, 1);
+        const x = xmap(c), y = ymap(sm);
+        if (firstPt) { ctx.moveTo(x, y); firstPt = false; } else { ctx.lineTo(x, y); }
+        sumOmega += sm; count++;
+        if (sm > 1) nSig++;
+      }
+      ctx.stroke();
+      const hotPeaks = gene.hot.filter(h => h[2] > 1);
+      hotName = hotPeaks.length ? hotPeaks.map(h => h[3]).join(', ') : 'none';
+    }
+
+    // annotate hot regions on the gene track at top
+    ctx.fillStyle = themeColor('bg-elev-2');
+    ctx.fillRect(M.L, M.T - 14, plotW, 8);
+    for (const [s, e, peak, name] of gene.hot) {
+      ctx.fillStyle = themeColor('bad');
+      ctx.fillRect(xmap(s), M.T - 14, xmap(e) - xmap(s), 8);
+      ctx.fillStyle = themeColor('text-muted');
+      ctx.font = '10px sans-serif';
+      ctx.fillText(name, xmap((s + e) / 2) - 25, M.T - 18);
+    }
+
+    sMean.textContent = (sumOmega / Math.max(count, 1)).toFixed(2);
+    sSig.textContent = nSig.toString();
+    sHot.textContent = hotName;
+  }
+  geneSel.addEventListener('change', draw);
+  modelSel.addEventListener('change', draw);
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+
+/* ===== Demo 2: false-positive simulation ===== */
+(function () {
+  const canvas = document.getElementById('fpCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const wOmega = document.getElementById('trueOmega');
+  const wDens = document.getElementById('snpDens');
+  const lOmega = document.getElementById('trueOmegaVal');
+  const lDens = document.getElementById('snpDensVal');
+
+  function rand_normal() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  function simulateGene(len, trueOm, dens) {
+    // expected total nonsyn / syn given ω and density
+    const totalSnps = len * dens * 3; // 3 sites per codon
+    const expected_syn = totalSnps / (1 + 3 * trueOm); // rough heuristic
+    const expected_nonsyn = totalSnps - expected_syn;
+    const N_obs = Math.max(0, expected_nonsyn + rand_normal() * Math.sqrt(expected_nonsyn + 1));
+    const S_obs = Math.max(1, expected_syn + rand_normal() * Math.sqrt(expected_syn + 1));
+    const om_hat = (N_obs / 3) / (S_obs / 1); // very rough
+    // CrI width scales like 1/sqrt(N_obs+S_obs)
+    const seW = trueOm * 1.5 / Math.sqrt(Math.max(N_obs + S_obs, 1));
+    return { mean: om_hat, lo: Math.max(0.05, om_hat - 1.96 * seW), hi: om_hat + 1.96 * seW };
+  }
+
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    const M = { L: 70, R: 30, T: 20, B: 50 };
+    const trueOm = +wOmega.value, dens = +wDens.value;
+    lOmega.textContent = trueOm.toFixed(2);
+    lDens.textContent = dens.toFixed(3);
+    ctx.clearRect(0, 0, W, H);
+
+    const lens = [];
+    for (let i = 0; i < 80; i++) {
+      lens.push(20 + Math.exp(Math.random() * Math.log(2000 / 20)));
+    }
+    const xmin = 10, xmax = 2500;
+    const ymin = 0.1, ymax = 8;
+    const xmap = (v) => M.L + (Math.log(v) - Math.log(xmin)) / (Math.log(xmax) - Math.log(xmin)) * (W - M.L - M.R);
+    const ymap = (v) => H - M.B - (Math.log(v) - Math.log(ymin)) / (Math.log(ymax) - Math.log(ymin)) * (H - M.T - M.B);
+
+    // grid
+    ctx.strokeStyle = themeColor('border'); ctx.lineWidth = 1;
+    ctx.fillStyle = themeColor('text-muted'); ctx.font = '11px sans-serif';
+    [10, 30, 100, 300, 1000].forEach(x => {
+      const xx = xmap(x);
+      ctx.beginPath(); ctx.moveTo(xx, M.T); ctx.lineTo(xx, H - M.B); ctx.stroke();
+      ctx.fillText(x.toString(), xx - 8, H - M.B + 14);
+    });
+    [0.1, 0.5, 1, 2, 5].forEach(y => {
+      const yy = ymap(y);
+      ctx.beginPath(); ctx.moveTo(M.L, yy); ctx.lineTo(W - M.R, yy); ctx.stroke();
+      ctx.fillText(y.toString(), M.L - 28, yy + 4);
+    });
+
+    // omega = 1 reference
+    const y1 = ymap(1);
+    ctx.strokeStyle = themeColor('warn'); ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(M.L, y1); ctx.lineTo(W - M.R, y1); ctx.stroke(); ctx.setLineDash([]);
+
+    // axes labels
+    ctx.fillStyle = themeColor('text');
+    ctx.fillText('Gene length (codons, log)', W / 2 - 60, H - 8);
+    ctx.save();
+    ctx.translate(20, H / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Posterior ω (log)', -40, 0);
+    ctx.restore();
+
+    let nHits = 0;
+    for (const len of lens) {
+      const sim = simulateGene(len, trueOm, dens);
+      const x = xmap(len);
+      const yLo = ymap(Math.max(0.1, sim.lo));
+      const yHi = ymap(Math.min(ymax, sim.hi));
+      const y = ymap(Math.max(0.1, Math.min(ymax, sim.mean)));
+      const isHit = sim.lo > 1 || (sim.hi < 1 && trueOm < 1);
+      const positive = sim.lo > 1;
+      if (positive) nHits++;
+      ctx.strokeStyle = positive ? themeColor('accent') : themeColor('text-faint');
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, yLo); ctx.lineTo(x, yHi); ctx.stroke();
+      ctx.fillStyle = positive ? themeColor('accent') : themeColor('text-faint');
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+
+    ctx.fillStyle = themeColor('text');
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`Hits (CrI excludes 1): ${nHits} / ${lens.length}  ·  true ω = ${trueOm.toFixed(2)}`, M.L + 10, M.T + 14);
+  }
+
+  wOmega.addEventListener('input', draw);
+  wDens.addEventListener('input', draw);
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+
+/* ===== Demo 3: Drug resistance gene cards ===== */
+(function () {
+  const drugSel = document.getElementById('drugSel');
+  const list = document.getElementById('drugList');
+  if (!list) return;
+
+  const GENES = [
+    { gene: 'rpoB', drug: 'rif', label: 'Rifampicin', length: 1178, peak: [[430, 451, 'RDR I'], [488, 496, 'RDR II']], notes: 'S450L is the single most common rifampicin‑resistance mutation worldwide (~40‑50% of RIF‑R isolates).' },
+    { gene: 'rpoC', drug: 'rif', label: 'Rifampicin (compensatory)', length: 1316, peak: [[480, 510, 'compensatory cluster']], notes: 'Doesn\'t cause resistance directly. Restores fitness lost from rpoB mutation. Strong epistasis with rpoB.' },
+    { gene: 'katG', drug: 'inh', label: 'Isoniazid', length: 740, peak: [[310, 320, 'S315 hotspot']], notes: 'KatG activates INH; S315T retains some catalase activity but loses INH activation.' },
+    { gene: 'inhA', drug: 'inh', label: 'Isoniazid (target)', length: 269, peak: [[20, 25, 'I21'], [90, 100, 'S94']], notes: 'Direct INH target. Promoter ‑15C/T mutations also confer resistance via overexpression.' },
+    { gene: 'gyrA', drug: 'fq', label: 'Fluoroquinolones', length: 838, peak: [[88, 95, 'QRDR']], notes: 'D94G/N/Y and A90V dominate. QRDR is the FQ‑binding interface.' },
+    { gene: 'gyrB', drug: 'fq', label: 'Fluoroquinolones (β subunit)', length: 714, peak: [[460, 510, 'QRDR']], notes: 'Less common than gyrA mutations but equally diagnostic when present.' },
+    { gene: 'embB', drug: 'emb', label: 'Ethambutol', length: 1098, peak: [[300, 310, 'M306 hotspot'], [400, 425, 'M421/G406']], notes: 'M306V/I/L most common. Single‑residue resistance with predictable signature.' },
+    { gene: 'pncA', drug: 'pza', label: 'Pyrazinamide', length: 186, peak: [[1, 186, 'whole gene']], notes: 'Loss‑of‑function mutations across the entire gene. ω elevation is flat, not focal.' },
+    { gene: 'gidB', drug: 'str', label: 'Streptomycin', length: 240, peak: [[1, 240, 'gene‑wide LOF']], notes: 'Like pncA, mostly loss of function. Distinct from rpsL/rrs streptomycin resistance which is target‑site.' },
+  ];
+
+  function render() {
+    const filter = drugSel.value;
+    list.innerHTML = '';
+    for (const g of GENES) {
+      if (filter !== 'all' && filter !== g.drug) continue;
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--border); border-radius:10px; padding:14px; background:var(--bg-elev-1);';
+      let svgPeaks = '';
+      for (const [s, e, name] of g.peak) {
+        const x = (s / g.length) * 100;
+        const w = ((e - s) / g.length) * 100;
+        svgPeaks += `<div style="position:absolute; left:${x}%; width:${w}%; height:100%; background:var(--bad); opacity:0.85;" title="${name}"></div>`;
+      }
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <div>
+            <span class="mono" style="font-weight:700; font-size:15px;">${g.gene}</span>
+            <span class="pill accent" style="margin-left:8px;">${g.label}</span>
+          </div>
+          <span class="muted" style="font-size:12px;">${g.length} aa</span>
+        </div>
+        <div style="position:relative; height:18px; background:var(--bg-elev-2); border-radius:4px; overflow:hidden; margin:8px 0;">
+          ${svgPeaks}
+        </div>
+        <div class="muted" style="font-size:13px;">${g.notes}</div>
+      `;
+      list.appendChild(card);
+    }
+  }
+  drugSel.addEventListener('change', render);
+  render();
+})();
+
+/* ===== Demo 4: RpoB profile ===== */
+(function () {
+  const canvas = document.getElementById('rdrCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function rng(seed) { return Math.sin(seed * 7919) * 0.5 + 0.5; }
+  function profile(c) {
+    let om = 0.10 + 0.04 * rng(c);
+    // RDR I peak
+    if (c >= 425 && c <= 460) {
+      const center = 442, w = 14;
+      om = 0.1 + 7 * Math.exp(-((c - center) ** 2) / (2 * w * w));
+    }
+    // RDR II peak
+    if (c >= 480 && c <= 500) {
+      const center = 491, w = 7;
+      om = Math.max(om, 0.1 + 4 * Math.exp(-((c - center) ** 2) / (2 * w * w)));
+    }
+    om *= 0.85 + 0.3 * rng(c + 1000);
+    return om;
+  }
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const M = { L: 70, R: 20, T: 30, B: 50 };
+    const len = 1178;
+    const xmap = (c) => M.L + (c / len) * (W - M.L - M.R);
+    const ymap = (v) => M.T + (H - M.T - M.B) - (Math.log(Math.max(0.05, v)) - Math.log(0.05)) / (Math.log(10) - Math.log(0.05)) * (H - M.T - M.B);
+
+    ctx.strokeStyle = themeColor('border'); ctx.fillStyle = themeColor('text-muted'); ctx.font = '11px sans-serif';
+    [0.1, 0.5, 1, 2, 5, 10].forEach(v => {
+      const y = ymap(v);
+      ctx.beginPath(); ctx.moveTo(M.L, y); ctx.lineTo(W - M.R, y); ctx.stroke();
+      ctx.fillText(v.toString(), 30, y + 4);
+    });
+    [1, 200, 400, 600, 800, 1000, 1178].forEach(c => {
+      const x = xmap(c);
+      ctx.fillText(c.toString(), x - 12, H - 30);
+    });
+
+    // shaded RDR
+    ctx.fillStyle = themeColor('bad') + '20';
+    ctx.fillRect(xmap(425), M.T, xmap(460) - xmap(425), H - M.T - M.B);
+    ctx.fillRect(xmap(480), M.T, xmap(500) - xmap(480), H - M.T - M.B);
+    ctx.fillStyle = themeColor('bad');
+    ctx.font = '11px sans-serif';
+    ctx.fillText('RDR I', xmap(442) - 18, M.T - 4);
+    ctx.fillText('RDR II', xmap(491) - 18, M.T - 4);
+
+    // omega = 1 line
+    const y1 = ymap(1);
+    ctx.strokeStyle = themeColor('warn'); ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M.L, y1); ctx.lineTo(W - M.R, y1); ctx.stroke(); ctx.setLineDash([]);
+
+    // dots
+    ctx.fillStyle = themeColor('accent');
+    for (let c = 1; c <= len; c++) {
+      const om = profile(c);
+      const x = xmap(c), y = ymap(om);
+      ctx.fillStyle = om > 1 ? themeColor('bad') : themeColor('accent');
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath(); ctx.arc(x, y, 1.4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // axis labels
+    ctx.fillStyle = themeColor('text'); ctx.font = '12px sans-serif';
+    ctx.save();
+    ctx.translate(20, H / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Posterior mean ω (log scale)', -80, 0);
+    ctx.restore();
+    ctx.fillText('RpoB codon', W / 2 - 30, H - 12);
+  }
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+
+/* ===== Demo 5: Functional category bar chart ===== */
+(function () {
+  const canvas = document.getElementById('catCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cats = [
+    { name: 'Drug response / efflux', count: 28 },
+    { name: 'Cell wall / lipid metabolism', count: 24 },
+    { name: 'Stress response (DosR, redox)', count: 18 },
+    { name: 'Central carbon metabolism', count: 14 },
+    { name: 'PE/PPE family', count: 12 },
+    { name: 'Translation / ribosome', count: 8 },
+    { name: 'Iron acquisition (Mbt)', count: 7 },
+    { name: 'Conserved hypothetical', count: 22 },
+    { name: 'Other / regulators', count: 11 },
+  ];
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const M = { L: 220, R: 30, T: 20, B: 40 };
+    const max = Math.max(...cats.map(c => c.count));
+    const barH = (H - M.T - M.B) / cats.length;
+    cats.forEach((c, i) => {
+      const y = M.T + i * barH + 4;
+      const w = (c.count / max) * (W - M.L - M.R);
+      const grad = ctx.createLinearGradient(M.L, 0, M.L + w, 0);
+      grad.addColorStop(0, themeColor('accent'));
+      grad.addColorStop(1, themeColor('accent-soft'));
+      ctx.fillStyle = grad;
+      ctx.fillRect(M.L, y, w, barH - 8);
+      ctx.fillStyle = themeColor('text');
+      ctx.font = '13px sans-serif';
+      ctx.fillText(c.name, 10, y + barH / 2);
+      ctx.fillStyle = themeColor('text-muted');
+      ctx.fillText(c.count.toString(), M.L + w + 8, y + barH / 2);
+    });
+    ctx.fillStyle = themeColor('text-muted'); ctx.font = '12px sans-serif';
+    ctx.fillText('Number of genes with ω > 1 (replicated)', W / 2 - 100, H - 12);
+  }
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Latest Method: Boltz‑2 (Wohlwend 2025) · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="active deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#why-structure">1. Why structure prediction matters</a></li>
+    <li><a href="#alphafold2">2. AlphaFold2 — the baseline</a></li>
+    <li><a href="#alphafold3">3. AlphaFold3 &amp; the diffusion turn</a></li>
+    <li><a href="#boltz1">4. Boltz‑1 — the open replication</a></li>
+    <li><a href="#boltz2">5. Boltz‑2 — what's new</a></li>
+    <li><a href="#trunk">6. The PairFormer trunk</a></li>
+    <li><a href="#diffusion">7. The diffusion module</a></li>
+    <li><a href="#affinity">8. The affinity head</a></li>
+    <li><a href="#fep">9. Binding affinity vs. FEP+</a></li>
+    <li><a href="#using">10. Running Boltz‑2 in practice</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where you are in the five-piece pipeline">
+  <a class="step done" href="01-dnds-bayesian.html">✓ Foundation · GenomegaMap</a>
+  <span class="sep">→</span>
+  <a class="step done" href="02-tb-selection.html">✓ Ioerger Lab · TB Scans</a>
+  <span class="sep">→</span>
+  <span class="step here">📍 Latest Method · Boltz‑2</span>
+  <span class="sep">→</span>
+  <a class="step" href="04-keras-cheminformatics.html">Hands‑on · Keras MPNN</a>
+  <span class="sep">→</span>
+  <a class="step" href="05-smiles-permeability.html">SMILES · permeability</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Latest method paper · Wohlwend et al. 2025 · MIT (open license)</div>
+  <h1>Boltz‑2: structure + binding affinity in one model</h1>
+  <p class="lede">
+    AlphaFold made a graduate course's worth of crystallography optional. Boltz‑2 goes the next
+    step — predicting <em>how strongly</em> a small molecule binds a target alongside the 3D
+    complex, in <em>~20 seconds on one GPU</em>, at accuracy that approaches the gold‑standard
+    free‑energy perturbation methods at roughly 1000× the speed.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#why-structure">Why structure?</a>
+    <a class="qpill" href="#boltz2">What's new in Boltz‑2</a>
+    <a class="qpill" href="#diffusion">See diffusion live</a>
+    <a class="qpill" href="#using">Run it yourself</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  The <strong>Ioerger lab paper</strong> gave you a list of TB proteins worth investigating. But to
+  design a drug, the next question is <strong>what those proteins look like in 3D</strong> and
+  <strong>how tightly candidate drugs stick to them</strong>. Until 2020 we needed expensive lab
+  experiments (X‑ray crystallography, FEP+) for both. Now: <strong>Boltz‑2 takes protein sequence
+  + drug structure and outputs the 3D complex + binding strength in ~20 seconds</strong>. It's the
+  bridge from "this protein matters" to "test these 50 drug candidates first."
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>A selected gene becomes a protein target later.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Model input/output, affinity prediction, runtime constraints.</td></tr>
+      <tr><th>Use this for</th><td>Use only after GenomegaMap produces candidate genes.</td></tr>
+      <tr><th>Defer for now</th><td>Do not study architecture internals this week.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<div class="callout tip">
+  <div class="callout-title">First-read path</div>
+  Focus on §5 (Boltz‑2 specifically), §8 (affinity head), and §10 (running it).
+  AlphaFold history, diffusion internals, PairFormer details, and FEP+ comparison are now
+  optional reference material.
+</div>
+
+<section id="why-structure">
+<h2>1. Why structure prediction matters
+  <button class="section-complete" data-section="why-structure">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Drug design needs 3D shapes. For decades, getting one took 6–24 months of crystallography.
+    AlphaFold and friends shrank that to seconds. This section sets up <em>why</em> we care
+    about Boltz‑2 in particular among the predictors.
+  </p>
+</div>
+
+<p>
+  Once you have a list of genes under positive selection — say, the 53 genes from the
+  <a href="02-tb-selection.html">Ioerger lab's TB scan paper</a> — the next question is always the same: <em>can we
+  drug it?</em> Drugs work by physically docking into a pocket on a protein. Without a 3D model
+  you can't reason about what ligand will fit, you can't run virtual screening, and you can't
+  rationally design analogues. For a long time the answer was "wait for X‑ray crystallography to
+  catch up," which for any one new target meant 6–24 months and ~$100 k.
+</p>
+
+<p>
+  Deep learning broke that bottleneck. In 2020, AlphaFold2 demonstrated near‑experimental accuracy
+  on single‑chain proteins. AlphaFold3 (2024) added DNA, RNA, ligands, ions and modifications.
+  Boltz‑1 and Boltz‑2 are the openly released MIT‑licensed analogues — Boltz‑2 is the first to
+  predict <em>binding affinity</em> jointly with structure, which is the input metric a medicinal
+  chemist actually cares about.
+</p>
+
+<div class="callout">
+  <div class="callout-title">In one sentence</div>
+  Boltz‑2 takes (protein sequence + small molecule SMILES) → (3D complex + log<sub>10</sub> IC<sub>50</sub>),
+  trained end‑to‑end on the PDB plus curated PubChem/ChEMBL affinities plus molecular dynamics
+  trajectories.
+</div>
+</section>
+
+
+<section id="alphafold2" class="detail-section" data-summary="Open AlphaFold2 baseline background" data-tag="Background">
+<h2>2. AlphaFold2 — the baseline you have to know
+  <button class="section-complete" data-section="alphafold2">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Every modern structure predictor (AF3, Boltz‑1, Boltz‑2, ESM‑Fold) is a delta from
+    AF2. Knowing AF2's five blocks lets you read any of those papers in 20 minutes
+    instead of a week.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  AlphaFold2 takes a protein sequence (a string of amino acid letters) and predicts the
+  3D coordinates of every atom. The trick: it also looks at <strong>thousands of related
+  sequences</strong> from other species. If two positions in the protein <em>always
+  mutate together</em> across species, they're physically touching in 3D — that's the
+  signal AF2 squeezes out. Then it predicts which atoms are close to which, and finally
+  fills in 3D coordinates consistent with those predictions.
+</div>
+
+<p>
+  Boltz‑2 is best understood as the third step of a family tree: AlphaFold2 → AlphaFold3 →
+  Boltz‑{1, 2}. Skipping the lineage will leave architectural decisions feeling arbitrary, so
+  here's the AF2 picture in one diagram.
+</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrAF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="sans-serif" font-size="12" fill="currentColor">
+    <!-- Inputs -->
+    <g>
+      <rect x="20" y="40" width="140" height="100" rx="8" fill="var(--accent-glow)" stroke="currentColor"/>
+      <text x="90" y="62" text-anchor="middle" font-weight="700">Inputs</text>
+      <text x="90" y="84" text-anchor="middle">target sequence</text>
+      <text x="90" y="100" text-anchor="middle">MSA (N homologs)</text>
+      <text x="90" y="116" text-anchor="middle">templates (opt.)</text>
+    </g>
+
+    <!-- Embedding -->
+    <g>
+      <rect x="200" y="40" width="140" height="100" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="270" y="62" text-anchor="middle" font-weight="700">Embedding</text>
+      <text x="270" y="84" text-anchor="middle">MSA repr. (N×L×c)</text>
+      <text x="270" y="100" text-anchor="middle">pair repr. (L×L×c')</text>
+    </g>
+
+    <!-- Evoformer -->
+    <g>
+      <rect x="380" y="40" width="180" height="100" rx="8" fill="var(--accent-glow)" stroke="currentColor"/>
+      <text x="470" y="62" text-anchor="middle" font-weight="700">Evoformer × 48</text>
+      <text x="470" y="80" text-anchor="middle" font-size="10">row / column attention</text>
+      <text x="470" y="94" text-anchor="middle" font-size="10">triangle multiplication</text>
+      <text x="470" y="108" text-anchor="middle" font-size="10">triangle attention</text>
+      <text x="470" y="122" text-anchor="middle" font-size="10">MSA ↔ pair flow</text>
+    </g>
+
+    <!-- Structure module -->
+    <g>
+      <rect x="600" y="40" width="140" height="100" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="670" y="62" text-anchor="middle" font-weight="700">Structure module</text>
+      <text x="670" y="84" text-anchor="middle" font-size="10">Invariant Point Attn.</text>
+      <text x="670" y="100" text-anchor="middle" font-size="10">backbone frames</text>
+      <text x="670" y="116" text-anchor="middle" font-size="10">side‑chain χ angles</text>
+    </g>
+
+    <!-- Output -->
+    <g>
+      <rect x="290" y="220" width="180" height="60" rx="8" fill="var(--accent-glow)" stroke="currentColor"/>
+      <text x="380" y="244" text-anchor="middle" font-weight="700">3D coordinates + pLDDT</text>
+      <text x="380" y="262" text-anchor="middle" font-size="11">all‑atom protein structure</text>
+    </g>
+
+    <!-- Recycling -->
+    <text x="380" y="170" text-anchor="middle" font-style="italic" opacity="0.75">recycled 3× back into the network</text>
+  </g>
+
+  <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#arrAF)">
+    <line x1="160" y1="90" x2="200" y2="90"/>
+    <line x1="340" y1="90" x2="380" y2="90"/>
+    <line x1="560" y1="90" x2="600" y2="90"/>
+    <line x1="670" y1="140" x2="450" y2="220"/>
+    <path d="M 670 140 C 720 200, 200 200, 270 140" stroke-dasharray="4 3"/>
+  </g>
+</svg>
+<div class="caption">Figure 1. AlphaFold2 in five blocks. The architectural innovations are all in the Evoformer: it lets information flow back and forth between coevolutionary signal in the MSA and pair‑wise contact predictions, repeatedly.</div>
+</div>
+
+<h3>The MSA, why it's there, and what it does</h3>
+<p>
+  A <strong>multiple sequence alignment</strong> of the target sequence with hundreds or thousands
+  of homologs from related organisms exposes the only signal we have for which residues are
+  important: <em>covariation</em>. If two residues mutate together across species, they're almost
+  certainly in physical contact, because mutating one without compensating the other would break
+  the structure. AlphaFold2's row attention reads each MSA sequence; column attention reads each
+  position across sequences; together they extract the covariation pattern as a pair representation
+  before geometry is ever assigned.
+</p>
+
+<h3>The Evoformer in plain words</h3>
+<p>
+  Two parallel "towers" of transformer blocks: one operates on the MSA tensor (N × L × c), the
+  other on the pair tensor (L × L × c′). They communicate through three operations:
+</p>
+<ul>
+  <li><strong>MSA → pair (outer product mean)</strong>: feed coevolutionary signal into the L×L grid.</li>
+  <li><strong>Pair → MSA (bias on row attention)</strong>: feed the geometric model back into how MSA residues attend to each other.</li>
+  <li><strong>Triangle attention/multiplication</strong>: the pair grid is updated under the constraint that the geometry must be self‑consistent — if i is close to j, and j is close to k, then i should be near k (the triangle inequality).</li>
+</ul>
+
+<h3>The structure module</h3>
+<p>
+  After 48 Evoformer blocks, AF2 turns the final pair + MSA representation into 3D coordinates via
+  <strong>Invariant Point Attention (IPA)</strong>, a custom attention mechanism that operates on
+  rigid local frames (one per residue). It's invariant under global rotation/translation, so the
+  network never has to learn that "rotating the protein doesn't change the protein." The whole
+  structure is decoded in one pass; recycling refines it.
+</p>
+</section>
+
+
+<section id="alphafold3" class="detail-section" data-summary="Open AlphaFold3 diffusion background" data-tag="Background">
+<h2>3. AlphaFold3 and the diffusion turn
+  <button class="section-complete" data-section="alphafold3">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    AF2 was protein‑only. Drug discovery needs proteins <em>plus</em> small molecules
+    (ligands), ions, RNA, DNA. AF3 is the upgrade that handles all of those — and the
+    way it does it (tokens + diffusion) is exactly what Boltz‑2 inherits.
+  </p>
+</div>
+
+<p>
+  AF2 only handles proteins (with limited support for templates). To predict a complex with a
+  small molecule, an ion, or a modified residue, you needed a different tool. AlphaFold3 (Abramson
+  et&nbsp;al., 2024) generalizes the architecture in two big ways:
+</p>
+
+<ul>
+  <li><strong>Token‑based representation.</strong> Instead of "residues," AF3 uses generic
+    <em>tokens</em>. A standard amino acid is one token; a heavy atom of a small molecule is one
+    token; a nucleic acid base is one token. The MSA is dropped (or shrunk) for non‑protein tokens.</li>
+  <li><strong>Diffusion structure module.</strong> The IPA decoder is replaced by a
+    <em>denoising diffusion</em> module. Coordinates start as Gaussian noise and are denoised
+    iteratively, conditioned on the trunk's pair representation. This lets the model handle
+    arbitrary atoms and lets uncertainty in conformation come out naturally as sample diversity.</li>
+</ul>
+
+<div class="callout warn">
+  <div class="callout-title">A licensing aside</div>
+  AlphaFold3's weights are released under a Creative Commons license that <em>excludes commercial
+  use</em>. That, plus the urgency of letting industry use these tools, is the main reason the
+  Boltz family exists — it's an MIT‑licensed reproduction of the AF3 architecture from the MIT
+  CSAIL group, free to build on commercially.
+</div>
+</section>
+
+
+<section id="boltz1" class="detail-section" data-summary="Open Boltz-1 history" data-tag="Background">
+<h2>4. Boltz‑1 — the open replication (Wohlwend et&nbsp;al. 2024)
+  <button class="section-complete" data-section="boltz1">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    AF3's weights forbid commercial use, which slowed adoption. Boltz‑1 is the
+    MIT‑licensed reimplementation that <em>does</em> let you use it commercially —
+    and it's the predecessor whose deltas to Boltz‑2 are what you'll see in the paper.
+  </p>
+</div>
+
+<p>
+  Boltz‑1 essentially reproduced AF3 but with the goal of being <em>fully open</em> and pushing
+  efficiency. The architecture is broadly the same — pair representation refined by a
+  <em>PairFormer</em> (a renaming of the Evoformer with the column‑attention removed), then a
+  diffusion structure module on tokens — but with several deliberate differences:
+</p>
+
+<table>
+  <thead><tr><th>Choice</th><th>Boltz‑1</th><th>AlphaFold3</th></tr></thead>
+  <tbody>
+    <tr><td>License</td><td><strong>MIT</strong> (commercial OK)</td><td>CC‑BY‑NC (no commercial use)</td></tr>
+    <tr><td>Confidence head</td><td>Full trunk re‑initialized; trained separately</td><td>Joint with gradient blocking</td></tr>
+    <tr><td>Diffusion interpolation</td><td>Kabsch‑aligned (rigid‑body matched at every step)</td><td>Unaligned</td></tr>
+    <tr><td>Compute budget</td><td>~68 k training steps (~4× cheaper)</td><td>~150 k training steps</td></tr>
+    <tr><td>MSA pairing</td><td>Taxonomy‑informed dense pairing</td><td>Standard concatenation</td></tr>
+    <tr><td>Templates</td><td>Excluded in v1 (added in v2)</td><td>Included</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Boltz‑1 also introduced <strong>Boltz‑Steering</strong>: a Feynman‑Kac style guidance that biases
+  the diffusion process at inference time toward chemically valid structures (no atom clashes,
+  correct chirality, correct bond lengths) <em>without retraining</em>. It uses a sequential‑Monte‑Carlo
+  resampling: spawn many particles per timestep, weight them by an energy potential, resample. The
+  result was Boltz‑1x, which passes ~97% of physical sanity checks vs. ~57% for the un‑steered
+  base model.
+</p>
+</section>
+
+
+<section id="boltz2">
+<h2>5. Boltz‑2 — the version you'll actually use
+  <button class="section-complete" data-section="boltz2">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    This is <em>the</em> tool the lab runs day‑to‑day. This section explains the three additions
+    over Boltz‑1: affinity head, controllability, and a deeper trunk.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Boltz‑1 said: "Here's the protein–ligand 3D shape." Boltz‑2 adds: "...and here's
+  also a number telling you how strongly the ligand binds." That second number
+  (binding affinity) is what medicinal chemists use to rank drug candidates. Predicting
+  it directly with the structure means one tool replaces a slow, expensive lab assay.
+</div>
+
+<p>
+  Boltz‑2 (Passaro, Corso, Wohlwend et&nbsp;al., 2025) takes Boltz‑1 and adds three things:
+</p>
+
+<ol>
+  <li><strong>An affinity prediction head</strong> trained on PubChem and ChEMBL — this is the
+    headline feature.</li>
+  <li><strong>Controllability</strong>: the user can specify experimental conditions (X‑ray vs
+    NMR vs MD), pocket constraints, and contact constraints, and the diffusion is steered
+    accordingly.</li>
+  <li><strong>Trunk scaling</strong>: 64 PairFormer layers (up from 48), plus templates similar
+    to AF3, plus bf16 throughout for memory savings.</li>
+</ol>
+
+<div class="diagram">
+<svg viewBox="0 0 820 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+    <linearGradient id="trunkGrad" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+  <g font-family="sans-serif" font-size="12" fill="currentColor">
+
+    <!-- Inputs -->
+    <g>
+      <rect x="20" y="20" width="160" height="100" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="100" y="42" text-anchor="middle" font-weight="700">Inputs</text>
+      <text x="100" y="62" text-anchor="middle" font-size="11">protein seq</text>
+      <text x="100" y="76" text-anchor="middle" font-size="11">MSA (auto, MMseqs2)</text>
+      <text x="100" y="90" text-anchor="middle" font-size="11">templates</text>
+      <text x="100" y="104" text-anchor="middle" font-size="11">ligand SMILES</text>
+    </g>
+
+    <!-- Trunk -->
+    <g>
+      <rect x="220" y="20" width="240" height="180" rx="10" fill="url(#trunkGrad)" stroke="currentColor" stroke-width="2"/>
+      <text x="340" y="42" text-anchor="middle" font-weight="700">Trunk (64× PairFormer)</text>
+      <text x="340" y="68" text-anchor="middle" font-size="11">→ template module</text>
+      <text x="340" y="84" text-anchor="middle" font-size="11">→ MSA module</text>
+      <text x="340" y="100" text-anchor="middle" font-size="11">→ PairFormer ×64</text>
+      <text x="340" y="116" text-anchor="middle" font-size="11">  (triangle attn., row attn.)</text>
+      <text x="340" y="146" text-anchor="middle" font-size="10" font-style="italic">outputs:</text>
+      <text x="340" y="162" text-anchor="middle" font-size="11">single repr. s ∈ ℝ<tspan baseline-shift="super" font-size="9">L×c</tspan></text>
+      <text x="340" y="178" text-anchor="middle" font-size="11">pair repr. z ∈ ℝ<tspan baseline-shift="super" font-size="9">L×L×c</tspan></text>
+    </g>
+
+    <!-- Diffusion -->
+    <g>
+      <rect x="500" y="20" width="200" height="180" rx="10" fill="var(--accent-glow)" stroke="currentColor" stroke-width="2"/>
+      <text x="600" y="42" text-anchor="middle" font-weight="700">Diffusion module</text>
+      <text x="600" y="62" text-anchor="middle" font-size="11">noise schedule t ∈ [0, T]</text>
+      <text x="600" y="78" text-anchor="middle" font-size="11">x<tspan baseline-shift="sub" font-size="9">T</tspan> ~ 𝒩(0, σ<tspan baseline-shift="sub" font-size="9">max</tspan>²)</text>
+      <text x="600" y="100" text-anchor="middle" font-size="11">denoise(x<tspan baseline-shift="sub" font-size="9">t</tspan> | s, z, t) → x̂<tspan baseline-shift="sub" font-size="9">0</tspan></text>
+      <text x="600" y="116" text-anchor="middle" font-size="11">ODE/SDE step → x<tspan baseline-shift="sub" font-size="9">t−1</tspan></text>
+      <text x="600" y="146" text-anchor="middle" font-size="10" font-style="italic">+ Boltz‑Steering</text>
+      <text x="600" y="162" text-anchor="middle" font-size="11">(chirality, clashes,</text>
+      <text x="600" y="178" text-anchor="middle" font-size="11">pocket, contacts)</text>
+    </g>
+
+    <!-- Confidence + structure output -->
+    <g>
+      <rect x="730" y="60" width="80" height="120" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="770" y="85" text-anchor="middle" font-weight="700" font-size="11">Confid.</text>
+      <text x="770" y="105" text-anchor="middle" font-size="10">pLDDT</text>
+      <text x="770" y="120" text-anchor="middle" font-size="10">pAE</text>
+      <text x="770" y="135" text-anchor="middle" font-size="10">pDE</text>
+      <text x="770" y="155" text-anchor="middle" font-size="10">→ 3D coords</text>
+    </g>
+
+    <!-- Affinity branch -->
+    <g>
+      <rect x="220" y="240" width="480" height="120" rx="10" fill="var(--accent-glow)" stroke="currentColor" stroke-width="2"/>
+      <text x="460" y="262" text-anchor="middle" font-weight="700">Affinity module — PairFormer dual head</text>
+      <text x="460" y="284" text-anchor="middle" font-size="11">refined pair repr. on protein–ligand + ligand–ligand pairs</text>
+      <g>
+        <rect x="240" y="296" width="190" height="50" rx="6" fill="var(--bg-elev-2)" stroke="currentColor"/>
+        <text x="335" y="316" text-anchor="middle" font-size="11" font-weight="700">binary classifier</text>
+        <text x="335" y="332" text-anchor="middle" font-size="10">P(binder) — for screening</text>
+      </g>
+      <g>
+        <rect x="490" y="296" width="190" height="50" rx="6" fill="var(--bg-elev-2)" stroke="currentColor"/>
+        <text x="585" y="316" text-anchor="middle" font-size="11" font-weight="700">regressor</text>
+        <text x="585" y="332" text-anchor="middle" font-size="10">log<tspan baseline-shift="sub" font-size="9">10</tspan>(IC<tspan baseline-shift="sub" font-size="9">50</tspan>) — for lead opt.</text>
+      </g>
+    </g>
+
+  </g>
+  <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#arrB)">
+    <line x1="180" y1="70" x2="220" y2="70"/>
+    <line x1="460" y1="100" x2="500" y2="100"/>
+    <line x1="700" y1="100" x2="730" y2="100"/>
+    <line x1="340" y1="200" x2="340" y2="240"/>
+    <line x1="600" y1="200" x2="500" y2="240" stroke-dasharray="3 3"/>
+  </g>
+</svg>
+<div class="caption">Figure 2. Boltz‑2 architecture. The trunk is shared with Boltz‑1's design but deeper. The diffusion module produces atomic coordinates, and the affinity head is a separate PairFormer that consumes the structure to predict P(binder) and log<sub>10</sub>(IC<sub>50</sub>).</div>
+</div>
+
+<h3>Versus Boltz‑1 in one paragraph</h3>
+<p>
+  PairFormer depth doubled (48→64), templates added, Boltz‑Steering integrated by default rather
+  than as a separate run, training data expanded with NMR ensembles and molecular dynamics
+  trajectories so the model has seen <em>multiple conformers per sequence</em>, and — the headline
+  — an affinity head trained on a curated subset of PubChem and ChEMBL with K<sub>i</sub>,
+  K<sub>d</sub>, and IC<sub>50</sub> measurements all standardized to log<sub>10</sub>(IC<sub>50</sub>) in
+  μM.
+</p>
+
+</section>
+
+
+<section id="trunk" class="detail-section" data-summary="Open PairFormer architecture internals" data-tag="Advanced">
+<h2>6. The PairFormer trunk in detail
+  <button class="section-complete" data-section="trunk">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters · optional deep dive</span>
+  <p>
+    This section is <strong>deeper architecture detail</strong>. If you just want to
+    use Boltz‑2, skim and jump to §10 (Running it). If you want to modify or fine‑tune
+    it, read carefully — this is the heart of the model.
+  </p>
+</div>
+
+<p>
+  The "trunk" is the part of the model whose job is to take inputs (sequence, MSA, templates,
+  ligand graph) and produce a refined pair representation <em>z</em><sub>ij</sub> ∈ ℝ<sup>c</sup>
+  for every ordered pair of tokens (<em>i</em>, <em>j</em>) and a single representation
+  <em>s</em><sub>i</sub> ∈ ℝ<sup>c</sup> per token. After 64 PairFormer blocks <em>z</em> encodes
+  predicted distances, orientations, contacts, and chemistry — everything the diffusion module
+  needs to draw 3D coordinates.
+</p>
+
+<h3>Tokens, not residues</h3>
+<p>
+  An AlphaFold2 input is a sequence of L amino acids. A Boltz‑2 input is a sequence of L
+  <em>tokens</em>:
+</p>
+<ul>
+  <li>One token per amino acid (20 standard + modifications),</li>
+  <li>One token per nucleic acid base (DNA/RNA),</li>
+  <li>One token per <em>heavy atom</em> in any small molecule, ion, or non‑standard residue.</li>
+</ul>
+<p>
+  This is what lets a single network handle, say, a 280‑residue kinase + an ATP analog + a
+  Mg<sup>2+</sup> ion + a peptide substrate as one cohesive complex. The downside is that small
+  molecules can balloon the token count — a 60‑heavy‑atom ligand adds 60 tokens, and the pair
+  representation grows quadratically. PairFormer's triangle attention is O(L³) per layer in the
+  naïve implementation; the Boltz authors implemented a custom Triton kernel ("trifast") that
+  reduces the memory cost to O(L²).
+</p>
+
+<h3>Triangle multiplication and triangle attention</h3>
+<p>
+  Triangle operations enforce <em>self‑consistency</em> of the pair representation. Concretely, if
+  z<sub>ij</sub> represents an edge from i to j and z<sub>jk</sub> an edge from j to k, then triangle
+  multiplication updates z<sub>ik</sub> using a function of z<sub>ij</sub> and z<sub>jk</sub> over
+  all intermediate vertices k:
+</p>
+
+<div class="math">
+  z<sub>ik</sub><sup>new</sup> ← g(Σ<sub>j</sub> a<sub>ij</sub> ⊙ b<sub>jk</sub>)
+</div>
+
+<p>
+  where a, b are linear projections of z and g is a gated layer. There are four flavors —
+  outgoing/incoming × multiplication/attention — each of which lets the network express different
+  types of geometric reasoning. The intuition is just the triangle inequality: if i–j and j–k are
+  short edges, the i–k distance is constrained.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Why triangle ops matter — interactive</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">A toy "pair representation" with three points. Drag any of the three nodes; each edge stores its predicted distance. The <em>triangle constraint</em> says distances must be self‑consistent; the network learns to flag inconsistencies.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="triCanvas" width="700" height="280"></canvas>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><span class="stat-label">d(i,j)</span><span class="stat-value" id="triIJ">—</span></div>
+    <div class="stat"><span class="stat-label">d(j,k)</span><span class="stat-value" id="triJK">—</span></div>
+    <div class="stat"><span class="stat-label">d(i,k) actual</span><span class="stat-value" id="triIK">—</span></div>
+    <div class="stat"><span class="stat-label">d(i,k) bounds</span><span class="stat-value" id="triBounds">—</span></div>
+  </div>
+  <p class="faint" style="margin-top:8px">Drag the points. The "bounds" come from the triangle inequality |d(i,j) − d(j,k)| ≤ d(i,k) ≤ d(i,j) + d(j,k). When d(i,k) leaves that range, the configuration is geometrically impossible — exactly what triangle attention is in the network to detect.</p>
+</div>
+
+<h3>MSA module</h3>
+<p>
+  The MSA module is reduced relative to AF2: most blocks now sit in the pair representation. MSA
+  is processed once early, projected into the pair grid via outer‑product mean, and discarded.
+  This is a deliberate tradeoff — AF2 spent enormous compute on MSA cross‑talk that AF3 / Boltz
+  showed was not necessary if the pair stack is deep enough.
+</p>
+</section>
+
+
+<section id="diffusion" class="detail-section" data-summary="Open diffusion sampler internals" data-tag="Advanced">
+<h2>7. The diffusion module — making structure from noise
+  <button class="section-complete" data-section="diffusion">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>The trunk gave us <em>relationships</em> between residues. This section is how those relationships
+    become actual <strong>3D coordinates</strong>. The trick — borrowed from image generators like
+    Stable Diffusion — is to start from random noise and slowly "sharpen" it into a structure.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Imagine a sculptor with a block of marble — except the marble is a cloud of random points. At each
+  step, the model nudges every atom slightly toward where it "should" be, given the trunk's hints.
+  After 200 nudges, what was noise is a protein. The advantage over older methods (AF2's IPA): it's
+  the same algorithm whether you're folding a backbone, placing a side chain, or docking a ligand.
+  Everything is just "atoms in 3D" to a diffusion model.
+</div>
+
+<p>
+  After 64 trunk blocks you have a fixed pair representation z and a single representation s.
+  These <em>condition</em> a generative model that produces 3D coordinates. The model is a denoising
+  diffusion probabilistic model (DDPM); coordinates start as Gaussian noise and are denoised
+  toward a likely structure.
+</p>
+
+<h3>The forward (training) process</h3>
+<p>
+  At training time you take a known PDB structure x<sub>0</sub> (a tensor of all heavy‑atom
+  positions in ℝ<sup>3</sup>) and add Gaussian noise at level σ<sub>t</sub> drawn from a noise
+  schedule:
+</p>
+<div class="math">
+  x<sub>t</sub> = x<sub>0</sub> + σ<sub>t</sub> · ε, &nbsp; ε ∼ 𝒩(0, I)
+</div>
+<p>
+  The network is trained to predict the original x<sub>0</sub> given x<sub>t</sub>, t, s, z. Loss is
+  weighted MSE in coordinate space:
+</p>
+<div class="math">
+  ℒ<sub>diff</sub> = 𝔼<sub>t,ε</sub> [ w(t) · ‖ <em>f</em><sub>θ</sub>(x<sub>t</sub>; t, s, z) − x<sub>0</sub> ‖² ]
+</div>
+<p>
+  where w(t) follows the EDM weighting <code>(t² + σ<sub>data</sub>²)/(t · σ<sub>data</sub>)²</code>
+  (Karras et&nbsp;al. 2022). This is a slight departure from AF3's weighting; the Boltz team found
+  it more stable in low‑data regimes.
+</p>
+
+<h3>The reverse (sampling) process</h3>
+<p>
+  At inference time you start with x<sub>T</sub> ~ 𝒩(0, σ<sub>max</sub><sup>2</sup>I) and iterate:
+</p>
+<ol>
+  <li>Predict the clean structure: <em>x̂<sub>0</sub></em> = <em>f</em><sub>θ</sub>(x<sub>t</sub>; t, s, z).</li>
+  <li>Take a small Euler step toward x̂<sub>0</sub>: x<sub>t−1</sub> = x<sub>t</sub> + Δt · (x̂<sub>0</sub> − x<sub>t</sub>) / σ<sub>t</sub>.</li>
+  <li>Optionally add a small new noise (SDE flavor; the deterministic ODE flavor doesn't).</li>
+  <li>(Boltz‑specific) Apply Kabsch alignment between x̂<sub>0</sub> and x<sub>t</sub> — a rigid‑body
+    optimal rotation — before stepping. This reduces variance because the loss is invariant to
+    global rotation of x̂<sub>0</sub>, so without alignment the network spends capacity guessing
+    orientation.</li>
+  <li>(Boltz‑specific) Apply <em>Boltz‑Steering</em> potentials: a clash penalty, a chirality
+    penalty, optional pocket distance constraints, optional contact constraints. The gradient of
+    each potential is added to the velocity field. With multiple particles, low‑weight ones are
+    resampled (Sequential Monte Carlo).</li>
+  <li>Repeat until t = 0. Output x<sub>0</sub>.</li>
+</ol>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Diffusion sampler — animated</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">An ultra‑simplified analog. The "true structure" is a circle of points (gray). Press play and watch a noisy initialization (red) be denoised step by step. Each frame is one reverse‑diffusion step; the score field pushes points toward the circle.</p>
+
+  <div class="controls">
+    <div class="control"><label>Steps — <span id="diffStepsV">60</span></label><input id="diffSteps" type="range" min="10" max="200" step="5" value="60"/></div>
+    <div class="control"><label>Noise σ<sub>max</sub> — <span id="diffSigV">2.0</span></label><input id="diffSig" type="range" min="0.5" max="4" step="0.1" value="2.0"/></div>
+    <button class="btn" id="diffPlay">▶ Run</button>
+    <button class="btn secondary" id="diffReset">Reset</button>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="diffCanvas" width="700" height="320"></canvas>
+  </div>
+  <p class="faint">Real diffusion in Boltz‑2 has 200 timesteps default and operates in 3·N‑dimensional space, but the dynamics are exactly this: noise → small step toward predicted clean state → less noise → repeat.</p>
+</div>
+
+<h3>Why diffusion instead of IPA?</h3>
+<p>
+  Three reasons:
+</p>
+<ul>
+  <li><strong>Atomic resolution out of the box.</strong> IPA built a backbone first then placed
+    side chains. A small molecule has no backbone — diffusion gives all‑atom coordinates uniformly.</li>
+  <li><strong>Sampling diversity.</strong> Sampling 5 times gives 5 plausibly different
+    conformations rather than 5 perturbations of one answer. For a flexible loop or a flexible
+    ligand, that's exactly the question we want answered.</li>
+  <li><strong>Steerability.</strong> Diffusion's iterative sampler is the natural place to inject
+    side information: classifier guidance, energy potentials, contact constraints. AF2's IPA has
+    no analogous hook.</li>
+</ul>
+
+</section>
+
+
+<section id="affinity">
+<h2>8. The affinity head — the new piece in Boltz‑2
+  <button class="section-complete" data-section="affinity">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>This is <strong>the reason Boltz‑2 made headlines</strong>. AF3 / Boltz‑1 told you the shape of a
+    complex — useful, but doesn't directly answer "will my drug bind?". Boltz‑2 adds a head that
+    predicts <em>how strongly</em>. For drug discovery work in the Ioerger lab, this is the most
+    actionable piece of the whole pipeline.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Two predictors share the same backbone. The <strong>binary classifier</strong> is the cheap
+  question: "is this compound a binder, yes or no?" — perfect for screening millions of molecules.
+  The <strong>regressor</strong> is the expensive question: "how tightly does it bind, in nanomolar?"
+  — used on the few hundred survivors of the cheap screen. Same idea as triage in an emergency
+  room: fast screen first, careful measurement after.
+</div>
+
+<p>
+  After the diffusion module produces a structure x<sub>0</sub> (and the trunk produced z), Boltz‑2
+  feeds them into a <em>second</em> PairFormer that focuses exclusively on protein–ligand and
+  ligand–ligand atomic pairs. This module's job is two predictions:
+</p>
+
+<div class="two-col">
+  <div class="card">
+    <h3>Binary classifier — <code>affinity_probability_binary</code></h3>
+    <p>Sigmoid output ∈ [0, 1]. Trained on a curated set of binders/non‑binders. Used in the
+      virtual screening regime: dock 1M compounds, keep the top‑scoring 1k, give those to the
+      regressor.</p>
+  </div>
+  <div class="card">
+    <h3>Regressor — <code>affinity_pred_value</code></h3>
+    <p>Outputs log<sub>10</sub>(IC<sub>50</sub>/μM). Trained on K<sub>i</sub>, K<sub>d</sub>, and
+      IC<sub>50</sub> measurements all converted to a common log‑μM axis. Use this for lead
+      optimization where you care about the difference between 10 nM and 1 nM.</p>
+  </div>
+</div>
+
+<h3>The training data — "we curated the heck out of PubChem"</h3>
+<p>
+  The Boltz‑2 paper spends most of its data section explaining curation. Raw bioactivity tables
+  are a dumpster fire — the same compound can have IC<sub>50</sub> measurements spanning four
+  orders of magnitude across labs because of differences in assay format, target construct, ATP
+  concentration, etc. To make a usable training set the authors:
+</p>
+<ul>
+  <li>Filtered for assays where the <em>target sequence</em> is unambiguously specified.</li>
+  <li>Aggregated multiple measurements per (target, ligand) pair using the geometric mean.</li>
+  <li>Standardized K<sub>i</sub>, K<sub>d</sub>, IC<sub>50</sub> via the Cheng‑Prusoff approximation
+    or per‑assay calibration constants where possible.</li>
+  <li>Discarded ambiguous units / "&gt;" or "&lt;" measurements.</li>
+  <li>Augmented with molecular dynamics trajectories generated by Recursion, providing motion
+    examples for the diffusion to learn flexible binding modes.</li>
+</ul>
+
+<h3>Architecture: a "structure‑aware MLP" — sort of</h3>
+<p>
+  The affinity head is structurally another stack of PairFormer layers, but the input is the
+  filtered pair representation z<sub>ij</sub> on protein–ligand and intra‑ligand pairs only. After
+  several blocks, you pool the ligand atoms (e.g., via a learned attention readout), concatenate
+  with a pooled protein‑pocket representation, and pass through two heads (sigmoid for binary,
+  linear for regression). The whole thing is fine‑tuned on top of a pre‑trained Boltz‑2 trunk
+  (the trunk is partially frozen during this stage).
+</p>
+
+<div class="callout">
+  <div class="callout-title">Why this works at all</div>
+  Two reasons. First, the structural pre‑training has already taught the network where binding
+  pockets are and how a ligand's atoms tend to interact with surrounding side chains. Second, the
+  affinity head doesn't have to predict from scratch — it gets a 3D pose plus a pair representation
+  already enriched with chemistry. The hard work is mostly done.
+</div>
+</section>
+
+
+<section id="fep" class="detail-section" data-summary="Open FEP+ comparison details" data-tag="Background">
+<h2>9. Affinity prediction in context — Boltz‑2 vs FEP+
+  <button class="section-complete" data-section="fep">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>If someone asks "is Boltz‑2 actually good at affinity?" you need a calibrated answer. The
+    industry yardstick is <strong>FEP+</strong> — a physics‑based method that's painfully slow but
+    accurate. Knowing where Boltz‑2 wins (throughput) and loses (final‑round precision) is what
+    keeps you from over‑claiming.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  FEP+ is the careful chef who takes 12 hours per dish and gets it right. Boltz‑2 is the food‑truck
+  cook who cranks out a million plates in the same time at 80% of the quality. Neither is "better";
+  they're for different stages of a campaign. Use Boltz‑2 to find the few hundred compounds worth
+  cooking carefully — then run FEP+ on those.
+</div>
+
+<p>
+  The gold standard for computational binding affinity is <strong>Free Energy Perturbation
+  (FEP)</strong>. FEP simulates a thermodynamic path from one ligand to a closely related one
+  using molecular dynamics, computes the free energy difference along the path, and is
+  <em>physically grounded</em> — it includes all the entropy and explicit‑water effects that
+  matter for ΔG. The flagship commercial implementation is Schrödinger's <strong>FEP+</strong>.
+</p>
+
+<table>
+  <thead><tr><th>Aspect</th><th>FEP+</th><th>Boltz‑2 affinity head</th></tr></thead>
+  <tbody>
+    <tr><td>Wall‑clock per prediction</td><td>~6–24 hours on GPU cluster</td><td>~20 seconds on 1 GPU</td></tr>
+    <tr><td>Cost per prediction</td><td>~$100</td><td>~$0.01</td></tr>
+    <tr><td>Pearson r vs experiment</td><td>0.72 – 0.78</td><td>~0.62 (avg), 0.66 (best benchmark)</td></tr>
+    <tr><td>Requires high‑quality starting structure</td><td>Yes (often crystal)</td><td>No (predicts its own)</td></tr>
+    <tr><td>Handles novel chemistry</td><td>Limited (force‑field dependent)</td><td>Yes (within training distribution)</td></tr>
+    <tr><td>Throughput</td><td>~100 compounds / week</td><td>~10⁶ compounds / week</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Reading this table the right way: Boltz‑2 will not replace FEP+ in the late stages of a campaign
+  where you're optimizing the last 0.1 kcal/mol on a clinical candidate. It <em>will</em> replace
+  FEP for everything before that — the screening, the scaffold hopping, the SAR triage where you
+  have ~10⁵ compounds and need a ranking. That's the regime where 1000× speed at 80% of the
+  accuracy is unambiguously a win.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Cost / accuracy tradeoff explorer</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">Pick a budget (compute hours) and a desired correlation threshold; see whether each method gets you to your goal.</p>
+  <div class="controls">
+    <div class="control"><label>Compounds to score — <span id="costNV">10000</span></label><input id="costN" type="range" min="100" max="1000000" step="100" value="10000"/></div>
+    <div class="control"><label>Min Pearson r — <span id="costRV">0.6</span></label><input id="costR" type="range" min="0.4" max="0.85" step="0.01" value="0.6"/></div>
+  </div>
+  <div id="costOutput"></div>
+</div>
+
+<h3>What Boltz‑2 still gets wrong</h3>
+<ul>
+  <li><strong>Allosteric binders.</strong> If the ligand binds far from the active site, training data is sparse.</li>
+  <li><strong>Charged species &amp; metal coordination.</strong> Force‑field‑level effects that DDPMs don't model directly.</li>
+  <li><strong>Very flexible ligands.</strong> Macrocycles &amp; peptides — diffusion samples drift.</li>
+  <li><strong>Out‑of‑distribution chemistry.</strong> Novel scaffolds the model never saw in training look like noise to it.</li>
+  <li><strong>Cellular context.</strong> No model captures kinetics, off‑target effects, PK/ADME — that's still the chemist's job.</li>
+</ul>
+
+<div class="watch-out">
+  <strong>Common rookie mistake:</strong> reporting a single Boltz‑2 affinity value as if it were a
+  measurement. It isn't. Always (1) sample multiple seeds and report the spread, (2) compare to the
+  binary classifier — if the classifier says "probably not a binder," don't trust the regression
+  number, and (3) anchor on a known binder for the same target so you have a sanity check. Treat
+  Boltz‑2 like a triage tool, not a microscope.
+</div>
+</section>
+
+
+<section id="using">
+<h2>10. Running Boltz‑2 in practice
+  <button class="section-complete" data-section="using">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>This is <strong>the only section that matters on day one</strong>. If you skipped everything
+    above, start here: a pip install, a YAML file, and one command get you from sequence + SMILES to
+    a 3D complex with affinity predictions. Bookmark this page.</p>
+</div>
+
+<p>The repo (<a href="https://github.com/jwohlwend/boltz" target="_blank">jwohlwend/boltz</a>) is pip‑installable:</p>
+
+<pre><code><span class="tok-c"># install</span>
+pip install boltz
+
+<span class="tok-c"># run with auto‑MSA via ColabFold's MMseqs2 server</span>
+boltz predict input.yaml --use_msa_server --output_format pdb</code></pre>
+
+<p>The input YAML for a protein + ligand affinity prediction looks like:</p>
+
+<pre><code><span class="tok-k">version</span>: <span class="tok-n">1</span>
+<span class="tok-k">sequences</span>:
+  - <span class="tok-k">protein</span>:
+      <span class="tok-k">id</span>: <span class="tok-s">A</span>
+      <span class="tok-k">sequence</span>: <span class="tok-s">MTEYKLVVVGAGGVGKSALTIQLIQNHFVDEYDPTIEDSYRKQVVIDGETCLLDILDTAGQEEYSAMRDQYMRTGEGFLCVFAINNTKSFEDIHQYREQIKRVKDSDDVPMVLVGNKCDLAARTVESRQAQDLARSYGIPYIETSAKTRQGVEDAFYTLVREIRQH</span>
+      <span class="tok-k">msa</span>: <span class="tok-s">empty</span>          <span class="tok-c"># or path to .a3m</span>
+  - <span class="tok-k">ligand</span>:
+      <span class="tok-k">id</span>: <span class="tok-s">L</span>
+      <span class="tok-k">smiles</span>: <span class="tok-s">"CC(=O)Oc1ccccc1C(=O)O"</span>   <span class="tok-c"># aspirin</span>
+
+<span class="tok-k">properties</span>:
+  - <span class="tok-k">affinity</span>:
+      <span class="tok-k">binder</span>: <span class="tok-s">L</span></code></pre>
+
+<p>That YAML alone (after the MSA is fetched) gets you, in ~20 s on a single A100:</p>
+<ul>
+  <li><code>complex.cif</code> — predicted 3D structure of the K‑Ras / aspirin complex,</li>
+  <li><code>confidence.json</code> — pLDDT, pAE per token,</li>
+  <li><code>affinity.json</code> — <code>{"affinity_pred_value": 1.83, "affinity_probability_binary": 0.21}</code></li>
+</ul>
+
+<p>
+  The <code>affinity_pred_value: 1.83</code> means predicted log<sub>10</sub>(IC<sub>50</sub>/μM) ≈ 1.83, so
+  IC<sub>50</sub> ≈ 67 μM. The <code>affinity_probability_binary: 0.21</code> says only ~21% likely to
+  be a real binder — i.e., aspirin is not a K‑Ras binder, which is correct.
+</p>
+
+<h3>Practical tips</h3>
+<dl class="glossary">
+  <dt>GPU memory</dt><dd>An A100 (40&nbsp;GB) handles up to ~1500 tokens comfortably. For larger complexes use H100 or break into smaller chains.</dd>
+  <dt>Sample diversity</dt><dd>Default 5 diffusion samples; pick by pLDDT. For loops use 25.</dd>
+  <dt>Pocket constraints</dt><dd>If you know which residues line the binding site (from a homolog or from a docking experiment), pass them — accuracy goes up.</dd>
+  <dt>Affinity is harder than structure</dt><dd>Don't extrapolate. Boltz‑2 is calibrated on standard druglike chemistry; novel scaffolds, peptides, covalent binders need their own models.</dd>
+</dl>
+
+<h3>How this fits into your summer</h3>
+<p>
+  You'll probably use Boltz‑2 in two modes. Mode one: take a positively selected gene from
+  <a href="02-tb-selection.html">the Ioerger lab's TB scans</a> for which there's no PDB structure, fold it, look
+  at the predicted pocket. Mode two: virtual‑screen a focused library of candidate inhibitors
+  against an Mtb target and rank them by predicted IC<sub>50</sub> before running any wet‑lab
+  assays. Either way, the output is a starting point for an experimental campaign — not the final
+  answer.
+</p>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Latest Method · Boltz‑2 (3 of 5) · <a href="02-tb-selection.html">← back: Ioerger Lab · TB Scans</a> · <a href="index.html">overview</a> · <a href="04-keras-cheminformatics.html">next: Hands‑on · Keras MPNN →</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+<script>
+/* ----------------- Triangle inequality demo ----------------- */
+(function initTri() {
+  const cv = document.getElementById('triCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const pts = [
+    { name: 'i', x: 150, y: 200, color: '#0b5cd6' },
+    { name: 'j', x: 350, y: 100, color: '#7c3aed' },
+    { name: 'k', x: 550, y: 200, color: '#16a34a' }
+  ];
+  let drag = null;
+
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    // edges
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = themeColor('text-faint');
+    ctx.fillStyle = themeColor('text');
+    ctx.font = '13px sans-serif';
+    for (let a = 0; a < 3; a++) for (let b = a+1; b < 3; b++) {
+      const A = pts[a], B = pts[b];
+      ctx.beginPath();
+      ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+      const mx = (A.x+B.x)/2, my = (A.y+B.y)/2;
+      const d = (dist(A,B)/100).toFixed(2);
+      ctx.fillText(d + ' u', mx-12, my-6);
+    }
+    // points
+    for (const p of pts) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+      ctx.fillStyle = p.color; ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.name, p.x, p.y);
+      ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    }
+    // stats
+    const dij = dist(pts[0], pts[1]) / 100;
+    const djk = dist(pts[1], pts[2]) / 100;
+    const dik = dist(pts[0], pts[2]) / 100;
+    const lo = Math.abs(dij - djk), hi = dij + djk;
+    document.getElementById('triIJ').textContent = dij.toFixed(2);
+    document.getElementById('triJK').textContent = djk.toFixed(2);
+    document.getElementById('triIK').textContent = dik.toFixed(2);
+    document.getElementById('triBounds').textContent = `[${lo.toFixed(2)}, ${hi.toFixed(2)}]`;
+  }
+
+  cv.addEventListener('mousedown', e => {
+    const r = cv.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    for (const p of pts) if (Math.hypot(p.x - x, p.y - y) < 16) { drag = p; break; }
+  });
+  cv.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const r = cv.getBoundingClientRect();
+    drag.x = Math.max(20, Math.min(cv.width-20, e.clientX - r.left));
+    drag.y = Math.max(20, Math.min(cv.height-20, e.clientY - r.top));
+    draw();
+  });
+  cv.addEventListener('mouseup', () => { drag = null; });
+  cv.addEventListener('mouseleave', () => { drag = null; });
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+
+/* ----------------- Diffusion sampler demo ----------------- */
+(function initDiff() {
+  const cv = document.getElementById('diffCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const N = 30;        // points
+  const cx = cv.width / 2, cy = cv.height / 2, R = 90;
+  let particles = [];
+  let running = false;
+  let step = 0;
+  let totalSteps = 60;
+  let sigmaMax = 2.0;
+
+  function trueRing() {
+    return Array.from({length:N}, (_,i) => {
+      const a = (i/N) * Math.PI*2;
+      return { x: cx + R*Math.cos(a), y: cy + R*Math.sin(a) };
+    });
+  }
+  let target = trueRing();
+
+  function init() {
+    step = 0;
+    totalSteps = +document.getElementById('diffSteps').value;
+    sigmaMax = +document.getElementById('diffSig').value;
+    document.getElementById('diffStepsV').textContent = totalSteps;
+    document.getElementById('diffSigV').textContent = sigmaMax.toFixed(1);
+    particles = target.map(p => ({
+      x: p.x + (Math.random()-0.5)*sigmaMax*120,
+      y: p.y + (Math.random()-0.5)*sigmaMax*120
+    }));
+    draw();
+  }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    // target
+    ctx.fillStyle = themeColor('text-faint');
+    for (const p of target) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+    }
+    // current
+    ctx.fillStyle = '#dc2626';
+    ctx.strokeStyle = '#dc2626';
+    ctx.beginPath();
+    for (let i=0; i<particles.length; i++) {
+      const p = particles[i];
+      if (i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath(); ctx.globalAlpha = 0.18; ctx.fill(); ctx.globalAlpha = 1;
+    for (const p of particles) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+    }
+    // text
+    ctx.fillStyle = themeColor('text');
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`step ${step} / ${totalSteps}   σ ≈ ${(sigmaMax*(1-step/totalSteps)).toFixed(2)}`, 14, 22);
+  }
+
+  function tick() {
+    if (!running || step >= totalSteps) { running = false; return; }
+    step++;
+    const t = step / totalSteps;       // 0 → 1
+    const sigma = sigmaMax * (1-t);
+    // pull each particle toward its target with a small step + small remaining noise
+    for (let i=0; i<particles.length; i++) {
+      const tgt = target[i];
+      const dx = tgt.x - particles[i].x;
+      const dy = tgt.y - particles[i].y;
+      // Euler step toward predicted clean state
+      particles[i].x += dx * 0.10 + (Math.random()-0.5)*sigma*8;
+      particles[i].y += dy * 0.10 + (Math.random()-0.5)*sigma*8;
+    }
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  document.getElementById('diffPlay').addEventListener('click', () => {
+    if (running) return;
+    if (step >= totalSteps) init();
+    running = true;
+    requestAnimationFrame(tick);
+  });
+  document.getElementById('diffReset').addEventListener('click', init);
+  document.getElementById('diffSteps').addEventListener('input', init);
+  document.getElementById('diffSig').addEventListener('input', init);
+  document.addEventListener('themechange', draw);
+  init();
+})();
+
+/* ----------------- Cost / accuracy explorer ----------------- */
+(function initCost() {
+  const N = document.getElementById('costN');
+  const R = document.getElementById('costR');
+  if (!N) return;
+
+  const FEP = { secPer: 6 * 3600, cost: 100, r: 0.75 };
+  const B2  = { secPer: 20,        cost: 0.01, r: 0.62 };
+  const MPNN= { secPer: 0.05,      cost: 0.0001, r: 0.55 };
+
+  function fmtTime(s) {
+    if (s < 60) return s.toFixed(0) + ' s';
+    if (s < 3600) return (s/60).toFixed(1) + ' min';
+    if (s < 86400) return (s/3600).toFixed(1) + ' h';
+    if (s < 86400*30) return (s/86400).toFixed(1) + ' days';
+    return (s/86400/365).toFixed(1) + ' years';
+  }
+  function fmtMoney(c) {
+    if (c < 1) return '$' + c.toFixed(2);
+    if (c < 1000) return '$' + c.toFixed(0);
+    if (c < 1e6) return '$' + (c/1000).toFixed(1) + 'k';
+    return '$' + (c/1e6).toFixed(1) + 'M';
+  }
+
+  function row(name, m, n, minR) {
+    const total = m.secPer * n;
+    const cost  = m.cost   * n;
+    const meets = m.r >= minR;
+    return `<tr style="${meets ? '' : 'opacity:0.55'}"><td><strong>${name}</strong></td><td>${m.r.toFixed(2)}</td><td>${fmtTime(total)}</td><td>${fmtMoney(cost)}</td><td>${meets ? '✓ meets' : '✗ below threshold'}</td></tr>`;
+  }
+  function update() {
+    const n = +N.value, r = +R.value;
+    document.getElementById('costNV').textContent = n.toLocaleString();
+    document.getElementById('costRV').textContent = r.toFixed(2);
+    document.getElementById('costOutput').innerHTML = `
+      <table style="margin-top:10px"><thead><tr><th>method</th><th>Pearson r</th><th>wall‑clock (1 GPU)</th><th>est. cost</th><th>vs threshold</th></tr></thead>
+      <tbody>${row('FEP+', FEP, n, r)}${row('Boltz‑2', B2, n, r)}${row('MPNN (Keras tutorial)', MPNN, n, r)}</tbody></table>`;
+  }
+  N.addEventListener('input', update); R.addEventListener('input', update);
+  update();
+})();
+</script>
+
+</body>
+</html>

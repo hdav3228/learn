@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shatby Diabetes Comorbidity Thesis · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn active">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html" class="active">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#why-this-paper">1. Why this paper matters</a></li>
+    <li><a href="#question">2. Core question</a></li>
+    <li><a href="#cohorts">3. Cohorts and files</a></li>
+    <li><a href="#methods">4. Methods</a></li>
+    <li><a href="#results">5. GenomegaMap results</a></li>
+    <li><a href="#genes">6. Gene stories & Interpretation</a></li>
+    <li><a href="#limitations">7. Limitations</a></li>
+    <li><a href="#how-to-use">8. How to use it now</a></li>
+    <li><a href="#talk-track">9. Meeting Talk Track</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Paper reading order">
+  <a class="step done" href="01-dnds-bayesian.html">GenomegaMap</a>
+  <span class="sep">→</span>
+  <a class="step done" href="02-tb-selection.html">TB scans</a>
+  <span class="sep">→</span>
+  <span class="step here">Shatby thesis</span>
+  <span class="sep">→</span>
+  <a class="step" href="10-tandem-tb-diabetes.html">TANDEM</a>
+  <span class="sep">→</span>
+  <a class="step" href="11-mexico-mtb-genomics.html">Mexico</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Paper 3 · Shatby 2026 · diabetes-specific selection</div>
+  <h1>Comparative analysis of selected TB genes with diabetes comorbidity</h1>
+  <p class="lede">
+    This is the closest written blueprint for the summer project. It compares
+    <em>M. tuberculosis</em> isolates from patients with diabetes against matched non-diabetes
+    isolates, runs GenomegaMap separately on each group, and asks which genes show stronger
+    positive selection in the diabetes host environment.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#cohorts">Cohorts</a>
+    <a class="qpill" href="#methods">Methods</a>
+    <a class="qpill" href="#results">Main hits</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  GenomegaMap gives one omega distribution per gene per group. This thesis asks:
+  if TB grows in patients with diabetes, do different genes look adaptively useful than in TB
+  from patients without diabetes? The answer is tentative but important: several genes, especially
+  <strong>tal</strong>, <strong>otsB2</strong>, and <strong>lldD1</strong>, repeatedly show up as
+  diabetes-relevant candidates.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>This is the closest diabetes/TB project context.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Compare cohorts carefully; watch sample size and uncertainty.</td></tr>
+      <tr><th>Use this for</th><td>Use it to frame hypotheses and expected pitfalls.</td></tr>
+      <tr><th>Defer for now</th><td>Do not copy gene claims without checking your cohort outputs.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="why-this-paper">
+<h2>1. Why this paper matters
+  <button class="section-complete" data-section="why-this-paper">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    GenomegaMap and the Ioerger/Shatby TB scans tell you the method. This thesis tells you the
+    specific diabetes-vs-non-diabetes analysis pattern you are now trying to reproduce and scale.
+  </p>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <h3>Project-specific</h3>
+    <p>It is about the exact same biological question: diabetes comorbidity and TB adaptation.</p>
+  </div>
+  <div class="card">
+    <h3>Faster-relevant</h3>
+    <p>The thesis explicitly notes that much of the analysis used HPRC Faster.</p>
+  </div>
+  <div class="card">
+    <h3>Output-relevant</h3>
+    <p>It shows how to compare diabetes and non-diabetes omega values after separate runs, setting the analytical baseline.</p>
+  </div>
+</div>
+</section>
+
+<section id="question">
+<h2>2. Core question
+  <button class="section-complete" data-section="question">Mark complete</button>
+</h2>
+
+<p>
+  The central question is not simply "which genes have high dN/dS?" It is:
+  <strong>which genes have stronger evidence of positive selection in diabetes isolates than in
+  non-diabetes isolates?</strong>
+</p>
+
+<div class="callout">
+  <div class="callout-title">Important distinction</div>
+  A high diabetes omega value alone is not enough. A gene is more interesting for this project if
+  diabetes omega is elevated <em>relative to</em> non-diabetes omega, because that suggests a
+  diabetes-specific selective pressure instead of a general TB selective pressure.
+</div>
+</section>
+
+<section id="cohorts">
+<h2>3. Cohorts and files
+  <button class="section-complete" data-section="cohorts">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Project data rule</span>
+  <p>
+    The current workbook rule is stricter than just "has diabetes metadata." Use only rows marked
+    <code>samplestatus=good</code> in the combined diabetes workbook.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Group</th><th>What the thesis did</th><th>What to remember now</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Diabetes</td>
+      <td>Combined 160 diabetes isolates from Peru/Indonesia with 29 diabetes isolates from Mexico, giving 189 diabetes isolates.</td>
+      <td>Use the current workbook and good-only sample list, not memory or raw spreadsheet color alone.</td>
+    </tr>
+    <tr>
+      <td>Non-diabetes</td>
+      <td>Built an equal-sized comparison group, also 189 isolates.</td>
+      <td>Keep the comparison balanced and document exactly which isolates are included.</td>
+    </tr>
+    <tr>
+      <td>Per-gene inputs</td>
+      <td>Created separate per-gene files for each cohort so GenomegaMap could run gene by gene.</td>
+      <td>This is why Faster/Slurm matters: thousands of independent gene-level runs need scheduling.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">Current workbook</div>
+  Use <code>Ioerger's Lab/data/diabetes-cohort/metadata/diabetes.combined.xlsx</code> and include
+  only <code>samplestatus=good</code>. Rows marked bad are excluded for low coverage or mixed
+  TBProfiler sublineage evidence.
+</div>
+</section>
+
+<section id="methods" class="detail-section" data-summary="Open methods details" data-tag="Reference">
+<h2>4. Methods
+  <button class="section-complete" data-section="methods">Mark complete</button>
+</h2>
+
+<div class="two-col">
+  <div class="artifact-panel">
+    <h3>Manual dN/dS</h3>
+    <p>
+      The thesis first uses manual mutation counting to rank genes by nonsynonymous and
+      synonymous changes. This gives intuition and flags genes, but it is less rigorous than the
+      Bayesian model.
+    </p>
+  </div>
+  <div class="artifact-panel">
+    <h3>GenomegaMap</h3>
+    <p>
+      GenomegaMap is run separately for diabetes and non-diabetes groups. Its MCMC output gives
+      mean omega values and credible intervals for each gene in each group.
+    </p>
+  </div>
+</div>
+
+<div class="math">
+  &Delta;&omega; = &omega;<sub>diabetes</sub> - &omega;<sub>non-diabetes</sub>
+</div>
+
+<p>
+  Because GenomegaMap models one population at a time, the thesis approximates the
+  diabetes-minus-non-diabetes difference by resampling from both MCMC outputs. That gives an
+  approximate distribution for <code>&omega;diabetes - &omega;non-diabetes</code>, plus a
+  probability like <code>P(diabetes &gt; non-diabetes)</code>.
+</p>
+</section>
+
+<section id="results">
+<h2>5. GenomegaMap results & Figures
+  <button class="section-complete" data-section="results">Mark complete</button>
+</h2>
+
+<div class="study-dashboard">
+  <h3>The main result pattern</h3>
+  <p>
+    Several genes show elevated diabetes omega relative to non-diabetes. The strongest named
+    candidates in the thesis are not all "statistically final" in the same way, but they repeatedly
+    appear across rankings and biological interpretation.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Gene</th><th>Why it matters</th><th>Source result in thesis</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Rv1448c / tal</strong></td>
+        <td>Transaldolase, pentose phosphate pathway, possible metabolic adaptation.</td>
+        <td>Highest GenomegaMap omega difference: diabetes 2.59 vs non-diabetes 0.70.</td>
+      </tr>
+      <tr>
+        <td><strong>Rv3372 / otsB2</strong></td>
+        <td>Trehalose synthesis; connects to stress protection and cell-wall precursors.</td>
+        <td>Second-highest omega difference: diabetes 2.23 vs non-diabetes 0.36.</td>
+      </tr>
+      <tr>
+        <td><strong>Rv0694 / lldD1</strong></td>
+        <td>Also called mftD; linked to hypoxic survival and diabetic host conditions.</td>
+        <td>Diabetes omega credible interval was entirely above 1; non-diabetes was not.</td>
+      </tr>
+      <tr>
+        <td><strong>Rv3104c</strong></td>
+        <td>Ion-transporting protein in the thesis annotation.</td>
+        <td>Omega-difference credible interval entirely above 0.</td>
+      </tr>
+      <tr>
+        <td><strong>Rv3635</strong></td>
+        <td>Poorly characterized but passed the omega-difference interval screen.</td>
+        <td>Omega-difference credible interval entirely above 0.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout-title">Understanding the Results Figures</div>
+  When looking at the $\Delta\omega$ distribution charts in the thesis: if the bulk of the histogram sits to the right of zero, it means that during MCMC sampling, the $\omega$ drawn for the diabetes group was almost always larger than the $\omega$ drawn for the non-diabetes group.
+</div>
+
+</section>
+
+<section id="genes" class="detail-section" data-summary="Open gene-story examples" data-tag="Biology detail">
+<h2>6. Gene stories & Interpretation Example
+  <button class="section-complete" data-section="genes">Mark complete</button>
+</h2>
+
+<div class="concept-bridge">
+  <div class="concept-side good">
+    <h3>tal + otsB2</h3>
+    <p>
+      These are the clearest biological story pair. <strong>tal</strong> sits in the pentose
+      phosphate pathway, while <strong>otsB2</strong> is tied to trehalose synthesis. Together they
+      point toward metabolism, stress survival, and cell-wall-related biology under diabetes-linked
+      host pressure.
+    </p>
+  </div>
+  <div class="concept-side warn">
+    <h3>lldD1</h3>
+    <p>
+      <strong>lldD1</strong> is especially important because it appears in manual and GenomegaMap
+      rankings and has a diabetes omega interval above 1. The thesis connects it to hypoxia, which
+      is plausible in diabetes-associated host environments.
+    </p>
+  </div>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">Worked Interpretation Example: tal (Rv1448c)</div>
+  <strong>The Data:</strong> GenomegaMap says $\omega$ in diabetes is 2.59 (CrI: 1.2-4.1) and $\omega$ in non-diabetes is 0.70 (CrI: 0.3-1.1).<br>
+  <strong>The Interpretation:</strong> Because the non-diabetes interval straddles 1 (mostly below it) while the diabetes interval is entirely above 1, we conclude `tal` is evolving neutrally/purifyingly in normal hosts, but under *active positive selection* in diabetic hosts. This points to the hyperglycemic environment of a diabetic patient driving mutations in the pentose phosphate pathway.
+</div>
+
+</section>
+
+<section id="limitations">
+<h2>7. Limitations & What not to overclaim
+  <button class="section-complete" data-section="limitations">Mark complete</button>
+</h2>
+
+<div class="callout warn">
+  <div class="callout-title">What NOT to overclaim</div>
+  Do not claim that these genes *cause* diabetes, or that they make TB entirely incurable in diabetic patients. Claim only that the selective landscape acting on these proteins differs depending on the host's metabolic state.
+</div>
+
+<ul>
+  <li><strong>Sample size:</strong> 189 diabetes and 189 non-diabetes isolates is useful, but still small compared with the number of public TB genomes.</li>
+  <li><strong>Metadata scarcity:</strong> many public genomes do not have diabetes status, so cohort construction is a bottleneck.</li>
+  <li><strong>Separate GenomegaMap runs:</strong> direct diabetes-vs-non-diabetes difference modeling is approximated from MCMC samples, not native to GenomegaMap.</li>
+  <li><strong>Lineage and resistance confounding:</strong> differences in selection could reflect lineage, drug resistance, or sampling structure unless controlled carefully.</li>
+</ul>
+</section>
+
+<section id="how-to-use">
+<h2>8. How to use it now
+  <button class="section-complete" data-section="how-to-use">Mark complete</button>
+</h2>
+
+<div class="callout tip">
+  <div class="callout-title">What to remember</div>
+  The overarching pipeline here is what we are trying to scale. We need to parse metadata to get a clean cohort, run GenomegaMap in parallel, and then statistically compare the posteriors.
+</div>
+
+<ol class="step-list">
+  <li>Use this paper to understand the diabetes-vs-non-diabetes comparison logic.</li>
+  <li>Use the current workbook and good-only sample lists for the actual isolate set.</li>
+  <li>Use Faster only after the GenomegaMap/gcat environment passes a tiny one-gene test.</li>
+  <li>When reviewing output, look for genes with elevated diabetes omega, credible intervals, and useful biological interpretation.</li>
+</ol>
+</section>
+
+<section id="talk-track">
+<h2>9. Meeting Talk Track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What to say in a meeting</h3>
+  <p>"Anthony Shatby's thesis provided a strong proof-of-concept. It showed that we can identify host-context-dependent selection by running GenomegaMap on matched cohorts. Our goal now is to scale this process using the new combined cohort and the Faster cluster, ensuring we strictly filter out bad isolates, and replicate the findings for `tal`, `otsB2`, and `lldD1`."</p>
+</div>
+
+</section>
+
+</main>
+</div>
+
+<footer>
+  Built as preparation material · Texas A&amp;M Computer Science · Ioerger Lab
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

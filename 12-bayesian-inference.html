@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ioerger Lab: Bayesian Inference (1999) · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn active">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html" class="active">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#intro">1. What this paper is saying</a></li>
+    <li><a href="#project-relevance">2. Why this matters for us</a></li>
+    <li><a href="#learning-path">3. Methods decoder</a></li>
+    <li><a href="#key-results">4. Key results explained</a></li>
+    <li><a href="#talk-track">5. Talk track</a></li>
+    <li><a href="#limitations">6. What not to overclaim</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where you are in the pipeline">
+  <a class="step done" href="11-mexico-mtb-genomics.html">Mexico genomics</a>
+  <span class="sep">→</span>
+  <span class="step here">Bayesian inference</span>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Liu & Lawrence 1999 · Foundational Math</div>
+  <h1>Bayesian Inference on Biopolymer Models</h1>
+  <p class="lede">
+    Before GenomegaMap could use MCMC to sample &omega; across a genome, the computational biology field needed a formal way to handle uncertainty in sequence models. This 1999 paper is the mathematical ancestor to our entire approach.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#intro">Plain English</a>
+    <a class="qpill" href="#learning-path">Methods</a>
+    <a class="qpill" href="#key-results">Results</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">Read this first — in plain English</span>
+  Instead of saying "the best alignment is exactly this one," or "the mutation rate is exactly 1.5," Bayesian statistics gives you a <strong>probability distribution</strong> of all possible answers. This paper showed how to use math tricks (like Dynamic Programming) and computational tricks (like MCMC/Gibbs sampling) to actually calculate those distributions for biology problems. It's the reason GenomegaMap gives us a 95% Credible Interval for selection, rather than just a single, fragile point estimate.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Biology is sequence uncertainty; not TB-specific.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Bayesian posterior, Gibbs/MCMC, segmentation, uncertainty.</td></tr>
+      <tr><th>Use this for</th><td>Use to explain why GenomegaMap outputs distributions.</td></tr>
+      <tr><th>Defer for now</th><td>Do not read every derivation before you can explain the basics.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="intro">
+<h2>1. What this paper is saying
+  <button class="section-complete" data-section="intro">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The core message</span>
+  <p>Most early bioinformatics tools gave point estimates (a single best answer). This paper argues that we should use Bayesian inference to calculate posterior distributions for all unknowns, providing built-in uncertainty estimates.</p>
+</div>
+
+<p>The authors demonstrate that you can take classical recursive dynamic programming algorithms (used for sequence alignment or segmentation) and modify them to perform the massive sums/integrals required by Bayesian statistics. When exact math isn't possible, they introduce Markov chain Monte Carlo (MCMC) techniques like Gibbs sampling to approximate the answer.</p>
+</section>
+
+<section id="project-relevance">
+<h2>2. Why this matters for our project
+  <button class="section-complete" data-section="project-relevance">Mark complete</button>
+</h2>
+
+<p>Our entire workflow relies on <strong>GenomegaMap</strong>, which uses a Bayesian hidden Markov model and MCMC sampling to infer the &omega; (dN/dS) ratio. To trust GenomegaMap, you need to understand why it produces a <em>credible interval</em> rather than a single p-value.</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="icon">🎲</div>
+    <h3>The MCMC Engine</h3>
+    <p>This paper explains Gibbs sampling, the ancestor of the MCMC process GenomegaMap uses to explore different &omega; values.</p>
+  </div>
+  <div class="card">
+    <div class="icon">📊</div>
+    <h3>Posterior Distributions</h3>
+    <p>We don't get one &omega;. We get a distribution of &omega;s. This paper explains why that is mathematically superior.</p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: Point Estimates vs. Distributions</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>The scenario:</strong> You run a traditional tool on a very short TB gene (e.g., a 150bp ribosomal protein) with only one mutation.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>The old way:</strong> A traditional Maximum Likelihood tool sees 1 nonsynonymous mutation and 0 synonymous mutations. It calculates dN/dS = 1/0 = Infinity. It reports a point estimate of &omega; = &infin;. This is practically useless and statistically unstable.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>The Bayesian way (this paper):</strong> A Bayesian tool (like GenomegaMap) sees the same data. But it integrates that weak data with a prior distribution. Because there's very little data, the posterior distribution stays very wide. It might say the mean &omega; is 1.5, with a 95% credible interval of [0.1, 8.0]. This honestly reflects the massive uncertainty rather than confidently reporting nonsense.
+    </div>
+  </div>
+</div>
+
+</section>
+
+<section id="learning-path" class="detail-section" data-summary="Open section-by-section paper decoder" data-tag="Reference">
+<h2>3. Methods decoder: Section-by-section breakdown
+  <button class="section-complete" data-section="learning-path">Mark complete</button>
+</h2>
+
+<h3>Basic Bayesian Statistics</h3>
+<p>The paper defines the posterior as proportional to the Likelihood &times; Prior. It introduces the concept of a <em>conjugate prior</em> (like a Beta distribution for coin flips) which makes the math easy because the posterior ends up being the same shape as the prior.</p>
+
+<h3>Missing Data Framework</h3>
+<p>In bioinformatics, we often have missing data (e.g., we don't know the exact evolutionary path or the exact alignment). Bayesian methods treat missing data just like unknown parameters: we integrate (sum) over all possibilities to get the "marginal likelihood."</p>
+
+<h3>A Coin Example &amp; Sequence Segmentation</h3>
+<p>They use a two-coin game as an analogy for sequence segmentation. If a sequence has two regions with different properties (like the "sliding window" in GenomegaMap), we don't know where the boundary is. We can sum over all possible boundary points using dynamic programming to find the posterior distribution of the boundary location.</p>
+</section>
+
+<section id="key-results" class="detail-section" data-summary="Open key paper results" data-tag="Stats depth">
+<h2>4. Key results explained
+  <button class="section-complete" data-section="key-results">Mark complete</button>
+</h2>
+
+<div class="callout good">
+  <div class="callout-title">Result 1: Exact Bayesian Segmentation</div>
+  Using an adapted dynamic programming algorithm, they exactly calculated the posterior probability of change points in the yeast histone H1 genome sequence. This proved that Bayesian methods were computationally feasible for finding structural boundaries in biological sequences.
+</div>
+
+<div class="callout good">
+  <div class="callout-title">Result 2: Bayesian Alignment</div>
+  They showed that instead of fixing gap penalties (&lambda;<sub>o</sub>, &lambda;<sub>e</sub>) and looking for the "best" alignment, you can put priors on the gap penalties, sum over all alignments, and get a posterior distribution for the gap penalties themselves. The data "tells" you what the gap penalties should have been!
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: The sliding window</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>The GenomegaMap connection:</strong> GenomegaMap doesn't assume a gene has a single &omega; rate. It allows the rate to change across the sequence, using a sliding window.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>The Bayesian link:</strong> This is directly descended from the "Sequence Segmentation" result in this paper. Instead of hard-coding where the selection boundaries are, GenomegaMap uses MCMC to sum over all possible window boundary placements, giving us a smooth curve of posterior selection probability across the gene.
+    </div>
+  </div>
+</div>
+
+</section>
+
+
+<section id="talk-track">
+<h2>5. Talk track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What to say in a meeting</h3>
+  <p>"When interpreting our GenomegaMap results, we need to lean heavily on the Bayesian foundation described by Liu and Lawrence. If a gene has a high posterior mean &omega; but an extremely wide credible interval, we know the MCMC sampler struggled to converge or the sequence lacked enough SNPs to overcome the prior. The Bayesian approach protects us from overinterpreting noisy, short genes—a trap that traditional maximum-likelihood point estimators fall into."</p>
+</div>
+</section>
+
+<section id="limitations">
+<h2>6. What not to overclaim
+  <button class="section-complete" data-section="limitations">Mark complete</button>
+</h2>
+
+<div class="callout warn">
+  <div class="callout-title">What NOT to overclaim</div>
+  <ul style="margin:6px 0 0">
+    <li><strong>Bayesian != Perfect:</strong> Bayesian inference does not magically create data where none exists. If a sequence has no mutations, the posterior distribution will simply match the prior. The method handles uncertainty perfectly, but it cannot invent certainty.</li>
+    <li><strong>Priors matter:</strong> The results are still dependent on the choice of prior. A very strong, incorrect prior can overwhelm weak data. (This is why GenomegaMap's default priors are designed to be relatively uninformative/diffuse).</li>
+  </ul>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Built as preparation material &middot; Texas A&amp;M Computer Science &middot; Ioerger Lab
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

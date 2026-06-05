@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ballell TB Drug Overview · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn active">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html" class="active">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#scope">1. Scope boundary</a></li>
+    <li><a href="#why-this-paper">2. Why this paper matters</a></li>
+    <li><a href="#methods">3. Methods decoder</a></li>
+    <li><a href="#results">4. Results decoder</a></li>
+    <li><a href="#talk-track">5. Talk track</a></li>
+    <li><a href="#limitations">6. What not to overclaim</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Paper reading order">
+  <a class="step done" href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+  <span class="sep">→</span>
+  <span class="step here">Ballell TB drugs</span>
+  <span class="sep">→</span>
+  <a class="step" href="10-tandem-tb-diabetes.html">TANDEM</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Paper 5 · Ballell et al. 2005 · scoped TB drug background</div>
+  <h1>New small-molecule synthetic antimycobacterials</h1>
+  <p class="lede">
+    This is the drug-discovery background page. It explains why TB treatment is hard, what counts
+    as a hit or lead, how molecule quality is judged, and why the mycobacterial cell wall is both a
+    barrier and a target.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#scope">Scope rule</a>
+    <a class="qpill" href="#methods">Methods</a>
+    <a class="qpill" href="#results">Results</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">Read this first — in plain English</span>
+  Finding a gene under selection with GenomegaMap doesn't cure TB. To turn a genetic hit into a drug, you need a chemical that binds to the target protein, enters the heavily armored TB cell wall, and survives inside the human body. This paper lays out the reality of TB drug discovery: the DOTS regimen is difficult, drug resistance is rising, and the TB cell wall is the primary defensive barrier. We use this paper to understand the gap between "interesting gene" and "viable drug lead."
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>TB cell wall and drug-entry constraints for later hits.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Mostly downstream screening logic, not current inference.</td></tr>
+      <tr><th>Use this for</th><td>Use when connecting selected genes to drug follow-up.</td></tr>
+      <tr><th>Defer for now</th><td>Do not expand beyond the scoped reading boundary now.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<div class="callout warn">
+  <div class="callout-title">Reading boundary from Dr. Ioerger</div>
+  This page uses the scoped extracted text only through <em>Mycobacterial cell wall biosynthesis
+  inhibitors</em>. It intentionally stops before <em>Other targets</em>. Do not summarize or research targets outside this boundary unless explicitly requested.
+</div>
+
+<section id="scope">
+<h2>1. Scope boundary
+  <button class="section-complete" data-section="scope">Mark complete</button>
+</h2>
+
+<p>
+  The extracted helper for this paper intentionally ends before later target classes. Treat this page
+  as background for the intro, DOTS regimen, drug-discovery vocabulary, molecule-quality filters,
+  and cell-wall biosynthesis inhibitors.
+</p>
+</section>
+
+<section id="why-this-paper">
+<h2>2. Why this paper matters
+  <button class="section-complete" data-section="why-this-paper">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Where it fits</span>
+  <p>
+    GenomegaMap finds genes under selection. Ballell explains why a selected TB protein is not
+    automatically a useful drug target: compounds must hit the target, enter the cell, avoid bad
+    properties, and ideally shorten therapy.
+  </p>
+</div>
+
+<div class="concept-bridge">
+  <div class="concept-side warn">
+    <h3>The TB drug problem</h3>
+    <p>
+      TB treatment is long, adherence is difficult, resistance emerges, and susceptibility testing can
+      be slow. New compounds need novel mechanisms and practical treatment advantages.
+    </p>
+  </div>
+  <div class="concept-side good">
+    <h3>The project connection</h3>
+    <p>
+      If selection scans point to a target, downstream tools like Boltz-2, Keras MPNN, and SMILES
+      permeability only matter if the compound has plausible drug-like and cell-entry properties.
+    </p>
+  </div>
+</div>
+
+</section>
+
+<section id="methods" class="detail-section" data-summary="Open drug-discovery vocabulary" data-tag="Reference">
+<h2>3. Methods decoder: drug discovery vocabulary
+  <button class="section-complete" data-section="methods">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">How to talk about molecules</span>
+  <p>Ballell evaluates molecules not just by potency, but by whether they look plausible as oral drug candidates. The review categorizes molecules based on their development stage and physicochemical properties.</p>
+</div>
+
+<table>
+  <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Hit</strong></td><td>A molecule with confirmed activity against Mtb (e.g., low MIC), but often poor drug-like properties.</td></tr>
+    <tr><td><strong>Lead</strong></td><td>A stronger series with structure-activity relationship (SAR) evidence, plus acceptable selectivity, pharmacokinetics, or in vivo support.</td></tr>
+    <tr><td><strong>Tool compound</strong></td><td>A molecule that binds a target and proves a biological concept but has fatal flaws preventing it from becoming a drug.</td></tr>
+    <tr><td><strong>MIC</strong></td><td>Minimum Inhibitory Concentration. The lowest concentration that stops bacterial growth in the lab.</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Ballell uses physicochemical filters to judge quality. These include molecular weight, hydrogen-bond donors/acceptors, lipophilicity (clogP), and rotatable bonds (Lipinski's Rule of 5). A long or complex chemical synthesis also makes a hit less attractive. Selectivity index (SI) is crucial: it separates antibacterial activity from toxicity against host cells.
+</p>
+
+</section>
+
+<section id="results" class="detail-section" data-summary="Open DOTS and cell-wall inhibitor details" data-tag="Biology">
+<h2>4. Results decoder: DOTS and cell-wall inhibitors
+  <button class="section-complete" data-section="results">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the paper tells us</span>
+  <p>The paper reviews the current standard of care and focuses heavily on the cell wall as the ultimate target space for new drugs.</p>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <h3>The DOTS Regimen</h3>
+    <p>Directly Observed Therapy, Short-course. First 2 months: INH, RIF, PZA, EMB. Next 4 months: INH, RIF. This 6-month duration is the massive hurdle new drugs must beat.</p>
+  </div>
+  <div class="card">
+    <h3>Cell-wall Biosynthesis</h3>
+    <p>The mycobacterial cell envelope is a lipoglycan armor. Dispersing this armor is lethal to TB. Existing drugs like INH and EMB prove this mechanism works.</p>
+  </div>
+  <div class="card">
+    <h3>Mycolic Acids</h3>
+    <p>The core structural lipids of the TB cell wall. Inhibitors of mycolic acid synthesis or transfer (e.g., targeting mycolyl transferases) are highly sought after.</p>
+  </div>
+  <div class="card">
+    <h3>PA-824 (Pretomanid)</h3>
+    <p>Highlighted as a potent candidate linked to cell-wall mycolate biosynthesis with strong animal-model activity.</p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: Evaluating a GenomegaMap Hit</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>Scenario:</strong> GenomegaMap flags <code>otsB2</code> (trehalose synthesis) as under positive selection in diabetics. You want to pitch it as a drug target.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>Ballell framework check:</strong> First, does inhibiting <code>otsB2</code> kill the bacteria (MIC)? Trehalose is a precursor for cell-wall mycolates, so inhibiting it fits Ballell's "cell-wall biosynthesis" target profile.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>Chemistry check:</strong> Can we design a molecule that hits the enzyme *and* penetrates the TB cell wall? We will need cheminformatics models to ensure the clogP and molecular weight fit the narrow window of TB permeability.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">4</span>
+    <div class="we-body">
+      <strong>Conclusion:</strong> <code>otsB2</code> is a valid biological target conceptually, but making a "lead" compound for it requires overcoming the physicochemical barriers Ballell describes.
+    </div>
+  </div>
+</div>
+
+</section>
+
+
+<section id="talk-track">
+<h2>5. Talk track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What to say in a meeting</h3>
+  <p>"As Ballell highlights, finding a target is only step one. TB's complex, lipid-heavy cell wall makes compound permeation extremely difficult. Even if GenomegaMap gives us a great target associated with diabetes comorbidity, any downstream computational chemistry (like Boltz-2 or Keras) must heavily weight Lipinski rules and SMILES permeability parameters to ensure the compound can actually cross the mycobacterial envelope."</p>
+</div>
+</section>
+
+<section id="limitations">
+<h2>6. What not to overclaim
+  <button class="section-complete" data-section="limitations">Mark complete</button>
+</h2>
+
+<div class="callout warn">
+  <div class="callout-title">What NOT to overclaim</div>
+  <ul style="margin:6px 0 0">
+    <li><strong>Lipinski rules:</strong> Do not treat Lipinski's Rule of 5 as a hard law. TB drugs are notoriously weird and often break these rules (especially regarding lipophilicity, to cross the waxy envelope). Treat the rules as guidelines, not absolute vetoes.</li>
+    <li><strong>Genomics = Drugs:</strong> Do not claim a positively selected gene is automatically a good drug target. Essentiality, druggability, and toxicity matter just as much.</li>
+    <li><strong>Scope:</strong> Remember the scope restriction: we are intentionally ignoring non-cell-wall targets from this specific paper.</li>
+  </ul>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Built as preparation material · Texas A&amp;M Computer Science · Ioerger Lab
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

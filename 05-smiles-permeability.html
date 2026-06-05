@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SMILES Permeability · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab active">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#goal">1. Goal</a></li>
+    <li><a href="#dataset">2. Dataset</a></li>
+    <li><a href="#features">3. Feature pipelines</a></li>
+    <li><a href="#models">4. Model set</a></li>
+    <li><a href="#evaluation">5. Evaluation</a></li>
+    <li><a href="#deep-smiles">6. Direct SMILES models</a></li>
+    <li><a href="#runbook">7. Runbook</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<nav class="breadcrumb" aria-label="Where you are in the prep pipeline">
+  <a class="step done" href="01-dnds-bayesian.html">Foundation · GenomegaMap</a>
+  <span class="sep">→</span>
+  <a class="step done" href="02-tb-selection.html">Ioerger Lab · TB Scans</a>
+  <span class="sep">→</span>
+  <a class="step done" href="03-boltz2.html">Latest Method · Boltz‑2</a>
+  <span class="sep">→</span>
+  <a class="step done" href="04-keras-cheminformatics.html">Hands‑on · Keras MPNN</a>
+  <span class="sep">→</span>
+  <span class="step here">SMILES · permeability screen</span>
+</nav>
+
+<div class="page-progress">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Local task · Radchenko permeability dataset</div>
+  <h1>SMILES permeability: can a compound cross the mycobacterial cell wall?</h1>
+  <p class="lede">
+    This page turns the rough meeting notes into a concrete modeling workflow: DataWarrior
+    molecular properties, Open Babel FP2 fingerprints, combined feature vectors, and direct
+    SMILES-string models. The goal is not one magic classifier; it is a fair comparison with
+    ROC curves, confusion matrices, and cross-validated accuracy around the published baseline.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#features">Feature routes</a>
+    <a class="qpill" href="#evaluation">Results</a>
+    <a class="qpill" href="#models">Classical ML</a>
+    <a class="qpill" href="#deep-smiles">1-D CNN idea</a>
+    <a class="qpill" href="#runbook">Run the scripts</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  A compound can bind a great target and still fail if it never gets into the TB cell. This task is
+  the entry filter: given only the molecule, predict <strong>permeable</strong> vs
+  <strong>not permeable</strong> before wasting docking or wet-lab effort on molecules that the
+  cell wall is likely to reject.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>TB cell-wall entry matters only for downstream compounds.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Balanced accuracy, AUC, feature comparisons, leakage checks.</td></tr>
+      <tr><th>Use this for</th><td>Use results as the current permeability benchmark.</td></tr>
+      <tr><th>Defer for now</th><td>Do not let chemistry modeling distract from GenomegaMap setup.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="goal">
+<h2>1. The goal
+  <button class="section-complete" data-section="goal">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this matters</span>
+  <p>
+    <em>Mycobacterium tuberculosis</em> has an unusually difficult cell wall. The Radchenko et al.
+    paper frames permeability as a binary classification problem over drug-like compounds, and
+    reports cross-validated balanced accuracy of <strong>0.768</strong> and ROC AUC of
+    <strong>0.911</strong> for its best fragment-descriptor neural net.
+  </p>
+</div>
+
+<p>
+  The local implementation is deliberately broader than one model. It asks five related questions:
+</p>
+
+<table>
+  <thead><tr><th>Question</th><th>Modeling answer</th><th>Why it is useful</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Are simple physicochemical properties enough?</td>
+      <td>Naive Bayes, Random Forest, SVM, 2-layer MLP on DataWarrior descriptors.</td>
+      <td>Fast, interpretable sanity check.</td>
+    </tr>
+    <tr>
+      <td>Do substructure fingerprints help?</td>
+      <td>Run <code>fp2feats.py</code>, then train on 1024 FP2 bits.</td>
+      <td>Fingerprints capture local fragments directly.</td>
+    </tr>
+    <tr>
+      <td>Do properties and fingerprints complement each other?</td>
+      <td>Concatenate property columns with FP2 bits and cross-evaluate.</td>
+      <td>This is often the strongest classical baseline.</td>
+    </tr>
+    <tr>
+      <td>Can the model learn from SMILES strings themselves?</td>
+      <td>Character n-gram baseline, TensorFlow 1-D CNN, and transformer-ready script.</td>
+      <td>Tests the motif-learning idea from SMILES CNN papers.</td>
+    </tr>
+    <tr>
+      <td>Can stronger chemistry features beat the 0.75-ish ceiling?</td>
+      <td>RDKit descriptors, Morgan/ECFP4 fingerprints, MACCS keys, and an ensemble over old + RDKit views.</td>
+      <td>This is the current best route: 0.787 balanced accuracy after the meta-ensemble combiner.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="pathway" aria-label="Permeability modeling route">
+  <div class="path-step">
+    <strong>1. Start with molecules</strong>
+    <span>Each row is a compound with a SMILES string, ID, and permeable/not-permeable label.</span>
+  </div>
+  <div class="path-step">
+    <strong>2. Make feature views</strong>
+    <span>Properties, FP2, RDKit descriptors, Morgan fingerprints, and direct SMILES encodings.</span>
+  </div>
+  <div class="path-step">
+    <strong>3. Cross-evaluate</strong>
+    <span>Every model predicts held-out folds, so the confusion matrix is not training accuracy.</span>
+  </div>
+  <div class="path-step">
+    <strong>4. Pick the honest winner</strong>
+    <span>Best local route: RDKit component scores combined by a small meta-logistic model.</span>
+  </div>
+</div>
+
+<div class="diagram">
+<svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr-smiles" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+    <linearGradient id="smiles-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="var(--good)" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+  <g font-family="sans-serif" fill="currentColor" text-anchor="middle">
+    <rect x="24" y="70" width="135" height="74" rx="10" fill="url(#smiles-grad)" stroke="currentColor"/>
+    <text x="91" y="99" font-weight="700" font-size="13">SMILES</text>
+    <text x="91" y="121" font-size="11">radchenko-cln.txt</text>
+
+    <rect x="214" y="24" width="150" height="72" rx="10" fill="url(#smiles-grad)" stroke="currentColor"/>
+    <text x="289" y="52" font-weight="700" font-size="13">Properties</text>
+    <text x="289" y="74" font-size="11">DataWarrior descriptors</text>
+
+    <rect x="214" y="118" width="150" height="72" rx="10" fill="url(#smiles-grad)" stroke="currentColor"/>
+    <text x="289" y="146" font-weight="700" font-size="13">FP2 bits</text>
+    <text x="289" y="168" font-size="11">Open Babel fragments</text>
+
+    <rect x="214" y="212" width="150" height="72" rx="10" fill="url(#smiles-grad)" stroke="currentColor"/>
+    <text x="289" y="240" font-weight="700" font-size="13">String tokens</text>
+    <text x="289" y="262" font-size="11">n-grams / Conv1D</text>
+
+    <rect x="430" y="70" width="140" height="74" rx="10" fill="url(#smiles-grad)" stroke="currentColor"/>
+    <text x="500" y="99" font-weight="700" font-size="13">Classifiers</text>
+    <text x="500" y="121" font-size="11">NB · RF · SVM · MLP</text>
+
+    <rect x="620" y="70" width="116" height="74" rx="10" fill="url(#smiles-grad)" stroke="currentColor"/>
+    <text x="678" y="99" font-weight="700" font-size="13">Evaluate</text>
+    <text x="678" y="121" font-size="11">ROC · confusion</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#arr-smiles)" opacity="0.8">
+    <path d="M159 107 C180 107 186 60 214 60"/>
+    <path d="M159 107 C182 107 187 154 214 154"/>
+    <path d="M159 107 C180 107 186 248 214 248"/>
+    <path d="M364 60 C398 60 400 107 430 107"/>
+    <path d="M364 154 C397 154 400 107 430 107"/>
+    <path d="M364 248 C402 248 394 107 430 107"/>
+    <line x1="570" y1="107" x2="620" y2="107"/>
+  </g>
+</svg>
+<div class="caption">Figure 1. The task decomposes into representation choice, classifier choice, and honest evaluation.</div>
+</div>
+</section>
+
+<section id="dataset" class="detail-section" data-summary="Open dataset composition details" data-tag="Data detail">
+<h2>2. The dataset
+  <button class="section-complete" data-section="dataset">Mark complete</button>
+</h2>
+
+<p>
+  The folder <code>/Users/harshdave/Downloads/permeability-main</code> contains a cleaned local
+  copy of the Radchenko permeability data. The paper describes 5,371 compounds; this cleaned file
+  has <strong>5,367</strong> rows after local preprocessing, with a nearly balanced label column
+  named <code>perm</code>.
+</p>
+
+<table>
+  <thead><tr><th>Local file</th><th>Role</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr><td><code>radchenko-cln.txt</code></td><td>SMILES, compound ID, permeability label.</td><td>All labels; SMILES n-gram, CNN, transformer.</td></tr>
+    <tr><td><code>radchenko-cln.smi</code></td><td>SMILES and compound ID only, with no header row.</td><td>Clean input for the one-hot SMILES encoder.</td></tr>
+    <tr><td><code>radchenko-cln.props.txt</code></td><td>DataWarrior molecular properties.</td><td>Properties-only and combined models.</td></tr>
+    <tr><td><code>radchenko-cln.fpt</code></td><td>Open Babel FP2 fingerprint output.</td><td>Converted to feature columns by <code>fp2feats.py</code>.</td></tr>
+    <tr><td><code>radchenko-cln.fpt.feats.txt</code></td><td>Generated 1024-bit FP2 feature table.</td><td>Fingerprint-only and combined models.</td></tr>
+    <tr><td><code>results/</code></td><td>Generated reports, ROC image, confusion matrices, and best model bundle.</td><td>Model comparison and handoff.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Ioerger encoder update</div>
+  Ioerger's latest encoder change makes <code>encode_smiles.py</code> read an input filename from
+  the command line, using <code>radchenko-cln.smi</code> instead of the labeled
+  <code>radchenko-cln.txt</code>. The encoder now exports a clean ID + one-hot feature table from
+  SMILES only; labels stay separate for model training and evaluation.
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Dataset caution</div>
+  Random train/test splits are useful for a first pass, but related analogues can leak across folds.
+  For publication-quality claims, add a scaffold split once RDKit or another scaffold extractor is
+  available in the environment.
+</div>
+</section>
+
+<section id="features">
+<h2>3. Feature pipelines
+  <button class="section-complete" data-section="features">Mark complete</button>
+</h2>
+
+<div class="callout tip">
+  <div class="callout-title">Plain English: the SMILES confusion</div>
+  A SMILES string is the molecule written like a word. One-hot SMILES encoding turns each
+  character position into spreadsheet columns. Fingerprints and descriptors are different: they
+  are chemistry checklists, such as fragments, rings, atom paths, weight, polarity, and solubility.
+  In these runs, the chemistry checklists beat the raw molecule spelling.
+</div>
+
+<div class="artifact-panel">
+  <h3>One molecule, three ways to show it to a model</h3>
+  <div class="concept-bridge">
+    <div class="concept-side warn">
+      <h3>Raw spelling</h3>
+      <p><code>CC(=O)Nc1ccc...</code> is compact, but the model must learn chemistry from characters.</p>
+    </div>
+    <div class="concept-side">
+      <h3>One-hot table</h3>
+      <p>Character position becomes columns like <code>S017_04</code>. Clean pipeline, weaker signal.</p>
+    </div>
+    <div class="concept-side good">
+      <h3>Chemistry checklist</h3>
+      <p>Fingerprints/descriptors directly encode fragments, rings, paths, polarity, and weight.</p>
+    </div>
+  </div>
+  <div class="mini-legend">
+    <span class="legend-chip" style="--chip: var(--rose)">SMILES-only: weaker</span>
+    <span class="legend-chip" style="--chip: var(--amber)">CNN: learned signal</span>
+    <span class="legend-chip" style="--chip: var(--teal)">RDKit/fingerprints: best</span>
+  </div>
+</div>
+
+<div class="tab-group">
+  <div class="tabs">
+    <button class="tab active">Properties</button>
+    <button class="tab">FP2 fingerprints</button>
+    <button class="tab">Combined</button>
+    <button class="tab">SMILES strings</button>
+  </div>
+
+  <div class="tabpanel active">
+    <p>
+      DataWarrior properties are fixed-length molecular descriptors: molecular weight, cLogP,
+      cLogS, polar surface area, ring counts, rotatable bonds, donor/acceptor counts, and related
+      chemistry summaries. They are compact enough for Gaussian naive Bayes, Random Forests, SVMs,
+      and small MLPs.
+    </p>
+<pre><code>props = pd.read_csv("radchenko-cln.props.txt", sep="\t")
+X_props = props.drop(columns=["id", "perm"])
+y = props["perm"].astype(int)</code></pre>
+  </div>
+
+  <div class="tabpanel">
+    <p>
+      FP2 is Open Babel's path-based fingerprint. The README's command converts SMILES into
+      fingerprints, then <code>fp2feats.py</code> expands the hex output into 1024 binary columns.
+      This directly represents fragment presence/absence.
+    </p>
+<pre><code>obabel -ismi radchenko-cln.txt -ofpt -Oradchenko-cln.fpt -xfFP2 -xh
+python3 fp2feats.py radchenko-cln.fpt &gt; radchenko-cln.fpt.feats.txt</code></pre>
+  </div>
+
+  <div class="tabpanel">
+    <p>
+      The combined matrix concatenates molecular properties with FP2 bits. The properties give
+      global chemistry; the fingerprints give fragment-level chemistry. In the local runs this is
+      the representation that should be watched first.
+    </p>
+<pre><code>X_combined = props.merge(fp2, on="id")
+feature_cols = [c for c in X_combined.columns if c not in {"id", "perm"}]</code></pre>
+  </div>
+
+  <div class="tabpanel">
+    <p>
+      SMILES are variable-length strings, so the implemented scikit-learn baseline uses character
+      n-grams as a motif detector. The TensorFlow script tokenizes each character and trains
+      one-hot or embedding-based 1-D CNNs, with a small transformer implementation available for
+      follow-up experiments. The standalone encoder can also export a fixed 38 x 200 one-hot
+      SMILES matrix keyed by compound ID; <code>train_encoded_smiles_6models.py</code> uses that
+      clean encoded table for a six-model scikit-learn check.
+    </p>
+<pre><code>TfidfVectorizer(
+    analyzer="char",
+    ngram_range=(2, 5),
+    lowercase=False,
+    min_df=2
+)
+
+python encode_smiles.py radchenko-cln.smi &gt; radchenko-cln.smi.enc38x200.txt
+python3 train_encoded_smiles_6models.py</code></pre>
+  </div>
+</div>
+</section>
+
+<section id="models">
+<h2>4. Model set
+  <button class="section-complete" data-section="models">Mark complete</button>
+</h2>
+
+<p>
+  The runnable benchmark script covers the rough model list from the notes while keeping the code
+  dependency-light. Everything uses scikit-learn except the optional deep SMILES script.
+</p>
+
+<table>
+  <thead><tr><th>Model family</th><th>Where it is used</th><th>What it tests</th></tr></thead>
+  <tbody>
+    <tr><td>Naive Bayes</td><td>Properties and FP2 bits.</td><td>How far simple conditional independence gets you.</td></tr>
+    <tr><td>Random Forest</td><td>Properties, FP2, combined.</td><td>Strong nonlinear baseline for small-to-medium tabular data.</td></tr>
+    <tr><td>Support Vector Machine</td><td>RBF SVM on properties; linear SVM on FP2/combined.</td><td>Margin-based classifier with balanced class weighting.</td></tr>
+    <tr><td>2-layer backprop network</td><td>Properties, FP2, combined.</td><td>Small MLP baseline before using sequence or graph neural networks.</td></tr>
+    <tr><td>Character motif model</td><td>SMILES strings.</td><td>Direct string baseline without DataWarrior/Open Babel descriptors.</td></tr>
+    <tr><td>Encoded SMILES six-model runner</td><td>Ioerger <code>.smi</code> pipeline into 38 x 200 one-hot features.</td><td>Whether the cleaned SMILES feature export helps ordinary classifiers.</td></tr>
+    <tr><td>Soft ensemble</td><td>Best property/fingerprint models.</td><td>Averages complementary strong learners; previous best local result.</td></tr>
+    <tr><td>RDKit ensemble</td><td>Old features + RDKit descriptors + Morgan/ECFP4 + MACCS.</td><td>Current best local result.</td></tr>
+    <tr><td>Meta ensemble</td><td>Cross-validated RDKit component prediction scores.</td><td>Small final combiner that gives the best local score, with a significance caution.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <div class="callout-title">Interpretation rule</div>
+  If a complex model cannot beat the combined Random Forest or the FP2 Random Forest, keep the
+  simple model. Fancy only counts when it improves held-out performance.
+</div>
+</section>
+
+<section id="evaluation">
+<h2>5. Evaluation
+  <button class="section-complete" data-section="evaluation">Mark complete</button>
+</h2>
+
+<p>
+  The benchmark uses stratified cross-validation and stores out-of-fold predictions. That means
+  each compound is scored by a model that did not train on it, which gives a clean confusion matrix
+  and ROC curve without needing a tiny single holdout set.
+</p>
+
+<div class="stats-row">
+  <div class="stat">
+    <span class="stat-label">Local rows</span>
+    <span class="stat-value">5,367</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Reference BalAcc</span>
+    <span class="stat-value">0.768</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Reference AUC</span>
+    <span class="stat-value">0.911</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Local best BalAcc</span>
+    <span class="stat-value">0.787</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Local best AUC</span>
+    <span class="stat-value">0.866</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">CV folds</span>
+    <span class="stat-value">5</span>
+  </div>
+</div>
+
+<div class="model-ladder">
+  <h3>Accuracy ladder</h3>
+  <p>
+    Read this as the main result: raw SMILES models learned something, but the best accuracy came
+    from chemistry features and a small final combiner.
+  </p>
+  <div class="bar-list">
+    <div class="bar-row">
+      <div class="label">Meta RDKit ensemble</div>
+      <div class="meter"><span style="--w: 78.7%"></span></div>
+      <div class="value">0.787</div>
+    </div>
+    <div class="bar-row">
+      <div class="label">RDKit mean ensemble</div>
+      <div class="meter"><span style="--w: 78.5%"></span></div>
+      <div class="value">0.785</div>
+    </div>
+    <div class="bar-row">
+      <div class="label">Properties + FP2 Random Forest</div>
+      <div class="meter"><span style="--w: 76.9%"></span></div>
+      <div class="value">0.769</div>
+    </div>
+    <div class="bar-row">
+      <div class="label">SMILES 1-D CNN</div>
+      <div class="meter"><span style="--w: 71.9%"></span></div>
+      <div class="value">0.719</div>
+    </div>
+    <div class="bar-row">
+      <div class="label">Encoded SMILES ExtraTrees</div>
+      <div class="meter"><span style="--w: 66.6%"></span></div>
+      <div class="value">0.666</div>
+    </div>
+  </div>
+</div>
+
+<table>
+  <thead><tr><th>Top local model</th><th>Feature set</th><th>Balanced accuracy</th><th>ROC AUC</th><th>Sensitivity</th><th>Specificity</th></tr></thead>
+  <tbody>
+    <tr><td>Meta-logistic ensemble, tuned threshold</td><td>RDKit component prediction scores</td><td>0.787</td><td>0.866</td><td>0.751</td><td>0.823</td></tr>
+    <tr><td>RDKit soft ensemble, tuned threshold</td><td>Old features + RDKit descriptors + Morgan/ECFP4 + MACCS</td><td>0.785</td><td>0.865</td><td>0.753</td><td>0.817</td></tr>
+    <tr><td>RDKit soft ensemble, default threshold</td><td>Old features + RDKit descriptors + Morgan/ECFP4 + MACCS</td><td>0.782</td><td>0.865</td><td>0.780</td><td>0.784</td></tr>
+    <tr><td>Soft ensemble</td><td>Combined RF + HGB + properties SVM + ExtraTrees</td><td>0.775</td><td>0.856</td><td>0.772</td><td>0.779</td></tr>
+    <tr><td>Random Forest</td><td>Properties + FP2</td><td>0.769</td><td>0.847</td><td>0.760</td><td>0.777</td></tr>
+    <tr><td>Random Forest</td><td>FP2 only</td><td>0.754</td><td>0.827</td><td>0.728</td><td>0.779</td></tr>
+    <tr><td>2-layer MLP</td><td>Properties + FP2</td><td>0.745</td><td>0.815</td><td>0.733</td><td>0.757</td></tr>
+    <tr><td>RBF SVM</td><td>Properties only</td><td>0.731</td><td>0.805</td><td>0.755</td><td>0.708</td></tr>
+    <tr><td>One-hot 1-D CNN</td><td>SMILES string only</td><td>0.719</td><td>0.793</td><td>0.730</td><td>0.707</td></tr>
+    <tr><td>Char n-gram SVM</td><td>SMILES string only</td><td>0.724</td><td>0.791</td><td>0.735</td><td>0.714</td></tr>
+    <tr><td>ExtraTrees</td><td>Ioerger <code>.smi</code> -&gt; encoded 38 x 200 one-hot table</td><td>0.666</td><td>0.734</td><td>0.650</td><td>0.683</td></tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">Bottom line from the local runs</div>
+  Adding RDKit chemistry features finally moved the needle. The best single non-RDKit model is the
+  combined molecular-properties + FP2 Random Forest (<strong>0.769</strong> balanced accuracy,
+  <strong>0.847</strong> AUC). The previous ensemble reached <strong>0.775</strong> /
+  <strong>0.856</strong>. The RDKit-enhanced mean ensemble reaches
+  <strong>0.782</strong> / <strong>0.865</strong> at the default threshold, or
+  <strong>0.785</strong> balanced accuracy with the out-of-fold tuned threshold. A final
+  meta-logistic combiner over the RDKit component scores is the current best local number:
+  <strong>0.787</strong> balanced accuracy and <strong>0.866</strong> AUC. The direct SMILES
+  1-D CNN was tried and did not beat the fingerprint/property models. The new Ioerger-style
+  encoded-SMILES six-model run is useful as a clean pipeline check, but its best model reached
+  only <strong>0.666</strong> balanced accuracy and <strong>0.734</strong> AUC.
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Do not oversell the last decimal</div>
+  The jump from <strong>0.785</strong> to <strong>0.787</strong> is a useful local improvement, but a
+  paired bootstrap check gave a 95% difference interval that crosses zero. Report it as the best
+  current local score, not as a statistically secure breakthrough.
+</div>
+
+<table>
+  <thead><tr><th>Metric</th><th>Definition</th><th>Why it matters here</th></tr></thead>
+  <tbody>
+    <tr><td>Balanced accuracy</td><td>(Sensitivity + specificity) / 2.</td><td>Stable when class counts are close but not perfectly identical.</td></tr>
+    <tr><td>Sensitivity</td><td>TP / (TP + FN).</td><td>Fraction of permeable compounds recovered.</td></tr>
+    <tr><td>Specificity</td><td>TN / (TN + FP).</td><td>Fraction of non-permeable compounds rejected.</td></tr>
+    <tr><td>ROC AUC</td><td>Ranking quality across all score thresholds.</td><td>Useful when the final decision threshold may change by project.</td></tr>
+    <tr><td>Confusion matrix</td><td>TN, FP, FN, TP at the default threshold.</td><td>Shows whether errors are mostly false acceptances or false rejections.</td></tr>
+  </tbody>
+</table>
+
+<pre><code>python3 train_permeability_models.py
+python3 train_encoded_smiles_6models.py
+python3 train_permeability_ensemble.py
+.venv-smiles/bin/python train_permeability_rdkit_ensemble.py
+.venv-smiles/bin/python train_permeability_meta_ensemble.py
+head -5 results/permeability_model_summary.csv
+head -5 results/encoded_smiles_6model_summary.csv
+head -5 results/permeability_ensemble_summary.csv
+head -5 results/permeability_rdkit_ensemble_summary.csv
+head -5 results/permeability_meta_ensemble_summary.csv</code></pre>
+</section>
+
+<section id="deep-smiles" class="detail-section" data-summary="Open direct SMILES model details" data-tag="Optional">
+<h2>6. Direct SMILES models
+  <button class="section-complete" data-section="deep-smiles">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    The SMILES CNN paper treats a SMILES string like a 1-D grid. A convolution filter can slide
+    across characters and learn local motifs, analogous to motif detection in DNA sequence models.
+  </p>
+</div>
+
+<p>
+  The main Python 3.13 environment did not have TensorFlow, so a local Python 3.11 virtual
+  environment was created at <code>.venv-smiles/</code>. The Hirohara-style one-hot 1-D CNN was
+  tried with 5-fold cross-validation. It learned signal, but it did not beat fingerprints:
+  <strong>0.719</strong> balanced accuracy and <strong>0.793</strong> ROC AUC.
+</p>
+
+<p>
+  The newer local check follows Ioerger's cleaner data flow: first export SMILES-only one-hot
+  features from <code>radchenko-cln.smi</code>, then join the permeability labels by compound ID in
+  the model script. Six ordinary scikit-learn models were run on that encoded table. ExtraTrees was
+  best, at <strong>0.666</strong> balanced accuracy and <strong>0.734</strong> ROC AUC, which shows
+  the pipeline works but the flattened one-hot representation loses chemistry that FP2/RDKit
+  fingerprints preserve.
+</p>
+
+<pre><code>.venv-smiles/bin/python smiles_deep_models.py --architecture cnn_onehot
+.venv-smiles/bin/python smiles_deep_models.py --architecture cnn_wide
+.venv-smiles/bin/python smiles_deep_models.py --architecture transformer
+python3 train_encoded_smiles_6models.py</code></pre>
+
+<table>
+  <thead><tr><th>Architecture</th><th>Input</th><th>Cross-val result</th></tr></thead>
+  <tbody>
+    <tr><td>One-hot 1-D CNN</td><td>Padded one-hot SMILES characters.</td><td>0.719 balanced accuracy, 0.793 ROC AUC.</td></tr>
+    <tr><td>Embedding 1-D CNN</td><td>Padded character-tokenized SMILES.</td><td>Holdout check reached 0.715 balanced accuracy, 0.790 ROC AUC.</td></tr>
+    <tr><td>Transformer</td><td>Padded character-tokenized SMILES plus positional embeddings.</td><td>Implemented for follow-up, but not the current best path.</td></tr>
+    <tr><td>Char n-gram baseline</td><td>Variable-length SMILES strings.</td><td>0.724 balanced accuracy, 0.791 ROC AUC.</td></tr>
+    <tr><td>Encoded SMILES six-model best</td><td><code>.smi</code> file encoded to 7,600 one-hot columns.</td><td>ExtraTrees reached 0.666 balanced accuracy, 0.734 ROC AUC.</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead><tr><th>Encoded-SMILES model</th><th>Balanced accuracy</th><th>ROC AUC</th><th>Plain-English read</th></tr></thead>
+  <tbody>
+    <tr><td>ExtraTrees</td><td>0.666</td><td>0.734</td><td>Best of the six; usable signal, not competitive with fingerprints.</td></tr>
+    <tr><td>Random Forest</td><td>0.666</td><td>0.727</td><td>Nearly tied with ExtraTrees, but slightly weaker ranking quality.</td></tr>
+    <tr><td>Logistic Regression</td><td>0.647</td><td>0.701</td><td>Linear pattern in the one-hot columns is limited.</td></tr>
+    <tr><td>2-layer MLP</td><td>0.647</td><td>0.705</td><td>The small neural net did not extract enough extra signal from flattened one-hot features.</td></tr>
+    <tr><td>Linear SVM</td><td>0.639</td><td>0.685</td><td>Margin model works, but not as well as tree ensembles.</td></tr>
+    <tr><td>Bernoulli Naive Bayes</td><td>0.628</td><td>0.697</td><td>Simple bit-presence assumptions are too crude for this representation.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="runbook">
+<h2>7. Runbook
+  <button class="section-complete" data-section="runbook">Mark complete</button>
+</h2>
+
+<p>
+  The local code lives next to the data in
+  <code>/Users/harshdave/Downloads/permeability-main</code>. The commands regenerate SMILES and FP2
+  feature tables when needed, train the classical models, and write reports under
+  <code>results/</code>.
+</p>
+
+<pre><code>cd /Users/harshdave/Downloads/permeability-main
+python encode_smiles.py radchenko-cln.smi &gt; radchenko-cln.smi.enc38x200.txt
+python3 train_encoded_smiles_6models.py
+python3 train_permeability_models.py
+python3 train_permeability_ensemble.py
+.venv-smiles/bin/python train_permeability_rdkit_ensemble.py
+.venv-smiles/bin/python train_permeability_meta_ensemble.py
+
+# quicker smoke test
+python3 train_encoded_smiles_6models.py --quick --folds 2
+python3 train_permeability_models.py --quick --folds 2</code></pre>
+
+<table>
+  <thead><tr><th>Output</th><th>Contents</th></tr></thead>
+  <tbody>
+    <tr><td><code>results/permeability_model_summary.csv</code></td><td>One row per model with balanced accuracy, ROC AUC, sensitivity, specificity, and confusion counts.</td></tr>
+    <tr><td><code>results/permeability_fold_metrics.csv</code></td><td>Per-fold metrics for checking stability.</td></tr>
+    <tr><td><code>results/permeability_confusion_matrices.csv</code></td><td>Compact TN/FP/FN/TP table for each model.</td></tr>
+    <tr><td><code>results/permeability_roc_curves.png</code></td><td>Cross-validated ROC curves for the top models.</td></tr>
+    <tr><td><code>radchenko-cln.smi.enc38x200.txt</code></td><td>Clean ID + one-hot SMILES feature table generated from <code>radchenko-cln.smi</code>.</td></tr>
+    <tr><td><code>results/encoded_smiles_6model_summary.csv</code></td><td>Six-model comparison on the encoded SMILES table; best row is ExtraTrees at 0.666 balanced accuracy.</td></tr>
+    <tr><td><code>results/encoded_smiles_6model_folds.csv</code></td><td>Per-fold metrics for the encoded-SMILES models.</td></tr>
+    <tr><td><code>results/encoded_smiles_6model_predictions.csv</code></td><td>Out-of-fold predictions for every compound and each encoded-SMILES model.</td></tr>
+    <tr><td><code>results/best_*.joblib</code></td><td>Best full-data scikit-learn model bundle and feature metadata.</td></tr>
+    <tr><td><code>results/permeability_ensemble_report.json</code></td><td>Soft ensemble metrics, component metrics, and output paths.</td></tr>
+    <tr><td><code>results/permeability_ensemble_summary.csv</code></td><td>One-row ensemble summary plus component model summaries.</td></tr>
+    <tr><td><code>results/permeability_soft_ensemble_predictions.csv</code></td><td>Out-of-fold ensemble scores and component scores for every compound.</td></tr>
+    <tr><td><code>results/best_soft_ensemble.joblib</code></td><td>Current best full-data ensemble bundle.</td></tr>
+    <tr><td><code>results/smiles_cnn_onehot_report.json</code></td><td>5-fold CV report for the Hirohara-style one-hot SMILES Conv1D model.</td></tr>
+    <tr><td><code>results/smiles_cnn_onehot_cv_predictions.csv</code></td><td>Out-of-fold one-hot Conv1D predictions for every compound.</td></tr>
+    <tr><td><code>results/smiles_cnn_onehot.keras</code></td><td>Saved holdout-trained one-hot Conv1D Keras model.</td></tr>
+    <tr><td><code>results/smiles_cnn_wide_report.json</code></td><td>Holdout report for the embedding multi-kernel Conv1D check.</td></tr>
+    <tr><td><code>results/permeability_rdkit_ensemble_report.json</code></td><td>RDKit-enhanced mean ensemble metrics, including default and tuned thresholds.</td></tr>
+    <tr><td><code>results/permeability_rdkit_ensemble_summary.csv</code></td><td>RDKit ensemble summary plus each component model's metrics.</td></tr>
+    <tr><td><code>results/permeability_rdkit_ensemble_predictions.csv</code></td><td>Out-of-fold RDKit ensemble scores and component scores for every compound.</td></tr>
+    <tr><td><code>results/permeability_meta_ensemble_summary.csv</code></td><td>Final combiner results; current best local row is 0.787 balanced accuracy and 0.866 AUC.</td></tr>
+    <tr><td><code>results/permeability_meta_ensemble_report.json</code></td><td>Meta-ensemble settings, component AUC ranking, and bootstrap caution.</td></tr>
+    <tr><td><code>results/permeability_meta_ensemble_predictions.csv</code></td><td>Meta-ensemble scores and tuned predictions for every compound.</td></tr>
+    <tr><td><code>results/best_rdkit_soft_ensemble.joblib</code></td><td>Full-data RDKit mean ensemble bundle.</td></tr>
+    <tr><td><code>.venv-smiles/</code></td><td>Local Python 3.11 TensorFlow environment used because system Python 3.13 had no TensorFlow.</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead><tr><th>Script</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>encode_smiles.py</code></td><td>Exports a 38 x 200 one-hot SMILES feature table from a two-column <code>.smi</code> file.</td></tr>
+    <tr><td><code>train_encoded_smiles_6models.py</code></td><td>Uses the encoded SMILES table, joins labels by ID, and compares six simple classifiers.</td></tr>
+    <tr><td><code>train_permeability_models.py</code></td><td>Runs the full scikit-learn baseline matrix: properties, FP2, combined, and SMILES n-grams.</td></tr>
+    <tr><td><code>train_permeability_ensemble.py</code></td><td>Runs and saves the current best soft ensemble.</td></tr>
+    <tr><td><code>train_permeability_rdkit_ensemble.py</code></td><td>Runs and saves the current best RDKit-enhanced ensemble.</td></tr>
+    <tr><td><code>train_permeability_meta_ensemble.py</code></td><td>Combines RDKit component scores and writes the current best local report.</td></tr>
+    <tr><td><code>smiles_deep_models.py</code></td><td>Runs one-hot Conv1D, embedding Conv1D, and transformer-style SMILES sequence models.</td></tr>
+    <tr><td><code>fp2feats.py</code></td><td>Expands Open Babel FP2 hex fingerprints into 1024 binary feature columns.</td></tr>
+  </tbody>
+</table>
+</section>
+
+</main>
+</div>
+
+<footer>
+  SMILES permeability (5 of 5) · <a href="04-keras-cheminformatics.html">back: Keras MPNN</a> · <a href="index.html">overview</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

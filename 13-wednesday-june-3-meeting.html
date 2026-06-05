@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Wednesday June 3 Meeting · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <div class="dropdown">
+        <button class="dropbtn">Meetings</button>
+        <div class="dropdown-content">
+          <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+          <a href="13-wednesday-june-3-meeting.html" class="active">Wednesday June 3 Meeting</a>
+        </div>
+      </div>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#mission">Build checklist</a></li>
+    <li><a href="#run-prep">Run-prep workflow</a></li>
+    <li><a href="#xml-generator">XML generator</a></li>
+    <li><a href="#slurm-prep">Slurm prep checklist</a></li>
+    <li class="toc-optional"><a href="#local-inventory">Local file inventory</a></li>
+    <li class="toc-optional"><a href="#bayesian">Bayesian foundations</a></li>
+    <li class="toc-optional"><a href="#mcmc">Gibbs vs Metropolis</a></li>
+    <li class="toc-optional"><a href="#output-reading">Reading output</a></li>
+    <li class="toc-optional"><a href="#change-point">Change-point models</a></li>
+    <li class="toc-optional"><a href="#talk-track">Talk track</a></li>
+    <li class="toc-optional"><a href="#cleanup">Transcript cleanup</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where this meeting tab fits">
+  <a class="step done" href="index.html">Overview</a>
+  <span class="sep">→</span>
+  <a class="step done" href="01-dnds-bayesian.html">GenomegaMap foundation</a>
+  <span class="sep">→</span>
+  <a class="step done" href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+  <span class="sep">→</span>
+  <span class="step here">Wednesday June 3 Meeting</span>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Meeting prep · Wednesday, June 3 · Execution + Statistics</div>
+  <h1>June 3: code, configs, and controlled runs</h1>
+  <p class="lede">
+    This is the engineering meeting brief: filter good isolates, generate per-gene XML configs,
+    understand enough Bayesian/MCMC to defend the output, and prove one tiny run before any
+    large Slurm array.
+  </p>
+  <div class="quickstart">
+    <a class="qpill qpill-primary" href="#xml-generator">XML generator</a>
+    <a class="qpill" href="#run-prep">Run prep</a>
+    <a class="qpill" href="#slurm-prep">Slurm checklist</a>
+    <a class="qpill" href="index.html#todo">Back to TODO</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  We are getting ready to run thousands of independent GenomegaMap jobs. Before Faster enters the
+  picture at scale, we need code that creates the right input files, XML configs that never collide,
+  and a statistical explanation of what the MCMC trace means.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Good isolates only; bad/mixed samples distort cohort comparisons.</td></tr>
+      <tr><th>Stats/CS focus</th><td>XML generation, MCMC trace reading, Slurm-safe job arrays.</td></tr>
+      <tr><th>Use this for</th><td>Build checklist before scaling on Faster.</td></tr>
+      <tr><th>Defer for now</th><td>Full Bayesian derivations and change-point models until constant runs work.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ──────────────────── 1. MISSION ──────────────────── -->
+<section id="mission">
+<h2>Build checklist
+  <button class="section-complete" data-section="mission">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the meeting actually assigned</span>
+  <p>
+    The core assignment is: set up a Python pre-processing pipeline to generate GenomegaMap
+    inputs while filtering out bad data, and simultaneously read up on the statistical machinery
+    (Gibbs and Metropolis-Hastings) so you are not treating the software as a black box.
+  </p>
+</div>
+
+<div class="study-dashboard">
+  <h3>The deliverable</h3>
+  <p>
+    Before the Slurm meeting, you should have filtered cohort lists verified, the XML generator
+    dry-run passing, and enough Jun Liu reading to explain priors, posteriors, and Gibbs vs
+    Metropolis-Hastings on a whiteboard.
+  </p>
+
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">Bad isolates</span>
+      <span class="big">Exclude</span>
+      <span class="caption">Drop the ~10-15 bad samples from the spreadsheet before generating inputs.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">XML scaling</span>
+      <span class="big">1 per gene</span>
+      <span class="caption">~4,018 XML files per cohort; each injects unique file paths.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Math reading</span>
+      <span class="big">Jun Liu</span>
+      <span class="caption">First half of the Harvard statistician's Bayesian biopolymers paper.</span>
+    </div>
+    <div class="metric-tile">
+      <span class="kicker">Goal</span>
+      <span class="big">Slurm ready</span>
+      <span class="caption">Next meeting with Dr. Ioerger covers HPRC job arrays on Faster.</span>
+    </div>
+  </div>
+</div>
+
+<h3>The coding deliverable</h3>
+<table>
+  <thead>
+    <tr><th>Build or verify</th><th>Why it matters</th><th>Current local status</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Good-sample filters</strong></td>
+      <td>Bad isolates are excluded before GenomegaMap sees the data.</td>
+      <td><code>diabetes.good.samples.txt</code> has 178 IDs; <code>nondiabetes.good.samples.txt</code> has 175 IDs.</td>
+    </tr>
+    <tr>
+      <td><strong>Per-gene FASTA filtering</strong></td>
+      <td>Each gene file should contain only approved samples for that cohort.</td>
+      <td><code>generate_xml.py</code> validates and writes <code>.filtered.fasta</code> files.</td>
+    </tr>
+    <tr>
+      <td><strong>Per-gene XML configs</strong></td>
+      <td>Each job needs its own input path and output path.</td>
+      <td>The script uses <code>genomegaMap/examples/porB3.genomegaMapConstant.a.xml</code> as the template.</td>
+    </tr>
+    <tr>
+      <td><strong>One-gene smoke test</strong></td>
+      <td>Proves the executable, XML, and output table work before any array.</td>
+      <td>Use Rv0001 or porB3-style output as the first check.</td>
+    </tr>
+    <tr>
+      <td><strong>Slurm mini-array plan</strong></td>
+      <td>Tests resource requests, logs, and path handling with minimal service-unit risk.</td>
+      <td>Still needs Dr. Ioerger's approved template/settings.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Your advantage here</div>
+  This is exactly a CS/statistics task: deterministic preprocessing, config generation,
+  embarrassingly parallel execution, trace diagnostics, and posterior comparison. The biology
+  tells you what the labels mean; the computational discipline makes the result believable.
+</div>
+
+<details class="deep-dive">
+  <summary><span class="summary-main">What shifted after the June 1 brief</span><span class="deep-tag">Context</span></summary>
+  <div class="deep-dive-body">
+    <dl class="glossary">
+      <dt>From access to automation</dt>
+      <dd>Faster access should be in progress; the focus is now the preprocessing pipeline and XML generation.</dd>
+      <dt>From vocabulary to math</dt>
+      <dd>You need priors, posteriors, conjugacy, and Gibbs vs Metropolis-Hastings well enough to explain them, not just name them.</dd>
+      <dt>From one gene to 4,018</dt>
+      <dd>Each cohort has 4,018 ORF files. That means 4,018 unique XML configs per cohort before any array launch.</dd>
+      <dt>From black box to paper</dt>
+      <dd>Read the Jun Liu &amp; Lawrence paper enough to defend why the output is a distribution, not one number.</dd>
+    </dl>
+  </div>
+</details>
+</section>
+
+<!-- ──────────────────── 2. LOCAL INVENTORY ──────────────────── -->
+<section id="local-inventory" class="detail-section" data-summary="Open full local file inventory" data-tag="Reference">
+<h2>2. Known local project files
+  <button class="section-complete" data-section="local-inventory">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What exists in the repo right now</span>
+  <p>
+    Before writing scripts, you need to know what data you already have locally and what is
+    still missing. This section maps the current state of the
+    <code>data/diabetes-cohort/</code> directory.
+  </p>
+</div>
+
+<h3>Files that exist ✓</h3>
+<table>
+  <thead>
+    <tr><th>What</th><th>Local path</th><th>Why it matters</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Master workbook</strong></td>
+      <td><code>data/diabetes-cohort/metadata/diabetes.combined.xlsx</code></td>
+      <td>The combined diabetes + non-diabetes isolate metadata from Dr. Ioerger. Contains <code>samplestatus</code> column to identify bad rows.</td>
+    </tr>
+    <tr>
+      <td><strong>Diabetes good-only list</strong></td>
+      <td><code>data/diabetes-cohort/metadata/good-isolate-lists/diabetes.good.samples.txt</code></td>
+      <td>178 diabetes isolates with <code>samplestatus=good</code>. Pre-filtered.</td>
+    </tr>
+    <tr>
+      <td><strong>Non-diabetes good-only list</strong></td>
+      <td><code>data/diabetes-cohort/metadata/good-isolate-lists/nondiabetes.good.samples.txt</code></td>
+      <td>175 non-diabetes isolates with <code>samplestatus=good</code>. Pre-filtered.</td>
+    </tr>
+    <tr>
+      <td><strong>Good-only filtered CSV</strong></td>
+      <td><code>data/diabetes-cohort/metadata/exported-csv/diabetes.combined__nondiabetes-tbprofiler__good.csv</code></td>
+      <td>The filtered CSV export with only good isolates.</td>
+    </tr>
+    <tr>
+      <td><strong>Diabetes ORFs</strong></td>
+      <td><code>data/diabetes-cohort/raw-orfs/diabetes/orfs/</code></td>
+      <td>4,018 <code>*.seqs.noLC.txt</code> files and 4,018 <code>*.variants.txt</code> files. Named by Rv number (e.g. <code>Rv0001.seqs.noLC.txt</code>).</td>
+    </tr>
+    <tr>
+      <td><strong>Non-diabetes ORFs</strong></td>
+      <td><code>data/diabetes-cohort/raw-orfs/nondiabetes/orfs/</code></td>
+      <td>Same structure: 4,018 <code>*.seqs.noLC.txt</code> + 4,018 <code>*.variants.txt</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>porB3 example output</strong></td>
+      <td><code>data/diabetes-cohort/results/porB3.genomegaMapConstant.a.mcmc.txt</code></td>
+      <td>Real GenomegaMap constant-model MCMC output. 2,001 rows (header + 2,000 samples). Columns: <code>iteration</code>, <code>loglikelihood</code>, <code>loglik(seqs)</code>, <code>theta</code>, <code>kappa</code>, <code>omega0</code>. Use this to understand the output format before running your own.</td>
+    </tr>
+    <tr>
+      <td><strong>Install email</strong></td>
+      <td><code>references/instructions/instructionsgenomemegamap.txt</code></td>
+      <td>Dr. Ioerger's forwarded email showing how to compile GenomegaMap on Galaxy using miniconda3, gcat-project, GSL, and xerces-c.</td>
+    </tr>
+    <tr>
+      <td><strong>Bayesian paper guide</strong></td>
+      <td><code>references/instructions/bayesian_inference_models.md</code></td>
+      <td>Reading boundaries and interpretation rules for the Jun Liu &amp; Lawrence paper.</td>
+    </tr>
+    <tr>
+      <td><strong>Jun Liu extracted text</strong></td>
+      <td><code>references/extracted-text/bayesian_inference_models.txt</code></td>
+      <td>Searchable extracted text of the paper (58 KB).</td>
+    </tr>
+    <tr>
+      <td><strong>GenomegaMap paper text</strong></td>
+      <td><code>references/extracted-text/genomemegamap.txt</code></td>
+      <td>The Wilson 2020 GenomegaMap paper, extracted (70 KB).</td>
+    </tr>
+    <tr>
+      <td><strong>Shatby thesis text</strong></td>
+      <td><code>references/extracted-text/SHATBY-PRIMARY-2026.txt</code></td>
+      <td>Anthony Shatby's full thesis. 88 KB. Compare his results once you have yours.</td>
+    </tr>
+    <tr>
+      <td><strong>Cohort README</strong></td>
+      <td><code>data/diabetes-cohort/README.md</code></td>
+      <td>Master inventory of the cohort data folder. Start here when confused about file roles.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Current run-prep status</h3>
+<table>
+  <thead>
+    <tr><th>What</th><th>Local path or status</th><th>Why it matters</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>XML template</strong></td>
+      <td><code>genomegaMap/examples/porB3.genomegaMapConstant.a.xml</code></td>
+      <td>The GenomegaMap GitHub repo is cloned locally, and the Bayesian constant-model template now exists. Confirm with Dr. Ioerger before changing iterations, thinning, priors, or model type for the real run.</td>
+    </tr>
+    <tr>
+      <td><strong>Python XML generator</strong></td>
+      <td><code>generate_xml.py</code></td>
+      <td>Creates filtered FASTA files and per-gene XML configs. It validates the expected good-sample counts: 178 diabetes and 175 non-diabetes records per generated gene FASTA.</td>
+    </tr>
+    <tr>
+      <td><strong>Slurm/sbatch script</strong></td>
+      <td><code>*.slurm</code>, <code>*.sbatch</code>, or <code>*.sh</code></td>
+      <td>You + Dr. Ioerger at the Slurm meeting. Zero shell/Slurm scripts exist locally yet.</td>
+    </tr>
+    <tr>
+      <td><strong>Generated per-gene XML configs</strong></td>
+      <td>~4,018 <code>.xml</code> files per cohort</td>
+      <td>The Python generator creates these from the template when you are ready to generate run inputs.</td>
+    </tr>
+    <tr>
+      <td><strong>Gene list file</strong></td>
+      <td>Derived from ORF filenames</td>
+      <td>The generator builds the gene list by listing <code>*.seqs.noLC.txt</code> files and stripping the suffix.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Template now available locally</div>
+  The GenomegaMap repo has been cloned under <code>genomegaMap/</code>, so the constant Bayesian
+  template is available locally. The remaining question is not "where is the template?" but
+  "which exact template/settings should be used for the production Faster run?"
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">The "Bad Isolates" Rule</div>
+  When reading <code>diabetes.combined.xlsx</code>, use ONLY isolates with
+  <code>samplestatus=good</code>. The ~10-15 red-highlighted rows must be excluded because they are
+  low coverage (<code>target_median_depth</code> &lt; 40) or have mixed sublineages identified by
+  TBProfiler. The pre-filtered good-only lists already exist:
+  <code>diabetes.good.samples.txt</code> (178 samples) and
+  <code>nondiabetes.good.samples.txt</code> (175 samples).
+</div>
+</section>
+
+<!-- ──────────────────── 3. RUN-PREP WORKFLOW ──────────────────── -->
+<section id="run-prep">
+<h2>Run-prep workflow
+  <button class="section-complete" data-section="run-prep">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The practical order of operations</span>
+  <p>
+    Dr. Ioerger's instructions and the meeting both emphasize: test small, test local, test on one
+    gene, then scale. The HPRC Faster cluster costs real service units, and a bad 4,018-job array
+    can waste hours of compute budget in minutes.
+  </p>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">The safe order</div>
+  Local validation first, one-gene executable test second, tiny Slurm array third, full array last.
+  This order keeps bugs cheap.
+</div>
+
+<div class="pathway" aria-label="Run prep path">
+  <div class="path-step">
+    <strong>1. Local/Galaxy setup</strong>
+    <span>Compile GenomegaMap on Galaxy following the install email. Confirm it produces the porB3 ML output matching Dr. Ioerger's numbers (θ ≈ 0.122, κ ≈ 2.645, ω ≈ 0.899).</span>
+  </div>
+  <div class="path-step">
+    <strong>2. One-gene tiny test</strong>
+    <span>Run the constant model on a single small gene (e.g. porB3 or Rv0001). Check that the output has the expected column format and ~2,000 rows. Compare to the existing porB3 result file.</span>
+  </div>
+  <div class="path-step">
+    <strong>3. Write the XML generator</strong>
+    <span>Use <code>generate_xml.py</code> to loop over gene names, filter FASTA records to good samples, inject paths, and write per-gene XML configs.</span>
+  </div>
+  <div class="path-step">
+    <strong>4. Small Slurm test</strong>
+    <span>Submit 3-5 genes as a Slurm array on Faster. Inspect logs, output files, runtime, and memory usage.</span>
+  </div>
+  <div class="path-step">
+    <strong>5. Scale toward ~4,018 genes</strong>
+    <span>Only after the small array produces correct outputs, submit the full gene set for each cohort.</span>
+  </div>
+</div>
+
+<h3>Pre-scale checklist</h3>
+<ol class="step-list">
+  <li><strong>Run one dry validation.</strong> Confirm <code>Rv0001</code> keeps 178 diabetes and 175 non-diabetes records.</li>
+  <li><strong>Generate one real config pair.</strong> Create one filtered FASTA and XML for a single gene/cohort so you can inspect the exact paths.</li>
+  <li><strong>Trace the path assumptions.</strong> Decide whether the XML will be run from <code>Ioerger's Lab</code>, copied to Faster scratch, or rewritten with absolute paths.</li>
+  <li><strong>Prepare a tiny job list.</strong> Pick 3-5 genes for the first array test; do not use all 4,018 as the first Slurm attempt.</li>
+  <li><strong>Write down expected output shape.</strong> The trace table should include <code>iteration</code>, <code>loglikelihood</code>, <code>theta</code>, <code>kappa</code>, and <code>omega0</code>.</li>
+</ol>
+
+<div class="callout bad">
+  <div class="callout-title">Cluster caution: service units</div>
+  Never submit thousands of jobs until one job and one mini-array have produced the exact output
+  table you expect. The meeting explicitly warned that a bad array wastes service units. Prefer
+  conservative resource requests: short wall times, small memory, and one CPU per job.
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Workflow vocabulary</div>
+  <strong>SSH</strong> means logging into the cluster from your terminal.
+  <strong>Module/environment setup</strong> means loading the software GenomegaMap needs.
+  <strong>Slurm</strong> is the cluster's job scheduler. A <strong>job array</strong> is one
+  submission that runs the same script many times, usually once per gene.
+  <strong>Service units</strong> are the compute budget you spend when jobs run.
+</div>
+</section>
+
+<!-- ──────────────────── 4. XML GENERATOR ──────────────────── -->
+<section id="xml-generator">
+<h2>XML generator
+  <button class="section-complete" data-section="xml-generator">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the XML file controls</span>
+  <p>
+    GenomegaMap does not accept simple command-line flags for inputs and outputs. You must feed it
+    an XML configuration file that specifies everything: the input FASTA path (the
+    <code>&lt;seqs&gt;</code> block), the output destination, the MCMC hyper-parameters
+    (iterations, thinning interval), and prior distributions.
+  </p>
+</div>
+
+<div class="concept-bridge">
+  <div class="concept-side good">
+    <h3>Think of XML as a config object</h3>
+    <p>
+      The template is the class definition. Each generated XML file is one instance with a specific
+      gene, cohort, input FASTA path, and output trace path.
+    </p>
+  </div>
+  <div class="concept-side warn">
+    <h3>The dangerous fields are paths</h3>
+    <p>
+      The statistical settings may stay fixed, but the input and output paths must change for
+      every gene. If they do not, the array silently becomes wrong even if jobs appear to run.
+    </p>
+  </div>
+</div>
+
+<details class="deep-dive">
+  <summary><span class="summary-main">Open XML field reference and generator mechanics</span><span class="deep-tag">Reference</span></summary>
+  <div class="deep-dive-body">
+    <h3>What each XML field does</h3>
+    <dl class="glossary">
+      <dt><code>&lt;seqs&gt;</code> (input sequences)</dt>
+      <dd>Points to the aligned FASTA file for one gene. This is the field that must change for every gene. If all 4,018 jobs read the same <code>&lt;seqs&gt;</code> tag, they will all analyze the same gene.</dd>
+      <dt>Output file path</dt>
+      <dd>Where GenomegaMap writes the MCMC trace table. This must also be unique per gene; otherwise 4,018 parallel jobs overwrite the same file simultaneously.</dd>
+      <dt>Iterations</dt>
+      <dd>How many MCMC steps to run. Usually set high: 10,000 for a test, 100,000 or 1,000,000 for a real run.</dd>
+      <dt>Thinning interval</dt>
+      <dd>Save every <em>n</em>th iteration. If you run 10,000 iterations and thin by 5, you get 2,000 saved rows. This prevents gigabyte output files filled with highly-correlated adjacent samples.</dd>
+      <dt>Prior distributions</dt>
+      <dd>The XML can specify prior distributions (e.g. Gamma priors for variance parameters) and starting values. <strong>Do not modify these</strong> unless Dr. Ioerger explicitly says to.</dd>
+      <dt>Model type</dt>
+      <dd>Constant, independent, or window. You are running <strong>constant</strong> first.</dd>
+    </dl>
+
+    <div class="worked-example">
+      <h4>How the Python generator should work</h4>
+      <div class="we-step">
+        <div class="we-num">1</div>
+        <div class="we-body">
+          <strong>Get the template.</strong> Obtain the base XML template from Dr. Ioerger or the
+          GenomegaMap GitHub repo. The install email references
+          <code>porB3.genomegaMapConstantML.a.xml</code> as the test case; the cloned repo also includes
+          <code>porB3.genomegaMapConstant.a.xml</code>, which is the Bayesian constant-model template
+          used by <code>generate_xml.py</code>.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">2</div>
+        <div class="we-body">
+          <strong>Build the gene list.</strong> List all <code>*.seqs.noLC.txt</code> filenames from
+          the ORF directory (e.g. <code>Rv0001.seqs.noLC.txt</code>) and strip the suffix to get gene
+          names. There are 4,018 per cohort.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">3</div>
+        <div class="we-body">
+          <strong>Loop, filter, and substitute.</strong> For each gene name, read the raw FASTA, keep
+          only SRR IDs from the cohort's good-sample list, write a <code>.filtered.fasta</code>, then
+          point the XML input to that filtered FASTA and set a unique output path.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">4</div>
+        <div class="we-body">
+          <strong>Write the XML.</strong> Save each modified XML to a per-gene config directory (e.g.
+          <code>configs/diabetes/Rv0001.constant.xml</code>).
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">5</div>
+        <div class="we-body">
+          <strong>Validate one.</strong> Run GenomegaMap on one of the generated XML files. Confirm the
+          output matches the expected column format: <code>iteration</code>,
+          <code>loglikelihood</code>, <code>loglik(seqs)</code>, <code>theta</code>,
+          <code>kappa</code>, <code>omega0</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Run check: generate_xml.py</div>
+    <span class="demo-tag">dry-run first</span>
+  </div>
+<pre><code><span class="tok-c"># From the repo root, validate one gene without writing outputs:</span>
+python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001
+
+<span class="tok-c"># When ready, generate all filtered FASTAs and XML configs:</span>
+python3 "Ioerger's Lab/generate_xml.py"
+</code></pre>
+  <p class="muted">
+    The dry run checks the template path, sample lists, raw FASTA headers, and expected filtered
+    counts without creating generated files.
+  </p>
+</div>
+
+<div class="callout tip">
+  <div class="callout-title">Why unique output paths matter</div>
+  If 4,018 Slurm array jobs all write to the same <code>output.txt</code> file, the file will be
+  corrupted by interleaved writes. Each gene must have its own output file so results are
+  isolated and recoverable.
+</div>
+</section>
+
+<!-- ──────────────────── 5. BAYESIAN FOUNDATIONS ──────────────────── -->
+<section id="bayesian" class="detail-section" data-summary="Open Bayesian foundations detail" data-tag="Stats depth">
+<h2>5. Bayesian foundations
+  <button class="section-complete" data-section="bayesian">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The Jun Liu &amp; Lawrence paper</span>
+  <p>
+    You are required to read the first half of the Jun Liu &amp; Lawrence (1999) paper on Bayesian
+    inference in biopolymer models. It strips away the biology and explains probability from the
+    ground up. The reading guide is at
+    <code>references/instructions/bayesian_inference_models.md</code> and the full text is at
+    <code>references/extracted-text/bayesian_inference_models.txt</code>.
+  </p>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">If you only remember one sentence</div>
+  Bayesian inference takes your prior beliefs about a parameter, combines them with observed data
+  through a likelihood function, and produces a posterior distribution that quantifies both the
+  best estimate and the uncertainty.
+</div>
+
+<div class="two-col">
+  <div class="artifact-panel">
+    <h3>Know this for Dr. Ioerger</h3>
+    <ul>
+      <li>What a likelihood is and why GenomegaMap works in log-likelihood space.</li>
+      <li>Why the posterior is a distribution, not a single point estimate.</li>
+      <li>Why conjugate priors are convenient in toy examples but not enough for GenomegaMap.</li>
+      <li>Why MCMC samples are a practical approximation to an intractable posterior.</li>
+    </ul>
+  </div>
+  <div class="artifact-panel">
+    <h3>Do not overinvest yet</h3>
+    <ul>
+      <li>Full derivations of every biopolymer model in the Liu paper.</li>
+      <li>Every prior family in the XML schema.</li>
+      <li>Change-point/window math before the constant model works.</li>
+      <li>Biological interpretation of every gene before the scan finishes.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>The Bayesian Decoder</h3>
+<div class="math">
+  posterior ∝ likelihood × prior
+</div>
+
+<dl class="glossary">
+  <dt>Parameter</dt>
+  <dd>An unknown number the model is trying to estimate. GenomegaMap estimates ω, κ, and θ jointly.</dd>
+  <dt>Likelihood Function</dt>
+  <dd>Connects observed data to parameters. It answers: <em>if the true ω was 1.5, how probable would it be to see this exact pattern of synonymous and nonsynonymous mutations?</em> Higher likelihood means that parameter value explains the data better.</dd>
+  <dt>Prior Distribution</dt>
+  <dd>Your statistical belief about the parameter <em>before</em> looking at the data. Usually modeled as a broad distribution so the data can dominate. The XML file specifies these.</dd>
+  <dt>Joint PDF</dt>
+  <dd>The product of the likelihood and the prior. In practice the denominator in Bayes' theorem (the marginal likelihood, integrating out all parameters) is often dropped, making the posterior <em>proportional to</em> the joint PDF.</dd>
+  <dt>Posterior Distribution</dt>
+  <dd>The updated distribution over parameter values after combining prior and likelihood. This is the answer GenomegaMap outputs: not a single number, but a spread.</dd>
+  <dt>Posterior Mean</dt>
+  <dd>The average of the sampled posterior values. Useful as a summary, but not enough by itself. A mean of 1.2 from a very wide distribution is different from a mean of 1.2 from a narrow one.</dd>
+  <dt>Credible Interval</dt>
+  <dd>A range containing most of the posterior probability, often 95%. If the 95% credible interval for ω crosses 1, the evidence for positive selection is weaker even if the mean is above 1.</dd>
+  <dt>Conjugate Priors</dt>
+  <dd>A mathematical "hack" to make the equations solvable in closed form. If you pick the <em>right</em> prior distribution family for your likelihood, they multiply together to produce a posterior of the same distribution family, avoiding complex integrals.</dd>
+  <dt>Log-likelihood</dt>
+  <dd>The natural log of the likelihood. Because likelihood products across thousands of data points get astronomically small, computations are done in log space to avoid numerical underflow.</dd>
+</dl>
+
+<h3>Conjugacy explained</h3>
+<div class="cards">
+  <div class="card">
+    <div class="icon">θ</div>
+    <h3>Binomial + Beta</h3>
+    <p>For binary events (like a coin flip), a <strong>Binomial</strong> likelihood combined with a <strong>Beta</strong> prior yields a <strong>Beta</strong> posterior. The new Beta parameters are just the old ones plus the observed counts.</p>
+  </div>
+  <div class="card">
+    <div class="icon">μ</div>
+    <h3>Normal + Normal</h3>
+    <p>If your likelihood is <strong>Normal</strong> with known variance, a <strong>Normal</strong> prior over the mean yields a <strong>Normal</strong> posterior. The posterior mean is a weighted average of the prior mean and the data mean.</p>
+  </div>
+  <div class="card">
+    <div class="icon">σ²</div>
+    <h3>Normal + Inverse-Gamma</h3>
+    <p>If estimating variance, combining a Normal likelihood with an <strong>Inverse-Gamma</strong> prior yields an Inverse-Gamma posterior. This is relevant for GenomegaMap's variance priors specified in the XML.</p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>The Coin Flip Example (from the meeting)</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Setup.</strong> You flip a coin 30 times and get 12 heads and 18 tails. You want to
+      estimate the true weight θ (probability of heads).
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Likelihood.</strong> Binomial distribution: the probability of seeing exactly 12
+      heads in 30 flips as a function of θ.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>Prior.</strong> A Beta(α, β) distribution. If you know nothing, use α = β = 1
+      (uniform). If you suspect a fair coin, use α = β = 10 (peaked at 0.5).
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">4</div>
+    <div class="we-body">
+      <strong>Posterior.</strong> Because Beta is conjugate to Binomial, the posterior is just
+      another Beta: <strong>Beta(α + 12, β + 18)</strong>. No integration needed.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">5</div>
+    <div class="we-body">
+      <strong>Result.</strong> The posterior distribution peaks near 40% (12/30), but the full
+      distribution explicitly shows you the probability that the coin could be 30% or 50% weighted.
+      This <em>uncertainty</em> is exactly what GenomegaMap gives you for ω — not just a point
+      estimate, but a spread.
+    </div>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>Why GenomegaMap gives a distribution, not a number</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Data:</strong> many TB isolates share the same gene, with occasional mutations.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Question:</strong> what ω value would make this pattern of synonymous and
+      nonsynonymous mutations plausible?
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>Output:</strong> not one answer, but a distribution of possible ω values. If the
+      distribution is mostly below 1, think purifying selection. If it is mostly above 1, think
+      positive selection. If it is wide and crosses 1, the data is too weak to decide.
+    </div>
+  </div>
+</div>
+
+<div class="callout tip">
+  <div class="callout-title">Best reading order</div>
+  Start with the reading guide at <code>references/instructions/bayesian_inference_models.md</code>.
+  Focus on the coin-flip example. Then read the first half of the extracted text.
+  Then come back to this page and make sure you can explain what a prior, likelihood, and
+  posterior are without looking.
+</div>
+</section>
+
+<!-- ──────────────────── 6. MCMC ──────────────────── -->
+<section id="mcmc" class="detail-section" data-summary="Open Gibbs and Metropolis-Hastings detail" data-tag="Stats depth">
+<h2>6. Gibbs vs Metropolis-Hastings
+  <button class="section-complete" data-section="mcmc">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">When closed-form solutions fail</span>
+  <p>
+    Conjugate priors only work for simple models. For GenomegaMap's Dirichlet-multinomial codon
+    model with three parameters (ω, κ, θ), you cannot analytically calculate the posterior
+    distribution. You must <em>sample</em> from it to build an empirical histogram.
+  </p>
+</div>
+
+<div class="concept-bridge">
+  <div class="concept-side good">
+    <h3>Gibbs Sampling</h3>
+    <p>
+      Used when you can't calculate the joint posterior for <em>all</em> parameters at once, but
+      you CAN calculate the <strong>conditional posterior</strong> of one parameter when the
+      others are held fixed.
+    </p>
+  </div>
+  <div class="concept-side warn">
+    <h3>Metropolis-Hastings</h3>
+    <p>
+      A "knowledge-free" fallback for when even conditional posteriors are too hard. You propose
+      random moves and probabilistically accept or reject them based on likelihood ratios.
+    </p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>How Gibbs Sampling works (3 parameters: θ, κ, ω)</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Start:</strong> Guess initial random values for θ₀, κ₀, and ω₀.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Update θ:</strong> Fix κ and ω at their current values. Mathematically derive the
+      conditional posterior distribution of θ given κ and ω. Draw a random value from that
+      distribution. This is θ₁.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>Update κ:</strong> Fix θ₁ (updated) and ω₀ (not yet updated). Draw a new κ value
+      from its conditional posterior. This is κ₁.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">4</div>
+    <div class="we-body">
+      <strong>Update ω:</strong> Fix θ₁ and κ₁. Draw a new ω value from its conditional
+      posterior. This is ω₁.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">5</div>
+    <div class="we-body">
+      <strong>Record:</strong> Save (θ₁, κ₁, ω₁) as one MCMC sample — one row in the output
+      file.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">6</div>
+    <div class="we-body">
+      <strong>Repeat:</strong> Go back to step 2 thousands of times. The sequence of parameter
+      triplets "wanders" around parameter space, staying near the true peak. After a burn-in
+      period, the histogram of these samples <em>is</em> the approximated posterior.
+    </div>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>How Metropolis-Hastings works</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Current state:</strong> You are at parameter values (θ, κ, ω) with a known
+      log-likelihood.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Propose:</strong> Randomly perturb one parameter. For example, change ω from 0.90
+      to 0.95 by adding a small random number drawn from a proposal distribution (often a normal
+      distribution centered at 0).
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>Score:</strong> Calculate the log-likelihood at the new parameter values. Compare
+      it to the old log-likelihood.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">4</div>
+    <div class="we-body">
+      <strong>Accept or reject:</strong> If the new log-likelihood is higher, always accept. If
+      it is lower, accept with probability proportional to the ratio
+      exp(new_loglik − old_loglik). This means worse proposals are less likely to be accepted,
+      but they sometimes are, allowing the chain to escape local minima.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">5</div>
+    <div class="we-body">
+      <strong>If rejected:</strong> The chain stays at the old values. In the output file, this
+      appears as a repeated row — the same parameter values on consecutive lines. This is normal
+      and expected.
+    </div>
+  </div>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Why repeated rows happen in MCMC output</div>
+  A proposed move was rejected, so the chain kept its old parameter values. This is not a bug.
+  If you see many consecutive identical rows, the chain may be stuck in a mode or the proposal
+  distribution is too wide. If you rarely see repeats, proposals may be too small. Both are
+  diagnostic signals.
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Simulated Annealing analogy</div>
+  The acceptance ratio in Metropolis-Hastings is conceptually similar to Simulated Annealing:
+  worse proposals can be accepted with a probability like e<sup>−Δ/T</sup>. The difference is
+  MCMC does not reduce the "temperature" over time — it maintains a constant acceptance policy
+  to correctly sample the posterior.
+</div>
+
+<h3>MCMC vocabulary</h3>
+<dl class="glossary">
+  <dt>Burn-in</dt>
+  <dd>Early MCMC samples discarded because the chain may not yet represent the target posterior. The first few hundred iterations often drift as the chain finds the right region of parameter space.</dd>
+  <dt>Thinning</dt>
+  <dd>Saving every <em>n</em>th sample. Adjacent MCMC samples are correlated; thinning reduces that autocorrelation and keeps file sizes manageable.</dd>
+  <dt>Convergence</dt>
+  <dd>The chain has "settled in" and is sampling from the true posterior. You can check convergence by plotting the trace of ω over iterations — it should look like random noise around a stable mean, not a trend.</dd>
+  <dt>Trace plot</dt>
+  <dd>A plot of a parameter value (y-axis) vs iteration number (x-axis). Used to visually assess convergence and diagnose problems.</dd>
+  <dt>Mixing</dt>
+  <dd>How well the chain explores the parameter space. Good mixing = the trace plot looks like "hairy caterpillar" noise. Bad mixing = the trace plot has long flat stretches or sudden jumps.</dd>
+  <dt>Acceptance rate</dt>
+  <dd>The fraction of proposed moves that are accepted. Too high (>0.5) means proposals are too timid. Too low (<0.1) means proposals are too bold. Typical target: 20-40%.</dd>
+</dl>
+
+<div class="callout tip">
+  <div class="callout-title">Test sampling yourself</div>
+  Install R locally or use Galaxy. Run <code>rnorm(1000, mean=0, sd=1)</code> to draw 1,000
+  random values from a normal distribution. Plot a histogram. This is exactly what MCMC does:
+  draw samples, build a histogram, and treat the histogram as the posterior.
+</div>
+</section>
+
+<!-- ──────────────────── 7. READING THE OUTPUT ──────────────────── -->
+<section id="output-reading" class="detail-section" data-summary="Open output-reading walkthrough" data-tag="Trace detail">
+<h2>7. Reading the output
+  <button class="section-complete" data-section="output-reading">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the porB3 example output looks like</span>
+  <p>
+    The file <code>data/diabetes-cohort/results/porB3.genomegaMapConstant.a.mcmc.txt</code>
+    is a real constant-model output. It has 2,001 lines (1 header + 2,000 data rows) saved every
+    5 iterations out of 10,000.
+  </p>
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Real output: first 6 rows</div>
+    <span class="demo-tag">porB3 constant model</span>
+  </div>
+<pre><code>iteration  loglikelihood  loglik(seqs)  theta      kappa    omega0
+5          -1949.75       -1950.7       0.141719   1        1
+10         -1943.1        -1944.22      0.141719   1.08969  0.747878
+15         -1936.28       -1936.98      0.141719   1.65439  0.747878
+20         -1934.84       -1934.91      0.141719   3.11886  0.747878
+25         -1934.35       -1934.6       0.1484     2.48343  0.747878
+</code></pre>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Column</th><th>What it is</th><th>How to use it</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>iteration</strong></td>
+      <td>The MCMC step number (saved every 5th step in this run).</td>
+      <td>X-axis of trace plots. Useful for identifying burn-in.</td>
+    </tr>
+    <tr>
+      <td><strong>loglikelihood</strong></td>
+      <td>The log-likelihood of the full model at the current parameter values.</td>
+      <td>Should stabilize (stop trending) after burn-in. Plot to check convergence.</td>
+    </tr>
+    <tr>
+      <td><strong>loglik(seqs)</strong></td>
+      <td>The log-likelihood of the sequence data component specifically.</td>
+      <td>Usually very close to loglikelihood. Useful for model debugging.</td>
+    </tr>
+    <tr>
+      <td><strong>theta</strong></td>
+      <td>Population-scaled mutation/diversity parameter (θ).</td>
+      <td>A nuisance parameter fit jointly with ω and κ. Don't interpret it biologically in isolation.</td>
+    </tr>
+    <tr>
+      <td><strong>kappa</strong></td>
+      <td>Transition/transversion ratio (κ).</td>
+      <td>Controls mutation bias. Typically 2-4 for protein-coding DNA. Stable values suggest convergence.</td>
+    </tr>
+    <tr>
+      <td><strong>omega0</strong></td>
+      <td>The dN/dS selection parameter (ω). <strong>This is your primary output.</strong></td>
+      <td>Histogram of all sampled ω values = posterior distribution. Mean, median, and 95% credible interval are the key summaries.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="worked-example">
+  <h4>Reading the porB3 output step by step</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Burn-in check:</strong> The first few rows show large log-likelihood changes
+      (−1949 → −1934). The chain is still settling. Discard the first ~200 iterations as burn-in.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Notice repeated rows:</strong> Lines 11 and 12 are identical
+      (iteration 55 and 60 have the same loglikelihood/theta/kappa/omega). This means the
+      proposed MCMC move at step 55 was rejected. Normal behavior.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>ML comparison:</strong> The install email shows maximum likelihood estimates:
+      θ ≈ 0.122, κ ≈ 2.645, ω ≈ 0.899. The MCMC samples should cluster around these values,
+      but with spread representing uncertainty.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">4</div>
+    <div class="we-body">
+      <strong>Interpret ω:</strong> Most sampled ω values in the output are near 0.8-1.0.
+      This is roughly neutral or very mildly purifying — the gene is not under strong positive
+      selection.
+    </div>
+  </div>
+</div>
+
+<div class="checkpoint">
+  <h4>Recognize problems before they become results</h4>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> loglikelihood keeps trending down/up for 1000+ iterations</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> the chain hasn't converged. Run more iterations or check input data.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> omega0 is exactly the same for 100+ consecutive rows</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> the chain is stuck. The proposal step size may be too large, causing all moves to be rejected.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> all genes have identical output files</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> the Slurm array index is not selecting different genes, or the XML generator used the same input path for all configs.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> theta or kappa values that are wildly different from the ML estimates</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> the input file may be malformed, or the XML may have wrong priors.</div>
+  </div>
+</div>
+</section>
+
+<!-- ──────────────────── 8. CHANGE-POINT MODELS ──────────────────── -->
+<section id="change-point" class="detail-section" data-summary="Open change-point/window-model analogy" data-tag="Advanced">
+<h2>8. Change-point models
+  <button class="section-complete" data-section="change-point">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The coin-swap analogy from the meeting</span>
+  <p>
+    Dr. Ioerger described a scenario where someone flips coin 1 for a while, then secretly
+    swaps it for coin 2 mid-sequence. You must estimate the weights of both coins AND the
+    exact step where the swap occurred. This is a direct analogy to GenomegaMap's sliding-window
+    model.
+  </p>
+</div>
+
+<div class="two-col">
+  <div class="demo">
+    <div class="demo-header">
+      <div class="demo-title">The coin game</div>
+      <span class="demo-tag">analogy</span>
+    </div>
+    <p>
+      You observe a sequence of 100 flips: the first 60 are mostly heads, the last 40 are mostly
+      tails. There are three unknowns:
+    </p>
+    <ul>
+      <li><strong>θ₁</strong> — the weight of coin 1.</li>
+      <li><strong>θ₂</strong> — the weight of coin 2.</li>
+      <li><strong>A</strong> — the changepoint (the flip number where the swap happened).</li>
+    </ul>
+    <p>
+      The Bayesian approach treats all three as random variables, samples them jointly via MCMC,
+      and returns posterior distributions for all three. The posterior for A will peak near the
+      true swap position.
+    </p>
+  </div>
+
+  <div class="demo">
+    <div class="demo-header">
+      <div class="demo-title">In GenomegaMap</div>
+      <span class="demo-tag">biology</span>
+    </div>
+    <p>
+      Replace "coins" with "regions of a gene" and "weights" with "ω values":
+    </p>
+    <ul>
+      <li>The first 200 codons might have ω = 0.3 (strongly purifying).</li>
+      <li>The next 100 codons might have ω = 2.5 (strong positive selection).</li>
+      <li>The last 200 codons might return to ω = 0.4.</li>
+    </ul>
+    <p>
+      The <strong>independent</strong> and <strong>window</strong> models try to find these
+      boundaries. The <strong>constant</strong> model (your current assignment) averages them all
+      into one ω, which is why it's simpler but less informative.
+    </p>
+  </div>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Bayesian sequence segmentation</div>
+  The Jun Liu paper describes a Bayesian sequence segmentation algorithm that is conceptually
+  similar to how GenomegaMap's sliding-window model works: it tries to find regions of the genome
+  with different underlying properties. Understanding the coin-swap example prepares you for the
+  more complex models later this summer.
+</div>
+</section>
+
+<!-- ──────────────────── 9. SLURM PREP ──────────────────── -->
+<section id="slurm-prep">
+<h2>Slurm prep checklist
+  <button class="section-complete" data-section="slurm-prep">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Before Dr. Ioerger helps you launch arrays</span>
+  <p>
+    Bring these artifacts and questions to the Slurm meeting. The goal is to leave with an
+    approved template, resource limits, and a safe mini-array plan.
+  </p>
+</div>
+
+<h3>Bring these</h3>
+<ol class="step-list">
+  <li><strong>Filtered sample lists confirmed.</strong> Verify that <code>diabetes.good.samples.txt</code> (178 samples) and <code>nondiabetes.good.samples.txt</code> (175 samples) match what Dr. Ioerger expects. Make sure no bad isolates slipped through.</li>
+  <li><strong>XML template and settings confirmed.</strong> The local clone includes the constant Bayesian template; ask whether its iterations, thinning, priors, and model choice are right for the real run.</li>
+  <li><strong>Python generator dry-run tested.</strong> Run <code>python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001</code> before generating all XML configs.</li>
+  <li><strong>porB3 output reviewed.</strong> Be able to explain what each column means, what burn-in looks like, and what the ω distribution for porB3 tells you about selection.</li>
+  <li><strong>Jun Liu paper concepts.</strong> Be able to explain priors, posteriors, the coin-flip example, and the difference between Gibbs and Metropolis-Hastings without looking at notes.</li>
+</ol>
+
+<h3>Ask Dr. Ioerger these</h3>
+<ol class="reader-path">
+  <li>
+    <strong>Which XML template/settings should the production run use?</strong>
+    The local GenomegaMap clone includes Bayesian and maximum-likelihood constant templates.
+    Confirm which one Dr. Ioerger wants and whether to change iterations, thinning, burn-in,
+    or priors before scaling to all genes.
+  </li>
+  <li>
+    <strong>How many iterations for the real run?</strong>
+    The porB3 test used 10,000 iterations with thinning of 5. Should the full 4,018-gene run use
+    more? 100,000? 1,000,000?
+  </li>
+  <li>
+    <strong>What burn-in to discard?</strong>
+    Should you discard the first 10%? 20%? Or use a convergence diagnostic?
+  </li>
+  <li>
+    <strong>Which Slurm partition and resource limits?</strong>
+    What wall time, memory, and CPU count per job? Which queue on Faster?
+  </li>
+  <li>
+    <strong>Where should production outputs live on Faster?</strong>
+    Should outputs go to scratch, a project directory, or another approved folder? This affects
+    XML paths, Slurm working directory, and result collection.
+  </li>
+  <li>
+    <strong>Should the generator create relative paths or Faster absolute paths?</strong>
+    The local script currently writes paths relative to <code>Ioerger's Lab</code>. Confirm whether
+    that is acceptable on Faster or whether configs should be regenerated after copying data.
+  </li>
+  <li>
+    <strong>Do the ORF files already exclude bad isolates?</strong>
+    The raw-orfs directory has 4,018 files per cohort, but it's unclear whether the sequences
+    inside already have bad-isolate sequences removed. If not, the FASTA files need preprocessing.
+  </li>
+  <li>
+    <strong>Does gcat or genomegaMap need to be on Faster?</strong>
+    The install instructions are for Galaxy. Does Faster have its own installation, or do you
+    need to recompile?
+  </li>
+  <li>
+    <strong>What counts as a hit?</strong>
+    After getting posterior distributions for diabetes and non-diabetes, how do we define a
+    "significant" difference? Posterior probability that ω_diabetes &gt; ω_nondiabetes? Credible
+    interval separation? A combined score?
+  </li>
+</ol>
+
+<h3>Known blockers</h3>
+<div class="checkpoint">
+  <h4>Things that will stop you if unresolved</h4>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>Blocker:</strong> Production XML settings not confirmed</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Action:</strong> Bring the local template and dry-run output to the Slurm meeting before launching large arrays.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>Blocker:</strong> Faster account not yet active</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Action:</strong> Check HPRC portal. Follow up with Dr. Ioerger as PI if still pending.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>Blocker:</strong> Generated FASTA counts do not validate</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Action:</strong> Use the generator dry run to confirm 178 diabetes and 175 non-diabetes records per gene before writing XML files.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>Blocker:</strong> GenomegaMap not compiled on Faster</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Action:</strong> The install email shows the Galaxy recipe. Ask if Faster needs a separate build.</div>
+  </div>
+</div>
+</section>
+
+<!-- ──────────────────── 10. TALK TRACK ──────────────────── -->
+<section id="talk-track" class="detail-section" data-summary="Open meeting talk track and mini glossary" data-tag="Optional">
+<h2>Talk track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What you should be able to say out loud</h3>
+  <p>
+    GenomegaMap uses a Bayesian framework with MCMC sampling to estimate the posterior distribution
+    of ω for each TB gene. The XML configuration file specifies inputs, outputs, and prior
+    distributions. We run the constant model first because it gives one gene-wide ω estimate,
+    which is the cleanest first pass across ~4,018 genes. Each gene needs its own XML config with
+    unique file paths so the Slurm array jobs don't overwrite each other. The MCMC output is a
+    tab-separated trace file where each row is a saved sample of (θ, κ, ω). After discarding
+    burn-in, the histogram of the ω column is the empirical posterior. We compare diabetes vs
+    non-diabetes posteriors gene by gene to find candidates for condition-specific selection.
+  </p>
+</div>
+
+<h3>Mini glossary for this meeting</h3>
+<dl class="glossary">
+  <dt>XML configuration</dt>
+  <dd>The input file format GenomegaMap uses instead of command-line flags. Controls model type, input/output paths, iterations, thinning, and priors.</dd>
+  <dt>gcat</dt>
+  <dd>The gcat-project runtime that GenomegaMap depends on. The actual executable is <code>~/gcat-project/gcat</code>. You pass it an XML file as the only argument.</dd>
+  <dt>Conjugate prior</dt>
+  <dd>A prior distribution family that, when multiplied by the likelihood, produces a posterior of the same family. Simplifies math but only works for certain model/distribution pairings.</dd>
+  <dt>Proposal distribution</dt>
+  <dd>In Metropolis-Hastings, the probability distribution used to generate candidate moves. Typically a normal distribution centered at the current parameter value.</dd>
+  <dt>Acceptance ratio</dt>
+  <dd>The probability of accepting a proposed MCMC move. Equals exp(new_loglik − old_loglik) when the proposal is symmetric. Better moves always accepted; worse moves sometimes accepted.</dd>
+  <dt>Markov chain</dt>
+  <dd>A sequence where each state depends only on the previous state, not the entire history. MCMC chains have this property: the next parameter set depends only on the current one.</dd>
+  <dt>Monte Carlo</dt>
+  <dd>Using random sampling to approximate a quantity. The "Monte Carlo" in MCMC means we are using random draws to approximate the posterior distribution.</dd>
+  <dt>Service units</dt>
+  <dd>HPC compute allocation currency. Each CPU-hour on Faster costs service units. A bad 4,018-job array with a 1-hour walltime could burn 4,018 SU in one submission.</dd>
+</dl>
+</section>
+
+<section id="cleanup" class="detail-section" data-summary="Open transcript cleanup appendix" data-tag="Appendix">
+<h2>Appendix: Transcript cleanup
+  <button class="section-complete" data-section="cleanup">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Audio corrections</span>
+  <p>
+    The audio transcript had several misheard terms. These are the important corrections.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Transcript phrase</th><th>Likely intended</th><th>Context</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>June Lou / famous statistician</td>
+      <td><strong>Jun Liu</strong></td>
+      <td>Co-author of the Bayesian inference paper with Charles Lawrence (1999). Harvard statistician.</td>
+    </tr>
+    <tr>
+      <td>Constant, individual or window</td>
+      <td><strong>Constant, independent, or window</strong></td>
+      <td>The three modes GenomegaMap can run in.</td>
+    </tr>
+    <tr>
+      <td>content ML</td>
+      <td><strong>CodonML / PAML</strong></td>
+      <td>Reference to other standard selection-inference tools.</td>
+    </tr>
+    <tr>
+      <td>Sikhs</td>
+      <td><strong>Seqs</strong></td>
+      <td>The XML parameter block defining the sequence input file (<code>&lt;seqs&gt;</code>).</td>
+    </tr>
+    <tr>
+      <td>NC, F Rand, Rant</td>
+      <td><strong>rnorm, rand()</strong></td>
+      <td>Functions in R/SciPy to draw random variates from distributions.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Careful inference</div>
+  Dataset labels and example file names from the audio are not reliable enough to treat as ground
+  truth. Use the files in the repo (especially <code>data/diabetes-cohort/README.md</code>) as the
+  authority for exact filenames and paths.
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Wednesday June 3 meeting prep · <a href="index.html">back to overview</a> · <a href="06-monday-june-1-meeting.html">review Monday's meeting</a> · <a href="12-bayesian-inference.html">Bayesian inference paper</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

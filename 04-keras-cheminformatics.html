@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hands‑on: Keras MPNN Tutorial · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="active deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#problem">1. The cheminformatics problem</a></li>
+    <li><a href="#smiles">2. SMILES — the input</a></li>
+    <li><a href="#fingerprints">3. Morgan / ECFP fingerprints</a></li>
+    <li><a href="#fp-baseline">4. A scikit‑learn baseline</a></li>
+    <li><a href="#graphs">5. Molecules as graphs</a></li>
+    <li><a href="#mpnn-theory">6. Message passing — theory</a></li>
+    <li><a href="#mpnn-keras">7. Building an MPNN in Keras</a></li>
+    <li><a href="#training">8. Training and evaluation</a></li>
+    <li><a href="#beyond-bbbp">9. Beyond BBBP — what to try</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<nav class="breadcrumb" aria-label="Where you are in the five-piece pipeline">
+  <a class="step done" href="01-dnds-bayesian.html">✓ Foundation · GenomegaMap</a>
+  <span class="sep">→</span>
+  <a class="step done" href="02-tb-selection.html">✓ Ioerger Lab · TB Scans</a>
+  <span class="sep">→</span>
+  <a class="step done" href="03-boltz2.html">✓ Latest Method · Boltz‑2</a>
+  <span class="sep">→</span>
+  <span class="step here">📍 Hands‑on · Keras MPNN</span>
+  <span class="sep">→</span>
+  <a class="step" href="05-smiles-permeability.html">SMILES · permeability</a>
+</nav>
+
+<div class="page-progress">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Hands‑on tutorial · official Keras + RDKit walkthrough</div>
+  <h1>Keras MPNN Tutorial: from SMILES to predicted activity</h1>
+  <p class="lede">
+    A neural network can't read a chemical drawing. It needs the molecule expressed as numbers —
+    fingerprints, graphs, embeddings. This page walks through the three featurization paradigms
+    in active use, builds a working Message‑Passing Neural Network in Keras for predicting
+    blood‑brain‑barrier permeability, and shows how to extend it to whatever endpoint your project
+    cares about.
+  </p>
+
+  <div class="quickstart">
+    <a class="qpill" href="#problem">🧩 The problem</a>
+    <a class="qpill" href="#fingerprints">👣 Fingerprints (start here)</a>
+    <a class="qpill" href="#mpnn-keras">🧠 Build an MPNN</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  <strong>Boltz‑2</strong> gave you predictions for one molecule at a time. This tutorial is about
+  screening <em>thousands at once</em> with simpler, faster models you train yourself. The hard
+  part isn't the neural network — it's <strong>how do you turn a chemical drawing into
+  numbers?</strong> Three paradigms exist (fingerprints, graphs, transformers); each has a sweet
+  spot. The shortest path from "I have a SMILES file" to "I have a working classifier": SMILES →
+  Morgan fingerprint → Random Forest. We build that in §4. Then we level up to a graph neural
+  network in §5–8.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Molecules are graphs/strings; biology is downstream target context.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Baselines, fingerprints, train/test evaluation, small-data limits.</td></tr>
+      <tr><th>Use this for</th><td>Use RF/fingerprint baselines before deep models.</td></tr>
+      <tr><th>Defer for now</th><td>Do not start with full MPNN code unless the project moves there.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<div class="callout tip">
+  <div class="callout-title">First-read path</div>
+  Focus on §1 (the problem), §3 (Morgan fingerprints), §4 (baseline), and §9 (project fit).
+  SMILES background, graph details, message passing, full MPNN code, and training notes are
+  optional unless the project moves into molecule modeling.
+</div>
+
+<section id="problem">
+<h2>1. The cheminformatics problem in one frame
+  <button class="section-complete" data-section="problem">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>Before learning <em>how</em> to build a molecular classifier, you need to see <em>why</em> it's
+    different from a normal ML problem. The input isn't a fixed‑size vector — it's a graph of atoms
+    with weird symmetries. And your dataset is probably tiny. Both of those constraints determine
+    every other choice on this page.</p>
+</div>
+
+<p>
+  You have a <em>set of molecules</em> with measured activity values: IC<sub>50</sub>,
+  K<sub>d</sub>, MIC, solubility, log&nbsp;P, blood‑brain‑barrier permeability, mouse
+  pharmacokinetics, anything. You want a model that, given a <em>new</em> molecule's structure,
+  predicts the activity. Three parts of this are subtle:
+</p>
+
+<ol>
+  <li><strong>The input is variable‑size and discrete.</strong> A typical small molecule has
+    10–60 heavy atoms, in arbitrary connectivity. Tabular ML doesn't apply directly.</li>
+  <li><strong>The input has symmetry.</strong> Toluene drawn left‑to‑right and right‑to‑left is
+    the same molecule. Your model better not say otherwise.</li>
+  <li><strong>You usually have a tiny labeled dataset.</strong> 200–5,000 compounds is a typical
+    in‑house assay. That's not deep‑learning territory by default — it's why featurization
+    matters so much.</li>
+</ol>
+
+<div class="diagram">
+<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrK" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="sans-serif" font-size="12" fill="currentColor" text-anchor="middle">
+    <g>
+      <rect x="20" y="60" width="140" height="80" rx="8" fill="var(--accent-glow)" stroke="currentColor"/>
+      <text x="90" y="86" font-weight="700">Molecule</text>
+      <text x="90" y="106" font-size="11">SMILES, MOL, etc.</text>
+      <text x="90" y="122" font-size="11" font-style="italic">e.g. CC(=O)Oc1ccccc1C(=O)O</text>
+    </g>
+    <g>
+      <rect x="200" y="60" width="160" height="80" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="280" y="86" font-weight="700">Featurizer</text>
+      <text x="280" y="106" font-size="11">fingerprint  /  graph  /  text</text>
+      <text x="280" y="122" font-size="11" font-style="italic">RDKit + Python</text>
+    </g>
+    <g>
+      <rect x="400" y="60" width="160" height="80" rx="8" fill="var(--accent-glow)" stroke="currentColor"/>
+      <text x="480" y="86" font-weight="700">Neural network</text>
+      <text x="480" y="106" font-size="11">RF/SVM, MLP, MPNN, transformer</text>
+    </g>
+    <g>
+      <rect x="600" y="60" width="100" height="80" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="650" y="86" font-weight="700">Prediction</text>
+      <text x="650" y="106" font-size="11">activity</text>
+      <text x="650" y="122" font-size="11" font-style="italic">log IC<tspan baseline-shift="sub" font-size="9">50</tspan>, P(toxic), …</text>
+    </g>
+  </g>
+  <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#arrK)">
+    <line x1="160" y1="100" x2="200" y2="100"/>
+    <line x1="360" y1="100" x2="400" y2="100"/>
+    <line x1="560" y1="100" x2="600" y2="100"/>
+  </g>
+</svg>
+<div class="caption">Figure 1. The pipeline. The middle box (featurizer) is where most of the variance in performance lives.</div>
+</div>
+</section>
+
+
+<section id="smiles" class="detail-section" data-summary="Open SMILES format background" data-tag="Background">
+<h2>2. SMILES — the input format
+  <button class="section-complete" data-section="smiles">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>SMILES is the universal interchange format for chemistry. Every public dataset ships in it,
+    every cheminformatics tool reads it, every paper quotes it. This section explains how to read
+    those strings before using them as machine-learning inputs.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  SMILES is just a way of writing a molecule as a one‑line string — like a flattened drawing. You
+  walk along the atoms, write each element, use parentheses for branches, numbers to mark where
+  rings close. Aspirin is <code>CC(=O)Oc1ccccc1C(=O)O</code>. After two or three examples it stops
+  looking like noise and starts looking like a molecular formula on a leash.
+</div>
+
+<p>
+  <strong>SMILES</strong> (Simplified Molecular Input Line Entry System) is a text encoding for a
+  molecular graph. It's how 99% of molecular data is shipped.
+</p>
+
+<table>
+  <thead><tr><th>SMILES</th><th>Molecule</th><th>What's going on</th></tr></thead>
+  <tbody>
+    <tr><td><code>CCO</code></td><td>Ethanol</td><td>three carbons read as C–C–O (Hs implicit)</td></tr>
+    <tr><td><code>c1ccccc1</code></td><td>Benzene</td><td>lowercase = aromatic; numbered atoms close the ring</td></tr>
+    <tr><td><code>CC(=O)Oc1ccccc1C(=O)O</code></td><td>Aspirin</td><td>branches in parens; <code>=</code>, <code>#</code> for double / triple bonds</td></tr>
+    <tr><td><code>O=C1CCC(=O)N1</code></td><td>Succinimide</td><td>numbered atom <code>1</code> begins ring; <code>N</code> closes it</td></tr>
+    <tr><td><code>CC[C@H](C)O</code></td><td>(S)‑butan‑2‑ol</td><td><code>@</code> / <code>@@</code> encode chirality</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">SMILES are not unique</div>
+  <code>CCO</code>, <code>OCC</code>, and <code>C(C)O</code> all denote ethanol but are distinct
+  <em>strings</em>. RDKit's <em>canonical SMILES</em> normalizes the atom traversal order so
+  every chemically distinct molecule has one canonical string. Always run inputs through
+  <code>Chem.MolToSmiles(Chem.MolFromSmiles(s))</code> before deduplicating a dataset; otherwise
+  you'll have hidden duplicates poisoning your splits.
+</div>
+
+<h3>RDKit — the workhorse</h3>
+<p>
+  RDKit is the open‑source cheminformatics toolkit. It parses SMILES, sanitizes molecules, runs
+  descriptor calculations, generates 2D/3D coordinates, and computes the fingerprints we discuss
+  next. It's a Python wrapper around C++; install with <code>pip install rdkit-pypi</code>.
+</p>
+
+<pre><code><span class="tok-k">from</span> rdkit <span class="tok-k">import</span> Chem
+<span class="tok-k">from</span> rdkit.Chem <span class="tok-k">import</span> Draw
+
+mol = Chem.<span class="tok-f">MolFromSmiles</span>(<span class="tok-s">"CC(=O)Oc1ccccc1C(=O)O"</span>)
+<span class="tok-c"># mol is now a graph: atoms, bonds, rings, aromaticity, etc.</span>
+<span class="tok-f">print</span>(mol.<span class="tok-f">GetNumAtoms</span>())                <span class="tok-c"># 13 heavy atoms</span>
+<span class="tok-f">print</span>(Chem.<span class="tok-f">MolToSmiles</span>(mol))            <span class="tok-c"># canonical: CC(=O)Oc1ccccc1C(=O)O</span>
+Draw.<span class="tok-f">MolToFile</span>(mol, <span class="tok-s">"aspirin.png"</span>)</code></pre>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">SMILES playground</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">Pick a molecule (or type a SMILES). The diagram is a simple 2D layout; you can see how the string maps to a graph.</p>
+  <div class="controls">
+    <div class="control" style="flex:1;min-width:280px">
+      <label>SMILES</label>
+      <input id="smInput" type="text" value="CC(=O)Oc1ccccc1C(=O)O" style="width:100%"/>
+    </div>
+    <div class="control">
+      <label>preset</label>
+      <select id="smPreset">
+        <option value="CCO">ethanol</option>
+        <option value="c1ccccc1">benzene</option>
+        <option value="CC(=O)Oc1ccccc1C(=O)O" selected>aspirin</option>
+        <option value="CN1C=NC2=C1C(=O)N(C(=O)N2C)C">caffeine</option>
+        <option value="CC(C)Cc1ccc(cc1)C(C)C(=O)O">ibuprofen</option>
+        <option value="OC(=O)C1=CC=C(O)C=C1">4‑hydroxybenzoic acid</option>
+        <option value="CC(C)(C)NCC(O)c1ccc(O)c(CO)c1">salbutamol</option>
+        <option value="CC1=C(C(=O)NC(=O)N1)F">fluorouracil</option>
+      </select>
+    </div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="smCanvas" width="700" height="280"></canvas>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-label">heavy atoms</span><span class="stat-value" id="smN">—</span></div>
+    <div class="stat"><span class="stat-label">bonds</span><span class="stat-value" id="smB">—</span></div>
+    <div class="stat"><span class="stat-label">rings (incl. aromatic)</span><span class="stat-value" id="smR">—</span></div>
+    <div class="stat"><span class="stat-label">parse status</span><span class="stat-value" id="smOK">—</span></div>
+  </div>
+</div>
+</section>
+
+
+<section id="fingerprints">
+<h2>3. Morgan / ECFP4 fingerprints — the strong baseline
+  <button class="section-complete" data-section="fingerprints">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>If you read only one section on this page, make it this one. Morgan fingerprints are the
+    workhorse representation in cheminformatics — they're <strong>fast, well‑understood, and very
+    hard to beat</strong> on small datasets. Every paper benchmarks against them. Every senior
+    chemist has opinions about them.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Walk through a molecule and write down every "neighborhood pattern" you see — this carbon plus
+  its two neighbors, that nitrogen plus its three neighbors, etc. Hash each pattern to a number.
+  Make a 2048‑bit vector with a 1 wherever a pattern's hash landed. Two molecules with similar
+  patterns end up with similar vectors. Boom — the molecule is now a fixed‑size vector you can
+  feed into any normal ML algorithm.
+</div>
+
+<p>
+  A <strong>Morgan fingerprint</strong> (also called <strong>Extended‑Connectivity Fingerprint</strong>,
+  ECFP) is the most useful single representation in cheminformatics. Conceptually, it's a hash of
+  every <em>circular substructure</em> in the molecule out to a fixed radius:
+</p>
+
+<ol>
+  <li>Start with each atom's identity (element, charge, degree, etc.) as its initial hash.</li>
+  <li>Round 1: each atom's new hash = hash(its old hash + sorted hashes of its neighbors).</li>
+  <li>Round 2: same, but neighbors now carry round‑1 information.</li>
+  <li>… up to <em>radius</em> rounds. ECFP4 means radius = 2 (the "4" is the diameter, 2·2).</li>
+  <li>Collect all the hashes generated at every round; fold them into a fixed‑size bit vector
+    (1024 or 2048 bits is standard).</li>
+</ol>
+
+<div class="callout">
+  <div class="callout-title">What you've built</div>
+  A 2048‑dim binary vector where bit <em>i</em> is on if the molecule contains a substructure
+  whose hash hits bit <em>i</em>. Two molecules with similar substructures end up with similar
+  fingerprints; <em>Tanimoto similarity</em> on the fingerprints is the gold‑standard chemical
+  similarity metric.
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Morgan algorithm walkthrough</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">A toy molecule with 5 atoms. Click "Round +1" to grow the neighborhood each atom is "aware of." After enough rounds, every atom's hash captures its full local environment.</p>
+  <div class="controls">
+    <button class="btn" id="morganStep">Round +1</button>
+    <button class="btn secondary" id="morganReset">Reset</button>
+    <div class="stat"><span class="stat-label">round (radius)</span><span class="stat-value" id="morganR">0</span></div>
+    <div class="stat"><span class="stat-label">unique features so far</span><span class="stat-value" id="morganU">5</span></div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="morganCanvas" width="700" height="260"></canvas>
+  </div>
+  <p class="faint">Each colored ring around an atom shows what's inside that atom's "knowledge horizon" at the current round. With radius 2, an atom encodes itself + neighbors + neighbors‑of‑neighbors.</p>
+</div>
+
+<h3>Why fingerprints work</h3>
+<p>
+  Activity is largely a function of <em>substructures</em>: pharmacophores, hydrogen‑bond donors,
+  hydrophobic patches. A fingerprint is exactly a "what substructures does this molecule have"
+  vector. Linear models, random forests, and small MLPs can read it directly. For most projects
+  with &lt;5,000 datapoints, a Morgan‑fingerprint random forest beats every fancy graph network
+  you can throw at it.
+</p>
+
+<h3>Tanimoto similarity</h3>
+<p>For two binary fingerprints A, B (with <em>|·|</em> = number of "on" bits):</p>
+<div class="math">T(A, B) = | A ∧ B | / | A ∨ B |</div>
+<p>
+  Bounded in [0, 1]. T = 1 means identical fingerprints (close to identical molecules); T &lt; 0.3
+  is "different scaffold." This is the search engine that powers Tanimoto‑based virtual screening,
+  duplicate detection, and dataset clustering.
+</p>
+</section>
+
+
+<section id="fp-baseline">
+<h2>4. A scikit‑learn baseline you should always run first
+  <button class="section-complete" data-section="fp-baseline">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>This section is <strong>the minimum viable model for any cheminformatics project</strong>. 30
+    lines of code, ~10 seconds to train, often matches everything fancier. The rule in the field is
+    "don't even submit a paper without comparing to this baseline." Your future self thanks you for
+    running it on day one.</p>
+</div>
+
+<div class="watch-out">
+  <strong>Common rookie mistake:</strong> jumping straight to a graph neural network because it
+  sounds cooler. On a 1,000‑compound dataset the GNN almost always loses to a Random Forest on
+  Morgan fingerprints — there isn't enough data to train a deep model from scratch. Always run the
+  baseline first; only escalate if you have a clear reason (large dataset, geometry‑dependent
+  property, transfer learning available).
+</div>
+
+<p>
+  Before reaching for graph neural networks, build a Morgan fingerprint + Random Forest baseline.
+  It's 30 lines of code, takes 10 seconds to train, and routinely matches state‑of‑the‑art on
+  small datasets. If you can't beat it, your fancy model isn't ready for production.
+</p>
+
+<pre><code><span class="tok-k">from</span> rdkit <span class="tok-k">import</span> Chem, DataStructs
+<span class="tok-k">from</span> rdkit.Chem <span class="tok-k">import</span> rdFingerprintGenerator
+<span class="tok-k">from</span> sklearn.ensemble <span class="tok-k">import</span> RandomForestClassifier
+<span class="tok-k">from</span> sklearn.model_selection <span class="tok-k">import</span> train_test_split
+<span class="tok-k">from</span> sklearn.metrics <span class="tok-k">import</span> roc_auc_score
+<span class="tok-k">import</span> numpy <span class="tok-k">as</span> np
+<span class="tok-k">import</span> pandas <span class="tok-k">as</span> pd
+
+<span class="tok-c"># 1. featurizer</span>
+fpgen = rdFingerprintGenerator.<span class="tok-f">GetMorganGenerator</span>(radius=<span class="tok-n">2</span>, fpSize=<span class="tok-n">2048</span>)
+<span class="tok-k">def</span> <span class="tok-f">smi_to_fp</span>(smi):
+    mol = Chem.<span class="tok-f">MolFromSmiles</span>(smi)
+    <span class="tok-k">if</span> mol <span class="tok-k">is</span> <span class="tok-k">None</span>: <span class="tok-k">return</span> <span class="tok-k">None</span>
+    fp = fpgen.<span class="tok-f">GetFingerprint</span>(mol)
+    arr = np.<span class="tok-f">zeros</span>(<span class="tok-n">2048</span>, dtype=np.uint8)
+    DataStructs.<span class="tok-f">ConvertToNumpyArray</span>(fp, arr)
+    <span class="tok-k">return</span> arr
+
+<span class="tok-c"># 2. data</span>
+df = pd.<span class="tok-f">read_csv</span>(<span class="tok-s">"BBBP.csv"</span>)
+df[<span class="tok-s">"fp"</span>] = df.smiles.<span class="tok-f">apply</span>(smi_to_fp)
+df = df.<span class="tok-f">dropna</span>(subset=[<span class="tok-s">"fp"</span>])
+X = np.<span class="tok-f">stack</span>(df.fp.values)
+y = df.p_np.values
+
+X_tr, X_te, y_tr, y_te = <span class="tok-f">train_test_split</span>(X, y, test_size=<span class="tok-n">0.2</span>, random_state=<span class="tok-n">42</span>, stratify=y)
+
+<span class="tok-c"># 3. model</span>
+clf = <span class="tok-f">RandomForestClassifier</span>(n_estimators=<span class="tok-n">500</span>, n_jobs=-<span class="tok-n">1</span>, random_state=<span class="tok-n">42</span>)
+clf.<span class="tok-f">fit</span>(X_tr, y_tr)
+
+<span class="tok-c"># 4. evaluate</span>
+proba = clf.<span class="tok-f">predict_proba</span>(X_te)[:, <span class="tok-n">1</span>]
+<span class="tok-f">print</span>(<span class="tok-s">f"Test AUC = </span>{<span class="tok-f">roc_auc_score</span>(y_te, proba):.<span class="tok-n">3</span>f}<span class="tok-s">"</span>)
+<span class="tok-c"># Typically ~0.91 on BBBP — a strong baseline.</span></code></pre>
+
+<div class="callout good">
+  <div class="callout-title">Rule of thumb</div>
+  Always run this baseline before training an MPNN. If your MPNN's test AUC is within 1% of
+  your random‑forest's, the MPNN isn't pulling its weight; either (a) the dataset is too small,
+  (b) you have a featurization bug, or (c) the activity really is captured by simple
+  substructures and you don't need deep learning.
+</div>
+</section>
+
+
+<section id="graphs" class="detail-section" data-summary="Open molecular graph representation details" data-tag="Model depth">
+<h2>5. Molecules as graphs (when fingerprints aren't enough)
+  <button class="section-complete" data-section="graphs">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>Fingerprints throw away <em>where things are</em>. For some properties (e.g., binding affinity
+    to a specific pocket) location matters and we need to keep the full graph. This section teaches
+    you to convert a SMILES string into the (atom features, bond features, adjacency) triplet that
+    every graph neural network expects.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  A molecule is literally a graph: atoms = nodes, bonds = edges. We just need to write that down in
+  a way the GPU likes. Each atom gets a feature vector ("I'm a carbon, sp³, 2 hydrogens, in a ring");
+  each bond gets one too ("I'm a single bond, not aromatic"); plus a list of which atoms are
+  connected. That's it. The model can now do "convolutions" on the graph the same way it would on
+  an image.
+</div>
+
+<p>
+  Fingerprints flatten a molecule to a bag of substructures. They lose <em>positional</em>
+  information: where in the molecule a given hydroxyl sits relative to a given aromatic ring is
+  irrelevant to the fingerprint, even though it can flip activity. For tasks where geometry
+  matters more — e.g., pose‑aware affinity, or properties driven by long‑range substructures —
+  it pays to keep the molecule as a graph.
+</p>
+
+<h3>The graph object</h3>
+<dl class="glossary">
+  <dt>Nodes (atoms)</dt><dd>One per heavy atom. Features: element type one‑hot, hybridization, degree, formal charge, number of attached Hs, aromaticity flag, ring membership, etc. Typical dim: 30–80.</dd>
+  <dt>Edges (bonds)</dt><dd>One per bond. Features: bond type one‑hot (single/double/triple/aromatic), conjugation flag, stereochemistry. Typical dim: 6–12.</dd>
+  <dt>Adjacency</dt><dd>Pairs of (source atom, target atom) indices, both directions. A bond between atoms 3 and 7 contributes two edges: (3, 7) and (7, 3).</dd>
+  <dt>Self‑loops</dt><dd>Optionally include (i, i) edges with a special "no bond" feature so each node sees itself in its own message aggregation.</dd>
+</dl>
+
+<h3>Atom and bond featurizers (Keras MPNN tutorial style)</h3>
+<pre><code><span class="tok-k">class</span> <span class="tok-f">AtomFeaturizer</span>:
+    <span class="tok-k">def</span> __init__(self, allowable_sets):
+        self.dim = <span class="tok-n">0</span>
+        self.mapping = {}
+        <span class="tok-k">for</span> name, allowed <span class="tok-k">in</span> allowable_sets.<span class="tok-f">items</span>():
+            self.mapping[name] = {v: self.dim + i <span class="tok-k">for</span> i, v <span class="tok-k">in</span> <span class="tok-f">enumerate</span>(<span class="tok-f">sorted</span>(allowed))}
+            self.dim += <span class="tok-f">len</span>(allowed)
+
+    <span class="tok-k">def</span> <span class="tok-f">__call__</span>(self, atom):
+        x = np.<span class="tok-f">zeros</span>(self.dim, dtype=np.float32)
+        <span class="tok-k">for</span> name, mp <span class="tok-k">in</span> self.mapping.<span class="tok-f">items</span>():
+            v = <span class="tok-f">getattr</span>(self, name)(atom)
+            <span class="tok-k">if</span> v <span class="tok-k">in</span> mp: x[mp[v]] = <span class="tok-n">1.0</span>
+        <span class="tok-k">return</span> x
+
+    <span class="tok-k">def</span> <span class="tok-f">symbol</span>(self, atom):       <span class="tok-k">return</span> atom.<span class="tok-f">GetSymbol</span>()
+    <span class="tok-k">def</span> <span class="tok-f">n_valence</span>(self, atom):    <span class="tok-k">return</span> atom.<span class="tok-f">GetTotalValence</span>()
+    <span class="tok-k">def</span> <span class="tok-f">n_hydrogens</span>(self, atom):  <span class="tok-k">return</span> atom.<span class="tok-f">GetTotalNumHs</span>()
+    <span class="tok-k">def</span> <span class="tok-f">hybridization</span>(self, atom):<span class="tok-k">return</span> atom.<span class="tok-f">GetHybridization</span>().name.<span class="tok-f">lower</span>()
+
+atom_featurizer = <span class="tok-f">AtomFeaturizer</span>({
+    <span class="tok-s">"symbol"</span>:        {<span class="tok-s">"B"</span>,<span class="tok-s">"Br"</span>,<span class="tok-s">"C"</span>,<span class="tok-s">"Ca"</span>,<span class="tok-s">"Cl"</span>,<span class="tok-s">"F"</span>,<span class="tok-s">"H"</span>,<span class="tok-s">"I"</span>,<span class="tok-s">"N"</span>,<span class="tok-s">"Na"</span>,<span class="tok-s">"O"</span>,<span class="tok-s">"P"</span>,<span class="tok-s">"S"</span>},
+    <span class="tok-s">"n_valence"</span>:     {<span class="tok-n">0</span>,<span class="tok-n">1</span>,<span class="tok-n">2</span>,<span class="tok-n">3</span>,<span class="tok-n">4</span>,<span class="tok-n">5</span>,<span class="tok-n">6</span>},
+    <span class="tok-s">"n_hydrogens"</span>:   {<span class="tok-n">0</span>,<span class="tok-n">1</span>,<span class="tok-n">2</span>,<span class="tok-n">3</span>,<span class="tok-n">4</span>},
+    <span class="tok-s">"hybridization"</span>: {<span class="tok-s">"s"</span>,<span class="tok-s">"sp"</span>,<span class="tok-s">"sp2"</span>,<span class="tok-s">"sp3"</span>},
+})  <span class="tok-c"># dim = 13 + 7 + 5 + 4 = 29</span></code></pre>
+
+<p>The bond featurizer is simpler: bond type and conjugation, plus an extra slot for "no bond" used in self‑loops.</p>
+</section>
+
+
+<section id="mpnn-theory" class="detail-section" data-summary="Open message-passing theory" data-tag="Advanced">
+<h2>6. Message passing — what's actually happening
+  <button class="section-complete" data-section="mpnn-theory">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters · math heavy</span>
+  <p>This section is the <strong>theory</strong> behind the Keras code in §7. If you just want
+    working code, skim the diagram and skip to §7. If you want to know what the layers actually
+    compute (or to debug a misbehaving model), read carefully.</p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Each atom starts knowing only itself. In <em>round 1</em> it gets a message from each neighbor —
+  a learned mix of "hey, I'm a nitrogen connected by a double bond." After round 1, every atom
+  knows itself + its 1‑hop neighborhood. After round 2, it knows the 2‑hop neighborhood. After T
+  rounds, T‑hop. Then we sum up all atom states into a single molecule‑level vector and predict.
+  That's it — the math just formalizes "tell your neighbors who you are, listen to them, repeat."
+</div>
+
+<p>
+  A <strong>Message Passing Neural Network</strong> (MPNN, Gilmer et al. 2017) is a graph neural
+  network customized for molecules. It generalizes the "convolution" idea from images to graphs:
+  each atom's representation is iteratively updated from its neighbors.
+</p>
+
+<p>The recipe for a single layer / step <em>t</em> → <em>t</em>+1:</p>
+
+<div class="math">
+  m<sub>v</sub><sup>t+1</sup> = Σ<sub>w ∈ N(v)</sub> M<sub>t</sub>( h<sub>v</sub><sup>t</sup>, h<sub>w</sub><sup>t</sup>, e<sub>vw</sub> )
+</div>
+<div class="math">
+  h<sub>v</sub><sup>t+1</sup> = U<sub>t</sub>( h<sub>v</sub><sup>t</sup>, m<sub>v</sub><sup>t+1</sup> )
+</div>
+
+<p>where</p>
+<ul>
+  <li>h<sub>v</sub><sup>t</sup> is the hidden state of atom <em>v</em> at step <em>t</em>,</li>
+  <li>e<sub>vw</sub> is the edge feature between v and w,</li>
+  <li>M<sub>t</sub> is a learned <em>message function</em> (usually MLP),</li>
+  <li>U<sub>t</sub> is a learned <em>update function</em> (often a GRU cell — pulls the new
+    aggregated message into the hidden state in a way reminiscent of an RNN's update).</li>
+</ul>
+
+<p>After T steps (typical T = 3–5), each atom's hidden state has aggregated information from its
+T‑hop neighborhood. Then a <em>readout</em> function pools the atom states into a single
+graph‑level vector:</p>
+
+<div class="math">
+  ŷ = R( { h<sub>v</sub><sup>T</sup> : v ∈ V } )
+</div>
+
+<p>Common readouts: sum, mean, max, attention‑weighted, set transformer.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- atoms -->
+  <g font-family="sans-serif" font-size="13" fill="currentColor" stroke="currentColor" stroke-width="0">
+    <!-- step labels -->
+    <text x="115" y="30" text-anchor="middle" font-weight="700">t = 0</text>
+    <text x="345" y="30" text-anchor="middle" font-weight="700">t = 1</text>
+    <text x="575" y="30" text-anchor="middle" font-weight="700">t = 2</text>
+
+    <!-- molecule positions: simple 5-atom chain at three time steps -->
+    <g transform="translate(0, 60)">
+      <!-- t=0: each atom 'knows' only itself -->
+      <circle cx="60"  cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="100" cy="80"  r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="140" cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="180" cy="80"  r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="220" cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="60" y1="120" x2="100" y2="80" stroke="currentColor"/>
+      <line x1="100" y1="80" x2="140" y2="120" stroke="currentColor"/>
+      <line x1="140" y1="120" x2="180" y2="80" stroke="currentColor"/>
+      <line x1="180" y1="80" x2="220" y2="120" stroke="currentColor"/>
+    </g>
+
+    <g transform="translate(230, 60)">
+      <!-- t=1: each atom + nearest neighbors -->
+      <circle cx="100" cy="100" r="38" fill="url(#ringGrad)" opacity="0.45"/>
+      <circle cx="60"  cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="100" cy="80"  r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="140" cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="180" cy="80"  r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="220" cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="60" y1="120" x2="100" y2="80" stroke="currentColor"/>
+      <line x1="100" y1="80" x2="140" y2="120" stroke="currentColor"/>
+      <line x1="140" y1="120" x2="180" y2="80" stroke="currentColor"/>
+      <line x1="180" y1="80" x2="220" y2="120" stroke="currentColor"/>
+      <text x="100" y="200" text-anchor="middle" font-size="11" font-style="italic">central atom now sees its 1‑hop ball</text>
+    </g>
+
+    <g transform="translate(460, 60)">
+      <!-- t=2: each atom + 2-hop -->
+      <circle cx="140" cy="120" r="78" fill="url(#ringGrad)" opacity="0.55"/>
+      <circle cx="60"  cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="100" cy="80"  r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="140" cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="180" cy="80"  r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="220" cy="120" r="14" fill="var(--accent-glow)" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="60" y1="120" x2="100" y2="80" stroke="currentColor"/>
+      <line x1="100" y1="80" x2="140" y2="120" stroke="currentColor"/>
+      <line x1="140" y1="120" x2="180" y2="80" stroke="currentColor"/>
+      <line x1="180" y1="80" x2="220" y2="120" stroke="currentColor"/>
+      <text x="140" y="220" text-anchor="middle" font-size="11" font-style="italic">central atom sees its 2‑hop ball</text>
+    </g>
+
+    <!-- readout -->
+    <g transform="translate(0, 270)">
+      <rect x="200" y="0" width="300" height="40" rx="8" fill="var(--bg-elev-2)" stroke="currentColor"/>
+      <text x="350" y="25" text-anchor="middle" font-weight="700">readout: pool atoms → one graph vector → predict y</text>
+    </g>
+  </g>
+</svg>
+<div class="caption">Figure 2. After T steps of message passing, each atom's representation has aggregated information from its T‑hop ball — the same information ECFP encodes statically, but now with learned weights tuned to your endpoint.</div>
+</div>
+
+<h3>The relationship to ECFP fingerprints</h3>
+<p>
+  An ECFP4 fingerprint is essentially a hand‑coded T = 2 message passing scheme: each atom's
+  "round‑t hash" = combine(its own label, neighbors' round‑(t‑1) hashes). The MPNN replaces the
+  hash function with a learned MLP, and instead of folding into a fixed bit vector, it pools
+  through a differentiable readout. So you can think of the MPNN as a continuous, end‑to‑end
+  trainable generalization of the Morgan fingerprint algorithm.
+</p>
+</section>
+
+
+<section id="mpnn-keras" class="detail-section" data-summary="Open full Keras MPNN code walkthrough" data-tag="Code depth">
+<h2>7. Building an MPNN in Keras — full working code
+  <button class="section-complete" data-section="mpnn-keras">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>This is the <strong>"copy this and modify it for your project"</strong> section. The full,
+    working code for a graph neural network on the BBBP benchmark — broken into digestible tabs.
+    If you're going to write any code from this page, start here.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout-title">How to read this section</div>
+  Read the tabs left‑to‑right: <strong>EdgeNetwork</strong> (the inner gear) → <strong>MessagePassing</strong>
+  (wraps it T times) → <strong>Readout</strong> (pools to one vector) → <strong>Full model</strong>
+  (assembles all three) → <strong>Featurization</strong> (turns SMILES into the tensors the model
+  expects). The first three implement the math from §6; the last two are plumbing.
+</div>
+
+<p>
+  This is adapted from the official Keras tutorial (Bresson &amp; Beretta) for predicting
+  blood‑brain‑barrier permeability (BBBP) — a binary classification task with 2,050 molecules. The
+  same architecture works for any binary or regression endpoint: just change the final layer and
+  loss.
+</p>
+
+<div class="tabs tab-group">
+  <button class="tab active">EdgeNetwork</button>
+  <button class="tab">MessagePassing</button>
+  <button class="tab">Readout</button>
+  <button class="tab">Full model</button>
+  <button class="tab">Featurization</button>
+</div>
+
+<div class="tabpanel active">
+<h4>EdgeNetwork — turns bond features into a per‑edge transformation matrix</h4>
+<p>The clever idea: the message from atom <em>w</em> to atom <em>v</em> isn't just a function of <em>h<sub>w</sub></em>; it depends on the bond <em>e<sub>vw</sub></em>. So we let the bond features generate a small linear transformation that gets applied to <em>h<sub>w</sub></em>.</p>
+<pre><code><span class="tok-k">class</span> <span class="tok-f">EdgeNetwork</span>(layers.Layer):
+    <span class="tok-k">def</span> <span class="tok-f">build</span>(self, input_shape):
+        self.atom_dim = input_shape[<span class="tok-n">0</span>][-<span class="tok-n">1</span>]
+        self.bond_dim = input_shape[<span class="tok-n">1</span>][-<span class="tok-n">1</span>]
+        self.kernel = self.<span class="tok-f">add_weight</span>(
+            shape=(self.bond_dim, self.atom_dim * self.atom_dim),
+            initializer=<span class="tok-s">"glorot_uniform"</span>, name=<span class="tok-s">"kernel"</span>)
+        self.bias   = self.<span class="tok-f">add_weight</span>(
+            shape=(self.atom_dim * self.atom_dim,),
+            initializer=<span class="tok-s">"zeros"</span>, name=<span class="tok-s">"bias"</span>)
+
+    <span class="tok-k">def</span> <span class="tok-f">call</span>(self, inputs):
+        atom, bond, pair = inputs                             <span class="tok-c"># pair = (i, j) indices</span>
+        bond = tf.<span class="tok-f">matmul</span>(bond, self.kernel) + self.bias
+        bond = tf.<span class="tok-f">reshape</span>(bond, (-<span class="tok-n">1</span>, self.atom_dim, self.atom_dim))
+        atom_neighbors = tf.<span class="tok-f">gather</span>(atom, pair[:, <span class="tok-n">1</span>])      <span class="tok-c"># source atom of each edge</span>
+        atom_neighbors = tf.<span class="tok-f">expand_dims</span>(atom_neighbors, axis=-<span class="tok-n">1</span>)
+        msg = tf.<span class="tok-f">matmul</span>(bond, atom_neighbors)                <span class="tok-c"># (E, atom_dim, 1)</span>
+        msg = tf.<span class="tok-f">squeeze</span>(msg, axis=-<span class="tok-n">1</span>)
+        <span class="tok-c"># sum messages by destination atom</span>
+        <span class="tok-k">return</span> tf.math.<span class="tok-f">unsorted_segment_sum</span>(
+            msg, pair[:, <span class="tok-n">0</span>], num_segments=tf.<span class="tok-f">shape</span>(atom)[<span class="tok-n">0</span>])</code></pre>
+</div>
+
+<div class="tabpanel">
+<h4>MessagePassing — repeats the EdgeNetwork T times with a GRU update</h4>
+<pre><code><span class="tok-k">class</span> <span class="tok-f">MessagePassing</span>(layers.Layer):
+    <span class="tok-k">def</span> __init__(self, units, steps=<span class="tok-n">4</span>, **kw):
+        <span class="tok-f">super</span>().__init__(**kw)
+        self.units = units; self.steps = steps
+
+    <span class="tok-k">def</span> <span class="tok-f">build</span>(self, input_shape):
+        atom_dim = input_shape[<span class="tok-n">0</span>][-<span class="tok-n">1</span>]
+        self.message = <span class="tok-f">EdgeNetwork</span>()
+        self.pad = <span class="tok-f">max</span>(<span class="tok-n">0</span>, self.units - atom_dim)
+        self.update = layers.<span class="tok-f">GRUCell</span>(atom_dim + self.pad)
+
+    <span class="tok-k">def</span> <span class="tok-f">call</span>(self, inputs):
+        atom, bond, pair = inputs
+        atom = tf.<span class="tok-f">pad</span>(atom, [(<span class="tok-n">0</span>, <span class="tok-n">0</span>), (<span class="tok-n">0</span>, self.pad)])  <span class="tok-c"># pad to GRU width</span>
+        <span class="tok-k">for</span> _ <span class="tok-k">in</span> <span class="tok-f">range</span>(self.steps):
+            agg = self.<span class="tok-f">message</span>([atom, bond, pair])
+            atom, _ = self.<span class="tok-f">update</span>(agg, atom)               <span class="tok-c"># GRU mixes new + old state</span>
+        <span class="tok-k">return</span> atom</code></pre>
+</div>
+
+<div class="tabpanel">
+<h4>TransformerEncoderReadout — pools the atom states with attention</h4>
+<p>Sum/mean readouts work but lose the ability to weight important atoms. A small transformer encoder over the (padded) atom set gives the model a learnable readout.</p>
+<pre><code><span class="tok-k">class</span> <span class="tok-f">TransformerEncoderReadout</span>(layers.Layer):
+    <span class="tok-k">def</span> __init__(self, num_heads=<span class="tok-n">8</span>, embed_dim=<span class="tok-n">64</span>, dense_dim=<span class="tok-n">512</span>, batch_size=<span class="tok-n">32</span>, **kw):
+        <span class="tok-f">super</span>().__init__(**kw)
+        self.partition_padding = <span class="tok-f">PartitionPadding</span>(batch_size)
+        self.attn   = layers.<span class="tok-f">MultiHeadAttention</span>(num_heads, embed_dim)
+        self.dense  = keras.<span class="tok-f">Sequential</span>([layers.<span class="tok-f">Dense</span>(dense_dim, activation=<span class="tok-s">"relu"</span>),
+                                    layers.<span class="tok-f">Dense</span>(embed_dim)])
+        self.norm1  = layers.<span class="tok-f">LayerNormalization</span>()
+        self.norm2  = layers.<span class="tok-f">LayerNormalization</span>()
+        self.pool   = layers.<span class="tok-f">GlobalAveragePooling1D</span>()
+
+    <span class="tok-k">def</span> <span class="tok-f">call</span>(self, inputs):
+        x = self.<span class="tok-f">partition_padding</span>(inputs)
+        mask = tf.<span class="tok-f">reduce_any</span>(tf.not_equal(x, <span class="tok-n">0.0</span>), axis=-<span class="tok-n">1</span>)[:, <span class="tok-k">None</span>, <span class="tok-k">None</span>, :]
+        a = self.<span class="tok-f">attn</span>(x, x, attention_mask=mask)
+        h = self.<span class="tok-f">norm1</span>(x + a)
+        h = self.<span class="tok-f">norm2</span>(h + self.<span class="tok-f">dense</span>(h))
+        <span class="tok-k">return</span> self.<span class="tok-f">pool</span>(h)</code></pre>
+</div>
+
+<div class="tabpanel">
+<h4>The MPNN model itself</h4>
+<pre><code><span class="tok-k">def</span> <span class="tok-f">MPNNModel</span>(atom_dim, bond_dim, batch_size=<span class="tok-n">32</span>,
+              message_units=<span class="tok-n">64</span>, message_steps=<span class="tok-n">4</span>,
+              num_attn_heads=<span class="tok-n">8</span>, dense_units=<span class="tok-n">512</span>):
+    atom_in       = layers.<span class="tok-f">Input</span>((atom_dim,), dtype=<span class="tok-s">"float32"</span>, name=<span class="tok-s">"atom_features"</span>)
+    bond_in       = layers.<span class="tok-f">Input</span>((bond_dim,), dtype=<span class="tok-s">"float32"</span>, name=<span class="tok-s">"bond_features"</span>)
+    pair_in       = layers.<span class="tok-f">Input</span>((<span class="tok-n">2</span>,),         dtype=<span class="tok-s">"int32"</span>,   name=<span class="tok-s">"pair_indices"</span>)
+    mol_in        = layers.<span class="tok-f">Input</span>((),            dtype=<span class="tok-s">"int32"</span>,   name=<span class="tok-s">"molecule_indicator"</span>)
+
+    h = <span class="tok-f">MessagePassing</span>(message_units, message_steps)([atom_in, bond_in, pair_in])
+    g = <span class="tok-f">TransformerEncoderReadout</span>(num_attn_heads, message_units, dense_units, batch_size)([h, mol_in])
+    g = layers.<span class="tok-f">Dense</span>(dense_units, activation=<span class="tok-s">"relu"</span>)(g)
+    out = layers.<span class="tok-f">Dense</span>(<span class="tok-n">1</span>, activation=<span class="tok-s">"sigmoid"</span>)(g)
+
+    <span class="tok-k">return</span> keras.<span class="tok-f">Model</span>(inputs=[atom_in, bond_in, pair_in, mol_in], outputs=out)
+
+mpnn = <span class="tok-f">MPNNModel</span>(atom_dim=<span class="tok-n">29</span>, bond_dim=<span class="tok-n">7</span>)
+mpnn.<span class="tok-f">compile</span>(
+    loss=keras.losses.<span class="tok-f">BinaryCrossentropy</span>(),
+    optimizer=keras.optimizers.<span class="tok-f">Adam</span>(<span class="tok-n">5e-4</span>),
+    metrics=[keras.metrics.<span class="tok-f">AUC</span>(name=<span class="tok-s">"AUC"</span>)],
+)</code></pre>
+</div>
+
+<div class="tabpanel">
+<h4>SMILES → batched graph tensors</h4>
+<pre><code><span class="tok-k">def</span> <span class="tok-f">graph_from_molecule</span>(mol):
+    af, bf, pi = [], [], []
+    <span class="tok-k">for</span> atom <span class="tok-k">in</span> mol.<span class="tok-f">GetAtoms</span>():
+        af.<span class="tok-f">append</span>(<span class="tok-f">atom_featurizer</span>(atom))
+        pi.<span class="tok-f">append</span>([atom.<span class="tok-f">GetIdx</span>(), atom.<span class="tok-f">GetIdx</span>()])         <span class="tok-c"># self loop</span>
+        bf.<span class="tok-f">append</span>(<span class="tok-f">bond_featurizer</span>(<span class="tok-k">None</span>))
+        <span class="tok-k">for</span> nb <span class="tok-k">in</span> atom.<span class="tok-f">GetNeighbors</span>():
+            bond = mol.<span class="tok-f">GetBondBetweenAtoms</span>(atom.<span class="tok-f">GetIdx</span>(), nb.<span class="tok-f">GetIdx</span>())
+            pi.<span class="tok-f">append</span>([atom.<span class="tok-f">GetIdx</span>(), nb.<span class="tok-f">GetIdx</span>()])
+            bf.<span class="tok-f">append</span>(<span class="tok-f">bond_featurizer</span>(bond))
+    <span class="tok-k">return</span> np.<span class="tok-f">array</span>(af), np.<span class="tok-f">array</span>(bf), np.<span class="tok-f">array</span>(pi)
+
+<span class="tok-k">def</span> <span class="tok-f">prepare_batch</span>(x, y):
+    <span class="tok-c"># merge B disconnected molecules into one global graph for vectorized ops</span>
+    af, bf, pi = x
+    n_atoms = af.<span class="tok-f">row_lengths</span>()
+    n_bonds = bf.<span class="tok-f">row_lengths</span>()
+    mol_indices = tf.<span class="tok-f">range</span>(<span class="tok-f">len</span>(n_atoms))
+    mol_indicator = tf.<span class="tok-f">repeat</span>(mol_indices, n_atoms)
+    inc = tf.<span class="tok-f">cumsum</span>(n_atoms[:-<span class="tok-n">1</span>])
+    inc = tf.<span class="tok-f">pad</span>(tf.<span class="tok-f">gather</span>(inc, tf.<span class="tok-f">repeat</span>(mol_indices[:-<span class="tok-n">1</span>], n_bonds[<span class="tok-n">1</span>:])), [(n_bonds[<span class="tok-n">0</span>], <span class="tok-n">0</span>)])
+    pi = pi.<span class="tok-f">merge_dims</span>(<span class="tok-n">0</span>, <span class="tok-n">1</span>).<span class="tok-f">to_tensor</span>() + inc[:, <span class="tok-k">None</span>]
+    af = af.<span class="tok-f">merge_dims</span>(<span class="tok-n">0</span>, <span class="tok-n">1</span>).<span class="tok-f">to_tensor</span>()
+    bf = bf.<span class="tok-f">merge_dims</span>(<span class="tok-n">0</span>, <span class="tok-n">1</span>).<span class="tok-f">to_tensor</span>()
+    <span class="tok-k">return</span> (af, bf, pi, mol_indicator), y</code></pre>
+</div>
+
+<div class="callout">
+  <div class="callout-title">Why merge molecules into one graph?</div>
+  Padding each molecule to "max atoms" wastes huge amounts of memory (a 60‑atom molecule next to
+  a 6‑atom molecule means 90% padding). Concatenating into one disconnected mega‑graph lets the
+  GPU treat all the atoms in the batch as one tensor; the <code>molecule_indicator</code> array
+  remembers which atom belongs to which molecule for the readout step.
+</div>
+</section>
+
+
+<section id="training" class="detail-section" data-summary="Open training and evaluation details" data-tag="Optional">
+<h2>8. Training, evaluation, and what to expect
+  <button class="section-complete" data-section="training">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>The single biggest source of <strong>misleading</strong> chemistry papers is the
+    train/test split. Random splits lie. This section teaches you the right way to evaluate — and
+    the watch‑outs that separate "looks great" from "actually generalizes."</p>
+</div>
+
+<div class="checkpoint">
+  <div class="cp-row">
+    <div class="cp-trigger">Random split AUC = 0.93, scaffold split AUC = 0.71</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action">Normal — the gap is the analogue‑leakage you removed. Report scaffold.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger">Train AUC = 0.99, val AUC = 0.72, big gap, still increasing</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action">Overfitting. Add dropout, reduce model size, or stop earlier.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger">Both train and val AUC plateau low (~0.6) early</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action">Underfitting / featurization bug. Check for NaN inputs first, then increase model capacity.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger">MPNN AUC ≈ Random Forest AUC</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action">Use the Random Forest. Simpler, faster, no GPU needed. The MPNN earns its keep only when it clearly beats the baseline.</div>
+  </div>
+</div>
+
+<pre><code>train = <span class="tok-f">MPNNDataset</span>(X_train, y_train)
+val   = <span class="tok-f">MPNNDataset</span>(X_val,   y_val)
+test  = <span class="tok-f">MPNNDataset</span>(X_test,  y_test)
+
+history = mpnn.<span class="tok-f">fit</span>(
+    train, validation_data=val, epochs=<span class="tok-n">40</span>,
+    class_weight={<span class="tok-n">0</span>: <span class="tok-n">2.0</span>, <span class="tok-n">1</span>: <span class="tok-n">0.5</span>},   <span class="tok-c"># BBBP is imbalanced; non-permeable is rare</span>
+)
+
+<span class="tok-c"># Expected AUC after 40 epochs: ~0.92 validation, ~0.93 test</span></code></pre>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Simulated training curve</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">A live mock of the BBBP MPNN training run. Useful for spotting overfitting patterns: training AUC keeps climbing while validation plateaus or dips.</p>
+  <div class="canvas-wrap">
+    <canvas id="trainCanvas" width="700" height="280"></canvas>
+  </div>
+  <div class="controls">
+    <button class="btn" id="trainPlay">▶ Run training</button>
+    <button class="btn secondary" id="trainReset">Reset</button>
+    <div class="stat"><span class="stat-label">epoch</span><span class="stat-value" id="trainEp">0</span></div>
+    <div class="stat"><span class="stat-label">train AUC</span><span class="stat-value" id="trainTr">—</span></div>
+    <div class="stat"><span class="stat-label">val AUC</span><span class="stat-value" id="trainV">—</span></div>
+  </div>
+</div>
+
+<h3>Splitting strategies — read this twice</h3>
+<p>
+  In molecular ML, <em>random</em> train/test splits massively overestimate performance, because
+  similar analogues end up on both sides. The sober alternatives:
+</p>
+<dl class="glossary">
+  <dt>Scaffold split</dt><dd>Group molecules by their Bemis‑Murcko scaffold; assign whole scaffolds to either train or test. Models see no analogues of test molecules during training. Penalizes "memorization."</dd>
+  <dt>Time split</dt><dd>If you have an internal corporate dataset, split by date the assay was run. Mimics real prospective use.</dd>
+  <dt>Cluster split</dt><dd>Cluster by Tanimoto similarity, assign clusters to splits. A more flexible scaffold split.</dd>
+</dl>
+<p>
+  Random splits are fine for hyperparameter tuning. Report scaffold or time split numbers in any
+  paper or grant proposal. Otherwise you'll get destroyed in review.
+</p>
+
+<h3>Augmentations</h3>
+<p>
+  Two cheap and effective ones:
+</p>
+<ul>
+  <li><strong>SMILES enumeration:</strong> the same molecule has many valid SMILES (different
+    starting atoms, different traversal orders). Train on multiple per molecule; the model learns
+    the symmetry implicitly. RDKit: <code>Chem.MolToRandomSmilesVect(mol, n)</code>.</li>
+  <li><strong>3D conformer enumeration:</strong> for tasks that depend on geometry, generate a
+    handful of conformers and average predictions or pool them through the readout.</li>
+</ul>
+</section>
+
+
+<section id="beyond-bbbp">
+<h2>9. From BBBP to your actual project
+  <button class="section-complete" data-section="beyond-bbbp">Mark complete</button>
+</h2>
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>BBBP is a teaching toy. The real questions in the Ioerger lab are about <strong>MIC against
+    M.tb</strong>, mammalian toxicity, and binding to specific Mtb targets. This section maps the
+    BBBP recipe onto those — including which loss, which output, and what extra plumbing you'll
+    need.</p>
+</div>
+
+<p>
+  BBBP is a toy benchmark — its real value is teaching you the pipeline. For an Ioerger‑lab
+  project the actual targets you might bolt this onto:
+</p>
+
+<table>
+  <thead><tr><th>Endpoint</th><th>Source data</th><th>Loss / output</th><th>Special handling</th></tr></thead>
+  <tbody>
+    <tr><td>MIC vs Mtb</td><td>CRyPTIC / in‑house</td><td>regression on log<sub>10</sub>(MIC)</td><td>censor &gt; / &lt; values; weight by replicate count</td></tr>
+    <tr><td>Mammalian cell tox</td><td>HepG2 IC<sub>50</sub></td><td>regression</td><td>sometimes binary at threshold; align with patent literature</td></tr>
+    <tr><td>Inhibitor of <em>rpoB</em></td><td>literature mining + Boltz‑2 binary head</td><td>binary classifier</td><td>imbalanced; use focal loss or class weights</td></tr>
+    <tr><td>Solubility (logS)</td><td>AqSolDB</td><td>regression</td><td>standard MPNN works out of the box</td></tr>
+    <tr><td>logP / clogP</td><td>computed by RDKit, infinite data</td><td>regression</td><td>good <em>self‑supervised</em> pretext task</td></tr>
+  </tbody>
+</table>
+
+<h3>Replacing the readout for affinity</h3>
+<p>
+  If your target is affinity against a specific protein, you'll want a <em>two‑input</em> model:
+  the MPNN encodes the molecule, and a separate encoder (sequence transformer, ESM embedding,
+  or another GNN) encodes the protein. Concatenate, MLP, predict log IC<sub>50</sub>. Or
+  better — use Boltz‑2's affinity head, which already does this end‑to‑end (see the
+  <a href="03-boltz2.html">Boltz‑2 page</a>).
+</p>
+
+<h3>When to abandon the MPNN</h3>
+<p>
+  If your dataset has more than ~20,000 datapoints, switch to a <strong>chemistry transformer</strong>
+  pretrained on millions of unlabeled molecules — e.g., ChemBERTa, MolFormer, or GraphMVP. They
+  consistently match or beat custom MPNNs at scale, and the pretrained weights compensate for
+  small fine‑tuning data.
+</p>
+
+<div class="callout warn">
+  <div class="callout-title">Reproducibility checklist</div>
+  Always pin RDKit version (changes break sanitize behavior). Always seed numpy + tf + python.
+  Always save the <em>canonical SMILES</em> alongside predictions, not the input SMILES — for
+  later joining. Always log per‑molecule predictions, not just aggregate metrics, so you can
+  diagnose failure modes by chemistry type.
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Hands‑on · Keras MPNN (4 of 5) · <a href="03-boltz2.html">← back: Latest Method · Boltz‑2</a> · <a href="05-smiles-permeability.html">next: SMILES permeability →</a> · <a href="index.html">overview</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+<script>
+/* ----------------- SMILES playground ----------------- */
+(function initSmiles() {
+  const input  = document.getElementById('smInput');
+  const preset = document.getElementById('smPreset');
+  const cv     = document.getElementById('smCanvas');
+  if (!cv) return;
+  const ctx    = cv.getContext('2d');
+
+  // Tiny SMILES parser sufficient for the demo: extracts heavy atoms + bonds.
+  // It deliberately doesn't aim for full chemistry, just enough to render meaningfully.
+  function parse(smi) {
+    const atoms = [];      // {sym, aromatic}
+    const bonds = [];      // {a, b, order}
+    const ringOpen = {};   // ringnum -> atomIdx
+    const stack   = [];
+    let pendingBond = 1;   // 1=single 2=double 3=triple 4=aromatic
+    let lastAtom = null;
+    const len = smi.length;
+    let i = 0;
+    while (i < len) {
+      const ch = smi[i];
+      if (ch === '(') { stack.push(lastAtom); i++; continue; }
+      if (ch === ')') { lastAtom = stack.pop(); i++; continue; }
+      if (ch === '=') { pendingBond = 2; i++; continue; }
+      if (ch === '#') { pendingBond = 3; i++; continue; }
+      if (ch === '-') { pendingBond = 1; i++; continue; }
+      if (ch === '/' || ch === '\\') { i++; continue; }
+      if (ch === '[') {
+        // bracket atom [C@H] or [N+] etc; just grab the first letter as symbol
+        const j = smi.indexOf(']', i);
+        const inner = smi.slice(i+1, j);
+        let sym = inner.match(/[A-Z][a-z]?/);
+        if (!sym) sym = inner[0];
+        else sym = sym[0];
+        const arom = inner[0] >= 'a' && inner[0] <= 'z';
+        atoms.push({ sym: sym, aromatic: arom });
+        if (lastAtom !== null) bonds.push({ a: lastAtom, b: atoms.length-1, order: pendingBond });
+        lastAtom = atoms.length - 1;
+        pendingBond = 1;
+        i = j + 1;
+        continue;
+      }
+      if (ch >= '0' && ch <= '9') {
+        const num = +ch;
+        if (ringOpen[num] !== undefined) {
+          bonds.push({ a: ringOpen[num], b: lastAtom, order: pendingBond });
+          delete ringOpen[num];
+        } else {
+          ringOpen[num] = lastAtom;
+        }
+        pendingBond = 1;
+        i++; continue;
+      }
+      // single-letter atoms
+      let m = smi.slice(i, i+2).match(/^(Cl|Br|Na|Ca|[BCNOFPSHIK]|[bcnops])/);
+      if (m) {
+        const sym = m[1];
+        const aromatic = (sym >= 'a' && sym <= 'z');
+        atoms.push({ sym: aromatic ? sym.toUpperCase() : sym, aromatic });
+        if (lastAtom !== null) bonds.push({ a: lastAtom, b: atoms.length-1, order: pendingBond });
+        lastAtom = atoms.length - 1;
+        pendingBond = 1;
+        i += sym.length;
+        continue;
+      }
+      i++;
+    }
+    return { atoms, bonds };
+  }
+
+  function layout(graph) {
+    // Force-directed layout — repulsion + spring on bonds — for ~80 iterations
+    const N = graph.atoms.length;
+    const pos = Array.from({length:N}, () => ({
+      x: Math.random()*cv.width*0.6 + cv.width*0.2,
+      y: Math.random()*cv.height*0.6 + cv.height*0.2
+    }));
+    const adj = Array.from({length:N}, () => []);
+    for (const b of graph.bonds) { adj[b.a].push(b.b); adj[b.b].push(b.a); }
+    const ideal = 36;
+    for (let it=0; it<150; it++) {
+      const force = Array.from({length:N}, () => ({x:0, y:0}));
+      // repulsion
+      for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) {
+        const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
+        const d  = Math.hypot(dx, dy) + 0.01;
+        const f  = 800 / (d*d);
+        force[i].x += dx/d * f; force[i].y += dy/d * f;
+        force[j].x -= dx/d * f; force[j].y -= dy/d * f;
+      }
+      // springs on bonds
+      for (const b of graph.bonds) {
+        const dx = pos[b.b].x - pos[b.a].x, dy = pos[b.b].y - pos[b.a].y;
+        const d  = Math.hypot(dx, dy) + 0.01;
+        const f  = (d - ideal) * 0.05;
+        force[b.a].x += dx/d * f; force[b.a].y += dy/d * f;
+        force[b.b].x -= dx/d * f; force[b.b].y -= dy/d * f;
+      }
+      // step + center-pull
+      const cx = cv.width/2, cy = cv.height/2;
+      for (let i=0;i<N;i++) {
+        force[i].x += (cx - pos[i].x) * 0.005;
+        force[i].y += (cy - pos[i].y) * 0.005;
+        const damp = 0.5;
+        pos[i].x += force[i].x * damp;
+        pos[i].y += force[i].y * damp;
+        pos[i].x = Math.max(20, Math.min(cv.width-20, pos[i].x));
+        pos[i].y = Math.max(20, Math.min(cv.height-20, pos[i].y));
+      }
+    }
+    return pos;
+  }
+
+  const colorMap = {
+    'C': '#202020', 'N': '#2563eb', 'O': '#dc2626', 'S': '#ca8a04',
+    'F': '#16a34a', 'Cl': '#16a34a', 'Br': '#9a3412', 'P': '#a16207',
+    'H': '#888888', 'I': '#7c3aed'
+  };
+
+  function render() {
+    const smi = input.value.trim();
+    let graph; let ok = true;
+    try { graph = parse(smi); if (!graph.atoms.length) ok = false; } catch(e) { ok = false; }
+    document.getElementById('smOK').textContent = ok ? 'parsed ✓' : 'failed ✗';
+    if (!ok) {
+      ctx.clearRect(0,0,cv.width,cv.height);
+      return;
+    }
+    const pos = layout(graph);
+    document.getElementById('smN').textContent = graph.atoms.length;
+    document.getElementById('smB').textContent = graph.bonds.length;
+    // ring count = bonds - atoms + 1 if connected
+    const rings = Math.max(0, graph.bonds.length - graph.atoms.length + 1);
+    document.getElementById('smR').textContent = rings;
+
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    // bonds
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = isDark ? '#cccccc' : '#444';
+    for (const b of graph.bonds) {
+      const A = pos[b.a], B = pos[b.b];
+      const dx = B.x - A.x, dy = B.y - A.y;
+      const d = Math.hypot(dx, dy);
+      const nx = -dy/d, ny = dx/d;
+      const offset = 4;
+      const orders = b.order;
+      for (let k=0; k<orders; k++) {
+        const off = (orders === 1) ? 0 : (k - (orders-1)/2) * offset;
+        ctx.beginPath();
+        ctx.moveTo(A.x + nx*off, A.y + ny*off);
+        ctx.lineTo(B.x + nx*off, B.y + ny*off);
+        ctx.stroke();
+      }
+    }
+    // atoms
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let i = 0; i < graph.atoms.length; i++) {
+      const p = pos[i]; const a = graph.atoms[i];
+      const c = colorMap[a.sym] || '#666';
+      ctx.fillStyle = isDark ? '#161a22' : '#fff';
+      ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = a.aromatic ? '#7c3aed' : c;
+      ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = c;
+      ctx.fillText(a.sym, p.x, p.y);
+    }
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  }
+
+  preset.addEventListener('change', () => { input.value = preset.value; render(); });
+  let to = null;
+  input.addEventListener('input', () => { clearTimeout(to); to = setTimeout(render, 300); });
+  document.addEventListener('themechange', render);
+  render();
+})();
+
+/* ----------------- Morgan algorithm walkthrough ----------------- */
+(function initMorgan() {
+  const cv = document.getElementById('morganCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+
+  // 5-atom toy: a chain C–N–C–O–C with positions
+  const atoms = [
+    { sym: 'C', x: 120, y: 130 },
+    { sym: 'N', x: 220, y: 80 },
+    { sym: 'C', x: 320, y: 130 },
+    { sym: 'O', x: 420, y: 80 },
+    { sym: 'C', x: 520, y: 130 },
+  ];
+  const bonds = [[0,1],[1,2],[2,3],[3,4]];
+  const adj = atoms.map(()=>[]);
+  for (const [a,b] of bonds) { adj[a].push(b); adj[b].push(a); }
+
+  let radius = 0;
+
+  function ballAt(idx, r) {
+    // BFS up to depth r from idx
+    const seen = new Set([idx]);
+    let frontier = [idx];
+    for (let d = 0; d < r; d++) {
+      const next = [];
+      for (const v of frontier) for (const w of adj[v]) if (!seen.has(w)) { seen.add(w); next.push(w); }
+      frontier = next;
+    }
+    return seen;
+  }
+
+  function uniqueFeatures(r) {
+    const features = new Set();
+    for (let v = 0; v < atoms.length; v++) {
+      // signature: at radius 0 it's the atom itself; at higher radii it's a hash of the BFS ball
+      let sig = atoms[v].sym;
+      let frontier = [v]; const seen = new Set([v]);
+      for (let d = 0; d < r; d++) {
+        const next = [];
+        for (const x of frontier) for (const y of adj[x]) if (!seen.has(y)) { seen.add(y); next.push(y); }
+        const labels = next.map(i => atoms[i].sym).sort().join('');
+        sig += '|' + labels;
+        frontier = next;
+      }
+      features.add(sig);
+    }
+    return features.size;
+  }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+
+    // draw "knowledge balls" for current radius
+    if (radius > 0) {
+      ctx.fillStyle = 'rgba(96, 165, 250, 0.20)';
+      ctx.strokeStyle = 'rgba(96, 165, 250, 0.55)';
+      ctx.lineWidth = 1.4;
+      for (let v = 0; v < atoms.length; v++) {
+        const ball = ballAt(v, radius);
+        const xs = [...ball].map(i => atoms[i].x);
+        const ys = [...ball].map(i => atoms[i].y);
+        const cx = xs.reduce((a,b)=>a+b,0)/xs.length;
+        const cy = ys.reduce((a,b)=>a+b,0)/ys.length;
+        let rad = 0;
+        for (const i of ball) rad = Math.max(rad, Math.hypot(atoms[i].x - cx, atoms[i].y - cy) + 26);
+        ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      }
+    }
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = themeColor('text');
+    for (const [a, b] of bonds) {
+      ctx.beginPath();
+      ctx.moveTo(atoms[a].x, atoms[a].y);
+      ctx.lineTo(atoms[b].x, atoms[b].y);
+      ctx.stroke();
+    }
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const a of atoms) {
+      ctx.fillStyle = themeColor('bg-elev-1');
+      ctx.beginPath(); ctx.arc(a.x, a.y, 16, 0, Math.PI*2); ctx.fill();
+      const colMap = { C: '#0b5cd6', N: '#7c3aed', O: '#dc2626' };
+      ctx.strokeStyle = colMap[a.sym] || themeColor('text');
+      ctx.stroke();
+      ctx.fillStyle = colMap[a.sym] || themeColor('text');
+      ctx.fillText(a.sym, a.x, a.y);
+    }
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+
+    document.getElementById('morganR').textContent = radius;
+    document.getElementById('morganU').textContent = uniqueFeatures(radius);
+  }
+
+  document.getElementById('morganStep').addEventListener('click', () => {
+    if (radius < 4) { radius++; draw(); }
+  });
+  document.getElementById('morganReset').addEventListener('click', () => { radius = 0; draw(); });
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+
+/* ----------------- Training curve ----------------- */
+(function initTrain() {
+  const cv = document.getElementById('trainCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const TOTAL = 40;
+  let epoch = 0;
+  let trAUC = [], vlAUC = [];
+  let running = false;
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    // axes
+    ctx.strokeStyle = themeColor('border');
+    ctx.lineWidth = 1;
+    const padL = 50, padB = 30, padT = 20, padR = 20;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT); ctx.lineTo(padL, H-padB); ctx.lineTo(W-padR, H-padB);
+    ctx.stroke();
+    // y axis ticks
+    ctx.fillStyle = themeColor('text-faint');
+    ctx.font = '11px sans-serif';
+    for (let v=0.5; v<=1.0001; v+=0.1) {
+      const y = padT + (1 - (v-0.5)/0.5) * (H - padT - padB);
+      ctx.fillText(v.toFixed(1), 12, y+3);
+      ctx.beginPath();
+      ctx.moveTo(padL-3, y); ctx.lineTo(padL, y);
+      ctx.stroke();
+    }
+    // x axis ticks
+    for (let e=0; e<=TOTAL; e+=10) {
+      const x = padL + (e/TOTAL) * (W - padL - padR);
+      ctx.fillText(e+'', x-6, H-padB+15);
+      ctx.beginPath();
+      ctx.moveTo(x, H-padB); ctx.lineTo(x, H-padB+3);
+      ctx.stroke();
+    }
+    function plot(arr, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i=0; i<arr.length; i++) {
+        const x = padL + (i/TOTAL) * (W - padL - padR);
+        const y = padT + (1 - (arr[i] - 0.5)/0.5) * (H - padT - padB);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+    plot(trAUC, '#2563eb'); plot(vlAUC, '#16a34a');
+    // legend
+    ctx.fillStyle = '#2563eb'; ctx.fillRect(W-150, 10, 12, 12);
+    ctx.fillStyle = themeColor('text'); ctx.fillText('train AUC', W-130, 20);
+    ctx.fillStyle = '#16a34a'; ctx.fillRect(W-150, 30, 12, 12);
+    ctx.fillStyle = themeColor('text'); ctx.fillText('val AUC',  W-130, 40);
+  }
+  function tick() {
+    if (!running || epoch >= TOTAL) { running = false; return; }
+    epoch++;
+    // simulate the published BBBP run
+    const tr = 0.65 + 0.31 * (1 - Math.exp(-epoch/9));
+    const vl = 0.83 + 0.10 * (1 - Math.exp(-epoch/11)) + (Math.random()-0.5)*0.012;
+    trAUC.push(tr); vlAUC.push(vl);
+    document.getElementById('trainEp').textContent = epoch;
+    document.getElementById('trainTr').textContent = tr.toFixed(3);
+    document.getElementById('trainV').textContent  = vl.toFixed(3);
+    draw();
+    setTimeout(tick, 100);
+  }
+  document.getElementById('trainPlay').addEventListener('click', () => {
+    if (running) return;
+    if (epoch >= TOTAL) { epoch = 0; trAUC = []; vlAUC = []; }
+    running = true; tick();
+  });
+  document.getElementById('trainReset').addEventListener('click', () => {
+    running = false; epoch = 0; trAUC = []; vlAUC = [];
+    document.getElementById('trainEp').textContent = 0;
+    document.getElementById('trainTr').textContent = '—';
+    document.getElementById('trainV').textContent  = '—';
+    draw();
+  });
+  document.addEventListener('themechange', draw);
+  draw();
+})();
+</script>
+
+</body>
+</html>

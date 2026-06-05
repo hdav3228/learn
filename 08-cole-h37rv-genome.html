@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cole H37Rv Genome Reference · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn active">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html" class="active">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#why-this-paper">1. Why this paper matters</a></li>
+    <li><a href="#erratum">2. Erratum rules</a></li>
+    <li><a href="#methods">3. Methods decoder</a></li>
+    <li><a href="#genome">4. Genome architecture</a></li>
+    <li><a href="#lipids">5. Lipid and cell-wall biology</a></li>
+    <li><a href="#repeats">6. PE/PPE/PGRS families</a></li>
+    <li><a href="#figures">7. Figure &amp; table decoder</a></li>
+    <li><a href="#talk-track">8. Talk track</a></li>
+    <li><a href="#limitations">9. What not to overclaim</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Paper reading order">
+  <a class="step done" href="07-shatby-diabetes-thesis.html">Shatby thesis</a>
+  <span class="sep">→</span>
+  <span class="step here">Cole H37Rv</span>
+  <span class="sep">→</span>
+  <a class="step" href="09-ballell-tb-drugs.html">Ballell drugs</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Paper 4 · Cole et al. 1998 · H37Rv reference genome</div>
+  <h1>Deciphering the biology of M. tuberculosis from the complete genome</h1>
+  <p class="lede">
+    This is the reference-genome paper. It gives you the H37Rv coordinate system, approximate
+    gene count, lipid-heavy biology, PE/PPE/PGRS families, and the gene annotation context that
+    later selection scans depend on.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#erratum">Erratum first</a>
+    <a class="qpill" href="#genome">Genome facts</a>
+    <a class="qpill" href="#lipids">Cell wall</a>
+    <a class="qpill" href="#figures">Figures</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">Read this first — in plain English</span>
+  Before you can ask which TB genes are under selection, you need a reference map of what the TB
+  genome contains. Cole 1998 is that map for H37Rv: a <strong>4.41 Mb</strong> genome, roughly
+  <strong>4,000 genes</strong>, a huge investment in lipid/cell-wall biology, and many repetitive
+  antigenic protein families. Every time GenomegaMap outputs a hit like "Rv1448c," this paper is
+  what gave that gene its name, its coordinates, and its initial functional annotation. Think of
+  this as the <em>dictionary</em> for the TB genome — you don't read it cover-to-cover, but
+  nothing else makes sense without it.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Reference genome and gene labels, especially erratum-sensitive ones.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Mostly annotation support, not a stats method page.</td></tr>
+      <tr><th>Use this for</th><td>Use when a hit gene needs biological labeling.</td></tr>
+      <tr><th>Defer for now</th><td>Do not memorize genome architecture before the scan runs.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="why-this-paper">
+<h2>1. Why this paper matters
+  <button class="section-complete" data-section="why-this-paper">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Project Relevance</span>
+  <p>
+    When GenomegaMap outputs a hit like "Rv1448c", this is the paper that explains what the "Rv"
+    stands for and how we know what that gene does. It sets the baseline coordinate system for all
+    variant calling and gene-level dN/dS estimation.
+  </p>
+</div>
+
+<div class="metric-strip">
+  <div class="metric-tile good">
+    <span class="kicker">Genome size</span>
+    <span class="big">4.41 Mb</span>
+    <span class="caption">H37Rv complete sequence: 4,411,529 bp.</span>
+  </div>
+  <div class="metric-tile note">
+    <span class="kicker">Genes</span>
+    <span class="big">~4,000</span>
+    <span class="caption">Approximate protein-coding gene count.</span>
+  </div>
+  <div class="metric-tile warn">
+    <span class="kicker">Signature biology</span>
+    <span class="big">Lipids</span>
+    <span class="caption">Large coding capacity devoted to lipogenesis and lipolysis.</span>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <h3>The coordinate system</h3>
+    <p>All later Rv gene IDs, selection hits, and variant calls sit on this H37Rv annotation backbone. Without it, "Rv1448c" is just a string.</p>
+  </div>
+  <div class="card">
+    <h3>The biological framework</h3>
+    <p>Cole classified genes into metabolism, regulation, virulence, cell-wall, PE/PPE, and unknown categories. When GenomegaMap flags a gene, Cole tells you the first-pass functional category.</p>
+  </div>
+</div>
+</section>
+
+<section id="erratum">
+<h2>2. Erratum rules
+  <button class="section-complete" data-section="erratum">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    The Nature erratum corrected technical mistakes in gene labels and figures. These corrections
+    do <em>not</em> change the overall conclusion, genome size, or approximate gene count, but they
+    matter whenever you discuss specific gene names or cite specific figures.
+  </p>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Read this before using gene labels</div>
+  Always apply these corrections when referencing gene labels from this paper. The original
+  mislabeled versions still appear in some databases and older citations.
+</div>
+
+<table>
+  <thead><tr><th>Original issue</th><th>Use this correction</th></tr></thead>
+  <tbody>
+    <tr><td>Table 1 symbols missing from production error</td><td>Use the corrected table from the erratum. Nature republished the corrected Table 1.</td></tr>
+    <tr><td>Figure 2 mislabeled Rv0649</td><td>Rv0649 should be <code>fabD2</code>, not <code>fadD37</code>.</td></tr>
+    <tr><td>Antigen 85 gene confusion</td><td>Rv0129c encodes antigen 85C. Rv3803c is MPT51 and now designated <code>fbpD</code>; it is <em>not</em> antigen 85C.</td></tr>
+    <tr><td>Figure 5b BCG-Pasteur sequence</td><td>Rv0746 should show a 16-codon deletion, not a 29-codon deletion.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="methods" class="detail-section" data-summary="Open methods decoder" data-tag="Reference">
+<h2>3. Methods decoder
+  <button class="section-complete" data-section="methods">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Understanding <em>how</em> the genome was sequenced and annotated tells you what the
+    annotations can and cannot promise. Cole 1998 used cosmid library shotgun sequencing —
+    state-of-the-art for 1998 but primitive by modern standards.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th>Method step</th><th>What they did</th><th>Why it matters now</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Sequencing</td>
+      <td>Shotgun sequencing of ordered cosmid and BAC clones covering the entire H37Rv chromosome.</td>
+      <td>This gave a single complete reference. Modern WGS reads are mapped back to this reference.</td>
+    </tr>
+    <tr>
+      <td>Gene prediction</td>
+      <td>Used computational ORF finding combined with codon-usage statistics, favored by the high G+C content (65.6%).</td>
+      <td>High G+C makes start-codon prediction harder. Some gene boundaries may be slightly off in the original annotation.</td>
+    </tr>
+    <tr>
+      <td>Functional annotation</td>
+      <td>Assigned functions by BLAST similarity to known proteins; many genes were "hypothetical" or "conserved hypothetical."</td>
+      <td>~40% of genes lacked clear function. Many have since been characterized, but always verify against modern databases like Mycobrowser.</td>
+    </tr>
+    <tr>
+      <td>G+C content</td>
+      <td>65.6% overall, with local deviations marking inserted elements or horizontally transferred regions.</td>
+      <td>High G+C shapes codon usage bias, which directly affects the &pi;<sub>j</sub> parameter in GenomegaMap's codon model.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="genome" class="detail-section" data-summary="Open genome architecture details" data-tag="Biology">
+<h2>4. Genome architecture
+  <button class="section-complete" data-section="genome">Mark complete</button>
+</h2>
+
+<p>
+  The paper reports a complete H37Rv genome of <strong>4,411,529 bp</strong>, high G+C content (65.6%),
+  and roughly <strong>4,000 genes</strong>. It frames TB as a slow-growing, genetically
+  homogeneous pathogen with a complex cell envelope and unusual intracellular biology.
+</p>
+
+<div class="cards">
+  <div class="card"><h3>Reference coordinate system</h3><p>Later Rv gene IDs and selection hits sit on this H37Rv annotation backbone.</p></div>
+  <div class="card"><h3>Functional categories</h3><p>The paper classifies genes into metabolism, regulation, virulence, cell-wall, PE/PPE, and unknown categories.</p></div>
+  <div class="card"><h3>tRNAs and codon bias</h3><p>The genome includes tRNAs recognizing many sense codons, and high G+C content shapes codon use — relevant to GenomegaMap's &pi;<sub>j</sub> parameter.</p></div>
+  <div class="card"><h3>Unknown genes</h3><p>Many genes were poorly characterized, which still affects modern selection-hit interpretation. "Hypothetical protein" is not your failure — it's the field's.</p></div>
+</div>
+</section>
+
+<section id="lipids" class="detail-section" data-summary="Open lipid and cell-wall biology" data-tag="Biology">
+<h2>5. Lipid and cell-wall biology
+  <button class="section-complete" data-section="lipids">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why TB is weird</span>
+  <p>
+    Cole 1998 emphasizes that TB devotes an unusually large part of its coding capacity (almost 9%)
+    to lipid metabolism, including enzymes for lipogenesis, lipolysis, mycolic acids, and related
+    cell-wall structures. No other bacterium comes close.
+  </p>
+</div>
+
+<p>
+  This matters for the diabetes project because selected genes are not just abstract IDs. Many TB
+  adaptation stories eventually run through metabolism, cell-wall remodeling, drug entry,
+  immune interaction, or stress survival. Understanding the lipid emphasis helps you build
+  biologically plausible stories for GenomegaMap hits.
+</p>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: Finding a lipid-adjacent hit</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>Scenario:</strong> GenomegaMap flags an uncharacterized gene like Rv1490 as under positive selection in diabetics.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>Action:</strong> Cross-reference it with the Cole 1998 functional categories or modern Mycobrowser. Check if it's adjacent to lipid metabolism genes on the genome map.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>Interpretation:</strong> If it's in or near lipid metabolism, you can hypothesize that the diabetic host environment (which has altered fatty acid and glucose levels) is forcing TB to remodel its cell wall for better survival. This is a biologically plausible story, not a proven mechanism.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">4</span>
+    <div class="we-body">
+      <strong>Caution:</strong> "Adjacent to lipid genes on the genome" is circumstantial. TB operons don't always cluster by function. Always check Mycobrowser or STRING for functional evidence.
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="repeats" class="detail-section" data-summary="Open PE/PPE/PGRS family notes" data-tag="Caution">
+<h2>6. PE/PPE/PGRS families
+  <button class="section-complete" data-section="repeats">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    PE/PPE/PGRS genes make up ~10% of the genome but are the single biggest source of false
+    positives in selection scans. Understanding why they're problematic saves you from reporting
+    noise as signal.
+  </p>
+</div>
+
+<p>
+  Cole 1998 highlights two glycine-rich repetitive protein families: <strong>PE</strong> and
+  <strong>PPE</strong>, making up about 10% of the genome's coding capacity. Many PE proteins
+  include PGRS (polymorphic GC-rich repetitive sequence) regions.
+</p>
+
+<table>
+  <thead><tr><th>Family</th><th>What to remember</th></tr></thead>
+  <tbody>
+    <tr><td>PE</td><td>Named for Pro-Glu motifs near the N terminus; includes a large PE-PGRS subgroup.</td></tr>
+    <tr><td>PPE</td><td>Named for Pro-Pro-Glu motifs; another expanded repetitive family.</td></tr>
+    <tr><td>PGRS</td><td>Polymorphic GC-rich repetitive sequences; variation can complicate mapping and interpretation.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">PE/PPE genes and GenomegaMap: a practical warning</div>
+  In the genome maps provided by the paper, there are large clusters of PE/PPE genes. These are
+  highly variable and repetitive. For our GenomegaMap scans, these genes often show an
+  artificially high &omega; because short reads misalign across the repeats, creating fake SNPs.
+  <strong>We typically filter them out.</strong> If you see a PE/PPE gene at the top of your
+  selection scan, be deeply skeptical before reporting it.
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: A PE_PGRS gene appears in your top hits</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>Scenario:</strong> After running GenomegaMap on the diabetes cohort, a gene named <code>PE_PGRS33</code> (Rv1818c) comes back with &omega; = 5.2.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>Red flag:</strong> PE_PGRS genes are in Cole's repetitive family. The high &omega; is almost certainly a mapping artifact from short reads misaligning across GC-rich repeats.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>Action:</strong> Exclude it from your candidate list. Note in your report that PE/PPE/PGRS genes were excluded per standard practice because of known short-read alignment artifacts.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">4</span>
+    <div class="we-body">
+      <strong>What to say:</strong> "PE/PPE genes are a known source of false positives in dN/dS scans due to read-mapping artifacts in repetitive regions. We followed standard practice and excluded them from our candidate list."
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="figures" class="detail-section" data-summary="Open figure and table decoder" data-tag="Reference">
+<h2>7. Figure &amp; table decoder
+  <button class="section-complete" data-section="figures">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    If someone asks you about the "Cole genome map" or "Table 1 categories," this decoder
+    tells you what to look for without re-reading the paper.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th>Figure / Table</th><th>What it shows</th><th>What to remember</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Table 1</strong></td>
+      <td>Functional classification of all predicted proteins by category (e.g., lipid metabolism, cell wall, virulence, information pathways, regulatory, PE/PPE, unknown).</td>
+      <td>Use the corrected version from the erratum. The lipid metabolism category is disproportionately large (~250 enzymes for fatty acid metabolism alone). "Unknown" and "conserved hypothetical" dominate.</td>
+    </tr>
+    <tr>
+      <td><strong>Figure 2</strong></td>
+      <td>Circular genome map showing gene positions on plus and minus strands, with functional categories color-coded.</td>
+      <td>Note the erratum: Rv0649 should be labeled <code>fabD2</code>, not <code>fadD37</code>. The map visually shows how PE/PPE genes cluster in certain regions.</td>
+    </tr>
+    <tr>
+      <td><strong>Figure 5b</strong></td>
+      <td>Comparison of Rv0746 between H37Rv and BCG-Pasteur, showing a deletion.</td>
+      <td>Erratum correction: the BCG-Pasteur deletion is 16 codons, not 29. This matters if anyone cites the figure for vaccine-related H37Rv-vs-BCG differences.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="talk-track">
+<h2>8. Talk track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What to say in a meeting</h3>
+  <p>"All of our variant calls are mapped to the H37Rv genome published by Cole in 1998. When we see a hit in GenomegaMap, we categorize its function based on the framework Cole laid out — specifically looking for enrichments in lipid metabolism, which makes up almost 10% of the TB genome, or filtering out the highly repetitive PE/PPE families that Cole identified. We always apply the Nature erratum corrections when discussing specific gene labels."</p>
+</div>
+</section>
+
+<section id="limitations">
+<h2>9. What not to overclaim
+  <button class="section-complete" data-section="limitations">Mark complete</button>
+</h2>
+
+<div class="callout warn">
+  <div class="callout-title">What NOT to overclaim</div>
+  <ul style="margin:6px 0 0">
+    <li><strong>Functional annotations:</strong> Do not treat the original 1998 functional annotations as absolute ground truth. The <em>sequence</em> (the coordinate system) is the bedrock, but the functional annotations have been vastly updated. Always verify uncharacterized "hypothetical" genes against modern databases like Mycobrowser.</li>
+    <li><strong>Gene count:</strong> The "~4,000" number is approximate. Modern re-annotations have refined the exact count, but the order of magnitude hasn't changed.</li>
+    <li><strong>PE/PPE function:</strong> Cole noted these families but their functions are still debated. Do not claim they are "immune evasion genes" without citing more recent evidence.</li>
+  </ul>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Built as preparation material · Texas A&amp;M Computer Science · Ioerger Lab
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

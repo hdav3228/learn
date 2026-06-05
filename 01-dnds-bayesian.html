@@ -1,0 +1,1443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Foundation: GenomegaMap (Wilson 2020) · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html" class="active">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#what-is-dnds">1. What dN/dS measures</a></li>
+    <li><a href="#codon-model">2. Codon substitution model</a></li>
+    <li><a href="#manual">3. The naive estimator</a></li>
+    <li><a href="#bayesian">4. Going Bayesian</a></li>
+    <li><a href="#mcmc">5. Metropolis‑Hastings MCMC</a></li>
+    <li><a href="#genomegamap">6. GenomegaMap proper</a></li>
+    <li><a href="#three-models">7. Three model variants</a></li>
+    <li><a href="#omegamap-vs-genomegamap">8. omegaMap vs GenomegaMap</a></li>
+    <li><a href="#running">9. Running it in practice</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where you are in the five-piece pipeline">
+  <span class="step here">📍 Foundation · GenomegaMap</span>
+  <span class="sep">→</span>
+  <a class="step" href="02-tb-selection.html">Ioerger Lab · TB Scans</a>
+  <span class="sep">→</span>
+  <a class="step" href="03-boltz2.html">Latest Method · Boltz‑2</a>
+  <span class="sep">→</span>
+  <a class="step" href="04-keras-cheminformatics.html">Hands‑on · Keras MPNN</a>
+  <span class="sep">→</span>
+  <a class="step" href="05-smiles-permeability.html">SMILES · permeability</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Foundation · the method paper · Wilson et al. 2020</div>
+  <h1>GenomegaMap: Bayesian dN/dS at genome scale</h1>
+  <p class="lede">
+    A pathogen evolving inside a host has skin in the game; the random mutations its DNA picks up
+    are subjected to natural selection in real time. The dN/dS ratio is how we read those tea
+    leaves. GenomegaMap is the modern, scalable, fully Bayesian way to estimate it across whole
+    genomes from tens of thousands of clinical isolates.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#what-is-dnds">What dN/dS is</a>
+    <a class="qpill" href="#mcmc">See MCMC live</a>
+    <a class="qpill" href="#three-models">Three model variants</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Imagine watching a pathogen mutate over thousands of patient infections. Some mutations
+  change the protein it makes; some don't. If selection is doing nothing, both kinds happen
+  about equally (per opportunity). If selection is <em>helping</em> certain protein changes
+  win — say, mutations that escape an antibiotic — then protein‑changing mutations pile up
+  faster. <strong>The ratio of "protein‑changing" to "silent" mutations is dN/dS, also
+  called ω (omega).</strong> ω &gt; 1 = protein is being adaptively reshaped. ω &lt; 1 =
+  protein is locked in place by selection. <strong>GenomegaMap</strong> is just the
+  Bayesian recipe for estimating ω rigorously from real data.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Only enough codon biology to understand dN/dS.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Posterior samples, MCMC, credible intervals, model choice.</td></tr>
+      <tr><th>Use this for</th><td>Use this to explain omega0 output and uncertainty.</td></tr>
+      <tr><th>Defer for now</th><td>Do not derive the full codon model on first pass.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="what-is-dnds">
+<h2>1. What dN/dS measures
+  <button class="section-complete" data-section="what-is-dnds">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Before we can <em>infer</em> selection, we need a number that <em>quantifies</em> it.
+    dN/dS (ω) is that number. This section defines it and explains why "just count
+    mutations" doesn't work as an estimator.
+  </p>
+</div>
+
+<p>
+  Every protein‑coding nucleotide change is one of two flavors: it either swaps the encoded amino
+  acid (<strong>nonsynonymous</strong>, "dN" type) or it doesn't (<strong>synonymous</strong>,
+  "dS" type). The genetic code is
+  <span class="gloss" data-def="Most amino acids are encoded by multiple codons. So a single‑base mutation often produces the same amino acid (synonymous) by accident.">degenerate</span>
+  — most amino acids are coded by multiple codons —
+  so synonymous changes happen all the time without any direct fitness consequence. They're a
+  decent proxy for the <em>raw</em> mutation rate.
+</p>
+
+<p>
+  Nonsynonymous changes <em>do</em> alter the protein. If selection is purifying (the wild‑type
+  protein is already fit), most of these get filtered out. If selection is positive (some variant
+  protein is fitter than wild type), nonsynonymous changes accumulate <em>faster</em> than they
+  would by chance. So:
+</p>
+
+<div class="math">
+  ω = dN / dS
+</div>
+
+<dl class="glossary">
+  <dt>ω &lt; 1</dt><dd><strong>Purifying selection.</strong> Most amino‑acid‑changing mutations are deleterious and removed. Typical of essential housekeeping genes. Most genes in any genome look like this.</dd>
+  <dt>ω ≈ 1</dt><dd><strong>Neutral evolution.</strong> Either the protein is unconstrained, or selective pressure is too weak to detect in this dataset.</dd>
+  <dt>ω &gt; 1</dt><dd><strong>Positive (diversifying) selection.</strong> Amino‑acid changes are accumulating <em>faster</em> than synonymous ones. This is the signature of an adaptive arms race — drug resistance, immune evasion, host adaptation.</dd>
+</dl>
+
+<div class="callout">
+  <div class="callout-title">Important nuance</div>
+  ω is a <em>per‑gene</em> (or per‑codon, per‑window) quantity. A single ω &gt; 1 codon embedded in
+  a constrained gene with overall ω = 0.3 is invisible at gene level. <em>Where</em> you average
+  matters enormously — that's the entire point of the <a href="02-tb-selection.html">Ioerger lab's TB scans</a>.
+</div>
+
+<h3>Why it's not just N/S</h3>
+<p>
+  If you naively count up nonsynonymous and synonymous mutations and divide, you get a biased
+  estimate. The reason is that there are <em>more possible</em> nonsynonymous than synonymous
+  changes per codon. If you mutate one base in a random codon, ~75% of single‑nucleotide changes
+  alter the amino acid — so you'd <em>expect</em> 3× more nonsynonymous than synonymous mutations
+  even if all mutations were neutral. dN and dS are <em>normalized</em> rates per nonsynonymous
+  and synonymous site respectively; ω compares them on equal footing.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Codon table — try mutating each position</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">Click a codon to see all 9 single‑base neighbors (3 positions × 3 alternative bases). Synonymous neighbors are green; nonsynonymous are red.</p>
+
+  <div class="controls">
+    <div class="control">
+      <label>Codon</label>
+      <select id="codonSel"></select>
+    </div>
+    <div class="stat"><span class="stat-label">N neighbors</span><span class="stat-value" id="codonN">0</span></div>
+    <div class="stat"><span class="stat-label">S neighbors</span><span class="stat-value" id="codonS">0</span></div>
+    <div class="stat"><span class="stat-label">→ stop</span><span class="stat-value" id="codonStop">0</span></div>
+  </div>
+
+  <div id="codonGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-family:'SF Mono',Menlo,monospace;font-size:13px;"></div>
+
+  <div class="try-it">
+    <strong>Try this:</strong> Pick codon <code>TTA</code> (Leucine). Of its 9 single‑base
+    neighbors, count the green (synonymous) ones. You should see only 1: <code>TTG</code>
+    (also Leucine). The other 8 are red — most random single‑base mutations
+    <em>do</em> change the amino acid. <strong>That's why naive N/S is biased toward
+    "lots of nonsynonymous changes" even under neutrality.</strong>
+  </div>
+</div>
+
+</section>
+
+<section id="codon-model" class="detail-section" data-summary="Open codon substitution model details" data-tag="Model detail">
+<h2>2. The codon substitution model (Nielsen &amp; Yang 1998)
+  <button class="section-complete" data-section="codon-model">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Just counting mutations gives biased answers (you saw why in §1). Instead, we
+    write down a <strong>probability model</strong> of how codons mutate over time
+    that has ω built in as a tunable knob. Then we can do statistics on real data.
+    This section is the model.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  A "rate matrix" Q is just a 61×61 lookup table: row <em>i</em>, column <em>j</em> says
+  "rate at which codon <em>i</em> turns into codon <em>j</em>." Most entries are 0
+  (because two codons rarely differ at &gt;1 base in one step). The rest are simple
+  formulas in four parameters: <strong>μ</strong> (overall mutation speed),
+  <strong>κ</strong> (transitions are mechanistically faster than transversions),
+  <strong>π<sub>j</sub></strong> (target codon frequency), and the star of the show
+  <strong>ω</strong> (multiplier on amino‑acid‑changing transitions/transversions).
+</div>
+
+<p>
+  To estimate ω rigorously we need a probabilistic model for codon evolution. The standard
+  workhorse is <strong>NY98</strong>: a 61×61 (60×60 if we drop stop codons) instantaneous rate
+  matrix <em>Q</em> where <em>Q</em><sub>ij</sub> is the rate at which codon <em>i</em> mutates to
+  codon <em>j</em>. The trick is to <em>parameterize</em> Q with a small number of biologically
+  meaningful parameters so we can do statistics:
+</p>
+
+<div class="math">
+Q<sub>ij</sub> =
+  <span style="display:inline-block;text-align:left;vertical-align:middle;line-height:1.6">
+    {0 &nbsp;&nbsp;&nbsp;&nbsp; if codons differ at &gt;1 position<br/>
+    &nbsp;μ π<sub>j</sub> &nbsp;&nbsp;&nbsp;&nbsp; synonymous transversion<br/>
+    &nbsp;μ κ π<sub>j</sub> &nbsp;&nbsp; synonymous transition<br/>
+    &nbsp;μ ω π<sub>j</sub> &nbsp;&nbsp; nonsynonymous transversion<br/>
+    &nbsp;μ ω κ π<sub>j</sub> &nbsp; nonsynonymous transition}
+  </span>
+</div>
+
+<dl class="glossary">
+  <dt>μ</dt><dd>Neutral mutation rate scaling factor.</dd>
+  <dt>κ</dt><dd>Transition / transversion rate ratio. Empirically &gt;1 (transitions, A↔G or C↔T, are mechanistically more frequent than transversions). Values of 2–4 are typical for mycobacterial genomes.</dd>
+  <dt>ω</dt><dd>The dN/dS we want — a multiplier on nonsynonymous rates.</dd>
+  <dt>π<sub>j</sub></dt><dd>Equilibrium frequency of target codon <em>j</em>. Reflects codon‑usage bias.</dd>
+</dl>
+
+<p>
+  The model assumes only single‑nucleotide changes per "instant" of evolutionary time
+  (multi‑nucleotide events are rare on the timescales we care about). Notice that ω only enters
+  the rates that change the amino acid; it's literally a knob on dN.
+</p>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">NY98 rate matrix — change parameters, see Q update</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">Pick a "from" codon and watch its row of Q. Changing ω rescales the nonsynonymous entries; changing κ rescales transitions. You're seeing exactly the matrix that GenomegaMap is fitting.</p>
+
+  <div class="controls">
+    <div class="control"><label>From codon</label><select id="qFrom"></select></div>
+    <div class="control"><label>ω (omega) — <span id="qOmegaV">1.00</span></label><input id="qOmega" type="range" min="0" max="3" step="0.05" value="1"/></div>
+    <div class="control"><label>κ (kappa) — <span id="qKappaV">2.00</span></label><input id="qKappa" type="range" min="1" max="6" step="0.1" value="2"/></div>
+    <div class="control"><label>μ (rate) — <span id="qMuV">1.00</span></label><input id="qMu" type="range" min="0.1" max="2" step="0.05" value="1"/></div>
+  </div>
+
+  <div id="qMatrix" style="overflow-x:auto"></div>
+</div>
+</section>
+
+
+<section id="manual" class="detail-section" data-summary="Open naive estimator sanity-check details" data-tag="Optional">
+<h2>3. The naive estimator (and why we need better)
+  <button class="section-complete" data-section="manual">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    Before reaching for full Bayesian machinery, it's worth seeing what the simplest
+    possible recipe looks like — both because the lab uses it as a sanity check, and
+    because seeing it fail tells us <em>why</em> we need GenomegaMap.
+  </p>
+</div>
+
+<p>
+  The Shatby thesis runs a "manual" dN/dS as a sanity check before turning to GenomegaMap. The
+  recipe is:
+</p>
+
+<ol>
+  <li>Count unique nonsynonymous SNPs <em>N</em> and unique synonymous SNPs <em>S</em> across all isolates.</li>
+  <li>Add pseudocounts to handle low‑count genes: 2 to N, 1 to S (the 2:1 pseudocount roughly matches the 2:1 expected ratio under neutrality, so the prior is "neutral").</li>
+  <li>
+    Compute a log‑fold change:
+    <div class="math">LFC = log<sub>2</sub>((N + 2) / (S + 1))</div>
+  </li>
+  <li>Optionally, χ² test against the expected 2:1 split.</li>
+</ol>
+
+<div class="callout warn">
+  <div class="callout-title">Why the manual approach is not enough</div>
+  It's quick, but it has serious problems:
+  <ul style="margin:6px 0 0">
+    <li>No notion of <em>uncertainty</em>. You get a point estimate, not a credible interval.</li>
+    <li>Doesn't account for transitions vs. transversions or codon‑usage bias.</li>
+    <li>Doesn't scale ω against the <em>opportunity</em> for nonsynonymous changes.</li>
+    <li>Lineage‑specific mutations get awkwardly excluded by ad‑hoc rules.</li>
+  </ul>
+  GenomegaMap is the principled fix.
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Manual dN/dS calculator</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">Plug in mutation counts from a hypothetical gene. Watch how the pseudocounts dampen extreme values. The 2:1 expectation under neutrality means a "neutral" gene gives LFC ≈ 0.</p>
+  <div class="controls">
+    <div class="control"><label>N (nonsyn unique SNPs)</label><input id="manN" type="number" value="10" min="0"/></div>
+    <div class="control"><label>S (syn unique SNPs)</label><input id="manS" type="number" value="3" min="0"/></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-label">Raw N/S</span><span class="stat-value" id="manRaw">—</span></div>
+    <div class="stat"><span class="stat-label">(N+2)/(S+1)</span><span class="stat-value" id="manAdj">—</span></div>
+    <div class="stat"><span class="stat-label">LFC = log₂</span><span class="stat-value" id="manLFC">—</span></div>
+    <div class="stat"><span class="stat-label">χ² vs 2:1</span><span class="stat-value" id="manChi">—</span></div>
+  </div>
+  <p class="faint" style="margin-top:10px">
+    Try (10, 0): the raw ratio is undefined but LFC is finite. Try (5, 1) — close to neutral. Try (15, 2) — strongly enriched.
+  </p>
+</div>
+
+<div class="worked-example">
+  <h4>Walkthrough — interpreting (N=15, S=2) for a hypothetical TB gene</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>Set up.</strong> You ran a selection scan and one gene came back with
+      15 unique nonsyn SNPs and 2 unique syn SNPs across all isolates.
+      Plug those into the demo above.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>Naive ratio.</strong> 15 / 2 = 7.5. Looks like extreme positive selection!
+      <em>But wait</em> — most random mutations are nonsyn anyway (≈75% of single‑base
+      changes alter the amino acid). The "neutral" expectation is closer to N:S ≈ 2:1.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>Pseudocount adjustment.</strong> (N+2)/(S+1) = 17/3 ≈ 5.67. Still high.
+      LFC = log<sub>2</sub>(5.67/2) ≈ 1.5 (above neutral by a factor of ~3).
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">4</span>
+    <div class="we-body">
+      <strong>Sanity check.</strong> χ² ≈ 7 against the 2:1 expectation, p ≈ 0.008.
+      So the result is unlikely under neutrality — but we have no <em>uncertainty interval</em>,
+      no proper handling of κ/codon usage, no idea if this is one hot codon or a
+      gene‑wide signal. <strong>This is exactly the gap GenomegaMap fills.</strong>
+    </div>
+  </div>
+</div>
+
+</section>
+
+
+<section id="bayesian" class="detail-section" data-summary="Open Bayesian model details" data-tag="Stats depth">
+<h2>4. Going Bayesian
+  <button class="section-complete" data-section="bayesian">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    A point estimate of ω hides uncertainty. Genes with few mutations <em>look</em>
+    like they have wildly extreme ω (we saw this above). Bayesian inference replaces
+    "best guess" with "full distribution of plausible values" — which is what
+    GenomegaMap reports.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Frequentist: "I think ω is 1.7." Bayesian: "Given the data, there's a 95% chance ω is
+  somewhere between 1.2 and 2.4 — and here's the full curve showing exactly how plausible
+  each value is." For genes with few mutations, that <em>curve</em> is wide; the Bayesian
+  output makes the uncertainty impossible to ignore. That's a <em>good</em> thing.
+</div>
+
+<div class="worked-example">
+  <h4>Bayes' rule as a lab habit</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Prior:</strong> before looking at this gene, the model allows many possible &omega;
+      values, but it does not assume every extreme value is equally likely.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Likelihood:</strong> for a proposed &omega;, ask whether the observed synonymous and
+      nonsynonymous codon changes would make sense under that value.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>Posterior:</strong> combine those two pieces. The result is a curve over possible
+      &omega; values. That curve is what the MCMC samples are trying to represent.
+    </div>
+  </div>
+</div>
+
+<p>
+  We want, for each gene, the full <em>posterior distribution</em> on ω given the observed allele
+  counts <em>x</em>. By Bayes' rule:
+</p>
+
+<div class="math">
+  p(ω, κ, μ | x) ∝ p(x | ω, κ, μ) · p(ω) p(κ) p(μ)
+</div>
+
+<table>
+  <thead><tr><th>Symbol</th><th>Say it as</th><th>What it means in this project</th></tr></thead>
+  <tbody>
+    <tr><td><strong>x</strong></td><td>the observed data</td><td>The codon counts or sequence patterns seen across isolates for one gene.</td></tr>
+    <tr><td><strong>&omega;</strong></td><td>omega</td><td>The dN/dS selection parameter you mainly care about.</td></tr>
+    <tr><td><strong>&kappa;</strong></td><td>kappa</td><td>The transition/transversion mutation-bias parameter.</td></tr>
+    <tr><td><strong>&mu;</strong> or <strong>&theta;</strong></td><td>mutation/diversity rate</td><td>A parameter controlling how much variation the model expects overall.</td></tr>
+    <tr><td><strong>p(ω, κ, μ | x)</strong></td><td>posterior</td><td>What parameter values are plausible after seeing the gene data.</td></tr>
+    <tr><td><strong>p(x | ω, κ, μ)</strong></td><td>likelihood</td><td>How well those parameter values explain the observed gene data.</td></tr>
+    <tr><td><strong>p(ω) p(κ) p(μ)</strong></td><td>priors</td><td>What the model considered plausible before seeing this gene.</td></tr>
+  </tbody>
+</table>
+
+<p>
+  The left‑hand side is what we report (mean, median, 95% credible interval). The right‑hand side
+  is just the likelihood times the prior. The likelihood is determined by the codon model. Priors
+  in GenomegaMap are weakly informative log‑normals — wide enough not to push the posterior
+  around but tight enough to regularize:
+</p>
+
+<table>
+  <thead><tr><th>Parameter</th><th>Prior median</th><th>Prior 95% range</th></tr></thead>
+  <tbody>
+    <tr><td>ω</td><td>0.45</td><td>(0.0098, 21)</td></tr>
+    <tr><td>κ</td><td>3.2</td><td>(0.90, 12)</td></tr>
+    <tr><td>θ</td><td>0.057</td><td>(0.023, 0.14)</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Why <em>credible intervals</em> instead of p‑values? The Bayesian credible interval has a clean
+  interpretation: "given the model and prior, there is a 95% probability that ω lies in this
+  range." The Shatby thesis flags a gene as significantly under positive selection when the
+  <em>entire</em> 95% CI sits above 1 — i.e., the posterior puts 97.5% of its mass on ω &gt; 1.
+</p>
+
+<h3>The likelihood: Multinomial‑Dirichlet</h3>
+<p>
+  At each codon site, given that the "ancestral" codon was <em>A</em>, the predicted distribution
+  over observed allele counts <em>x</em> follows a Multinomial‑Dirichlet form. Wilson 2020
+  derives this by combining a Poisson‑Random Field model of allele frequencies with the codon
+  rate matrix:
+</p>
+
+<div class="math">
+  Pr(x | A) = ( <sup>n</sup>⁄<sub>x</sub> ) · B(x + α<sub>A</sub>) / B(α<sub>A</sub>)
+</div>
+
+<p>
+  where <em>n</em> is the sample size, <em>α<sub>A</sub></em> is a 61‑vector of Dirichlet
+  concentration parameters derived from <em>Q</em>, and B is the multivariate beta function. The
+  ancestral codon is unknown so we marginalize:
+</p>
+
+<div class="math">
+  Pr(x) = Σ<sub>A</sub> π<sub>A</sub> · Pr(x | A)
+</div>
+
+<p>
+  This is one site's contribution to the likelihood. The total log‑likelihood for a gene is the
+  sum over its codon sites — <em>under the assumption that sites are independent</em>. We'll
+  return to that assumption.
+</p>
+
+<div class="callout">
+  <div class="callout-title">Bayesian vs. frequentist takes</div>
+  Classical PAML‑style methods optimize a likelihood over a fixed phylogeny and report a maximum‑
+  likelihood ω plus a likelihood‑ratio test. GenomegaMap instead samples the posterior, so the
+  uncertainty about ω is <em>built into the answer</em> rather than computed from a Hessian.
+</div>
+
+</section>
+
+
+<section id="mcmc" class="detail-section" data-summary="Open Metropolis-Hastings MCMC details" data-tag="Stats depth">
+<h2>5. Metropolis‑Hastings MCMC
+  <button class="section-complete" data-section="mcmc">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    We just wrote down the posterior we want — but that posterior is intractable to
+    compute directly. MCMC is the trick that lets us sample from <em>any</em> posterior
+    we can write down, even when we can't compute it. It's the engine inside GenomegaMap.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Imagine the posterior is a hilly landscape, and you can only feel the height under your
+  feet (not see the whole map). MCMC is a procedure where you take little random steps,
+  but you're <em>more likely</em> to step uphill than down. Run it long enough and the
+  fraction of time your feet spent in each region matches the height of the landscape there.
+  That's it. The fancy formulas just spell out exactly how to bias the steps so this works.
+</div>
+
+<p>
+  Computing the posterior in closed form is hopeless — there are 60 codons, three continuous
+  parameters, and a likelihood that's a product over thousands of sites. But we can <em>sample</em>
+  from it. Markov Chain Monte Carlo (MCMC) builds a Markov chain whose stationary distribution
+  is exactly the posterior we want. Run it long enough, and the histogram of visited states
+  approximates the posterior to arbitrary precision.
+</p>
+
+<div class="callout note">
+  <div class="callout-title">Output-file decoder</div>
+  A GenomegaMap output table is not one row per gene result. It is usually one row per saved
+  MCMC sample. If you see columns like iteration, likelihood, &omega;, &kappa;, and &theta;, each
+  row is one visited point in parameter space. The final gene summary comes later, when you take
+  means, credible intervals, and diagnostic plots from those rows.
+</div>
+
+<p>The Metropolis‑Hastings (MH) update is one of the simplest and most general MCMC moves:</p>
+
+<ol>
+  <li>Start at a random point <em>θ</em><sub>0</sub> in parameter space.</li>
+  <li>Propose a new value <em>θ'</em> drawn from a proposal distribution <em>q</em>(<em>θ'</em> | <em>θ</em><sub>t</sub>) — typically a small Gaussian random walk in log space.</li>
+  <li>
+    Compute the acceptance ratio
+    <div class="math">α = min(1, [p(θ' | x) · q(θ<sub>t</sub> | θ')] / [p(θ<sub>t</sub> | x) · q(θ' | θ<sub>t</sub>)])</div>
+  </li>
+  <li>With probability α, accept (θ<sub>t+1</sub> = θ'). Otherwise stay (θ<sub>t+1</sub> = θ<sub>t</sub>).</li>
+  <li>Repeat. Discard the first ~20% as burn‑in.</li>
+</ol>
+
+<p>
+  The magic is in step&nbsp;3: because we use a <em>ratio</em> of posteriors, the intractable
+  normalization constant of the posterior cancels out. We only need to evaluate the
+  un‑normalized density (likelihood × prior). And because q is symmetric for random‑walk
+  proposals, q ratios cancel too — α reduces to min(1, posterior ratio).
+</p>
+
+<div class="callout good">
+  <div class="callout-title">Tuning rule of thumb</div>
+  Aim for ~23–30% acceptance rate. Too high (you're barely moving) → poor mixing. Too low
+  (proposals are too aggressive) → also poor mixing. Adjust the proposal step size accordingly.
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Live Metropolis‑Hastings sampler</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">
+    The target distribution (gray) is a synthetic posterior on ω with two modes — bimodality is
+    common when there's both a "purifying" component (ω near 0.3) and a "diversifying" component
+    (ω near 2.5). Watch the chain (red dot) explore. Solid trail = accepted; X = rejected.
+  </p>
+
+  <div class="controls">
+    <div class="control"><label>Step size σ — <span id="mhStepV">0.4</span></label><input id="mhStep" type="range" min="0.05" max="2.5" step="0.05" value="0.4"/></div>
+    <div class="control"><label>Speed (steps/frame) — <span id="mhSpeedV">2</span></label><input id="mhSpeed" type="range" min="1" max="10" step="1" value="2"/></div>
+    <button class="btn" id="mhStart">▶ Start</button>
+    <button class="btn secondary" id="mhReset">Reset</button>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="mhCanvas" width="900" height="320"></canvas>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><span class="stat-label">Samples</span><span class="stat-value" id="mhN">0</span></div>
+    <div class="stat"><span class="stat-label">Acceptance</span><span class="stat-value" id="mhAcc">—</span></div>
+    <div class="stat"><span class="stat-label">Posterior mean</span><span class="stat-value" id="mhMean">—</span></div>
+    <div class="stat"><span class="stat-label">95% CI</span><span class="stat-value" id="mhCI">—</span></div>
+  </div>
+  <p class="faint" style="margin-top:10px">
+    <strong>What to look for:</strong> at very small σ the chain creeps and never crosses the
+    valley; at very large σ almost everything is rejected; at σ ≈ 0.4 you get fluid mixing across
+    both modes — that's "good MCMC".
+  </p>
+</div>
+
+<div class="checkpoint">
+  <h4>Recognize → Act · Diagnosing your chain</h4>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> Acceptance rate &gt; 60%, posterior mean barely changes between thousands of samples</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Increase σ. Your chain is creeping; proposals are too small to explore.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> Acceptance rate &lt; 5%, almost every proposal rejected</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Decrease σ. Proposals overshoot the high‑probability region.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> Trace plot looks like one mode for 3000 samples, never visits the other</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Run longer; consider parallel chains from different seeds; check for multimodality.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> Acceptance ~25%, trace fills both modes evenly</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Do:</strong> Nothing — that's good mixing. Discard burn‑in and report the posterior.</div>
+  </div>
+</div>
+
+<h3>What about reversible‑jump MCMC?</h3>
+<p>
+  Standard MH assumes the parameter space is fixed. But GenomegaMap's <em>sliding window</em>
+  variant has a variable number of windows — splitting and merging changes the dimension of the
+  parameter vector. <strong>Reversible‑jump MCMC</strong> (Green 1995) extends MH to handle that
+  by including a Jacobian term to keep the move reversible. In GenomegaMap, block boundaries are
+  proposed via a geometric distribution and split/merge moves are tossed in alongside the
+  ordinary updates. You don't need the math today; just know that's what's happening when you see
+  "RJ‑MCMC" in the source.
+</p>
+
+</section>
+
+
+<section id="genomegamap">
+<h2>6. GenomegaMap proper
+  <button class="section-complete" data-section="genomegamap">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    All the pieces above — codon model, Bayesian likelihood, MCMC — were already present
+    in Wilson's 2006 <em>omegaMap</em>. So what makes <em>Genome</em>gaMap different,
+    and why does it scale to 10,000+ isolates? Three engineering wins, summarized here.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  omegaMap (2006) was beautiful but slow — its likelihood took longer to compute as more
+  isolates were added, so 10,000 genomes was hopeless. GenomegaMap (2020) replaces the
+  slow likelihood with a tractable closed‑form expression that doesn't care how many
+  isolates you have. Same Bayesian guts, ~100× faster on big data.
+</div>
+
+<p>
+  Wilson's original 2006 <em>omegaMap</em> already did Bayesian dN/dS via MCMC, but it scaled
+  quadratically with sample size because it relied on the Li‑Stephens "product of approximate
+  conditionals" (PAC) likelihood. With ~10,000 isolates per gene becoming routine in TB
+  surveillance, that's intractable. GenomegaMap (Wilson 2020) makes <strong>three</strong> key
+  changes:
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="icon">1</div>
+    <h3>Constant time per site</h3>
+    <p>Replaces PAC with a population‑genetics derivation that gives a closed‑form Multinomial‑Dirichlet at each codon. Computational cost <em>doesn't grow with sample size</em>.</p>
+  </div>
+  <div class="card">
+    <div class="icon">2</div>
+    <h3>Phylogeny‑free</h3>
+    <p>Doesn't reconstruct a tree. It takes raw allele counts and uses a diffusion‑coalescent integral over implicit genealogies. This is huge: phylogenetic methods give false positives in the presence of recombination.</p>
+  </div>
+  <div class="card">
+    <div class="icon">3</div>
+    <h3>Parent‑dependent mutation</h3>
+    <p>Handles general mutation models where rates depend on both the source and target codon. The "parent‑dependent" extension gives a Dirichlet on allele frequencies conditional on the oldest allele.</p>
+  </div>
+</div>
+
+<h3>Why phylogeny‑free is a big deal</h3>
+<p>
+  Pathogen genomes are <em>mostly</em> clonal but recombine occasionally. Phylogenetic methods
+  assume a single tree at every site, so a recombination event creates a phylogenetic
+  inconsistency that the model can only "explain" by inferring fast mutation — <em>i.e., a false
+  positive signal of selection</em>. By integrating over genealogies, GenomegaMap sidesteps this.
+  The price: it assumes <strong>independence between sites</strong>, which isn't strictly true under
+  linkage. Wilson's coalescent simulations show this is forgivable in practice; even fully clonal
+  data give 92% coverage of true ω in 95% credible intervals.
+</p>
+
+<div class="callout">
+  <div class="callout-title">The diversity‑divergence equilibrium assumption</div>
+  Under Wright‑Fisher with weak selection at low mutation rates, the expected allele‑frequency
+  distribution is approximately Dirichlet with concentration parameters proportional to the
+  mutation rate matrix. GenomegaMap leverages this equilibrium so that, given Q (which contains
+  ω), the predicted allele counts at any codon follow a tractable distribution. No tree needed.
+</div>
+
+</section>
+
+
+<section id="three-models">
+<h2>7. Three model variants — Constant, Independent, Window
+  <button class="section-complete" data-section="three-models">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    This is the central pedagogical insight of the Ioerger &amp; Shatby 2025 paper:
+    "selection scan" isn't a single thing — it's a <em>resolution choice</em>.
+    Pick the wrong resolution and you'll either smear out a real signal or
+    drown in false positives. This section is the core skill of GenomegaMap.
+  </p>
+</div>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  You can ask "is this gene under selection?" at three zoom levels.
+  <strong>Whole gene</strong>: one number per gene — great for ranking thousands of genes,
+  but a single hot codon gets averaged away.
+  <strong>Per codon</strong>: one number per codon — pinpoints exact mutations, but each
+  number is built from very little data so it's noisy.
+  <strong>Sliding window</strong>: the algorithm picks the right zoom for each region
+  automatically — best of both, but heavier to run.
+</div>
+
+<div class="callout good">
+  <div class="callout-title">For today's project</div>
+  Start with the <strong>constant model</strong>. That gives one &omega; posterior per gene per
+  cohort, which is exactly what you need for the first diabetes vs non-diabetes comparison. The
+  codon and window models are useful later when you want to localize a signal inside a gene.
+</div>
+
+<p>
+  The <strong>same</strong> GenomegaMap inference machinery can be run at three different scales,
+  and the choice matters enormously for the questions you can answer:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Model</th><th>What ω does</th><th>Strength</th><th>Weakness</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Constant</strong> (gene‑level)</td>
+      <td>One ω for the whole gene</td>
+      <td>High statistical power; clean credible interval per gene</td>
+      <td>Single positively‑selected codon gets averaged out by the rest of the gene</td>
+    </tr>
+    <tr>
+      <td><strong>Independent</strong> (codon‑level)</td>
+      <td>One ω per codon, no sharing</td>
+      <td>Pinpoints exact mutation hot‑spots</td>
+      <td>Very low information per codon → high false‑positive rate. Long genes spuriously light up.</td>
+    </tr>
+    <tr>
+      <td><strong>Sliding window</strong></td>
+      <td>One ω per contiguous block; block boundaries are unknown and inferred via RJ‑MCMC</td>
+      <td>Best of both worlds — adapts the resolution to the data</td>
+      <td>More computationally demanding; mean window size is itself a quantity</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Three‑scale comparison on a synthetic gene</div>
+    <span class="demo-tag">interactive</span>
+  </div>
+  <p class="muted">
+    Below is a 600‑codon gene where I've planted a 30‑codon "hotspot" of strong positive selection
+    centered around codon 270 (think: the rifampicin‑resistance‑determining region of <em>rpoB</em>).
+    Move the slider to change the strength of the hotspot and see how each model responds.
+  </p>
+
+  <div class="controls">
+    <div class="control"><label>Hotspot ω — <span id="scaleOmegaV">3.5</span></label><input id="scaleOmega" type="range" min="0.5" max="6" step="0.1" value="3.5"/></div>
+    <div class="control"><label>Hotspot width (codons) — <span id="scaleWV">30</span></label><input id="scaleW" type="range" min="5" max="150" step="5" value="30"/></div>
+    <div class="control"><label>Background ω — <span id="scaleBgV">0.3</span></label><input id="scaleBg" type="range" min="0.05" max="1.5" step="0.05" value="0.3"/></div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="scaleCanvas" width="900" height="380"></canvas>
+  </div>
+
+  <p class="faint" style="margin-top:10px">
+    <strong>What you should see:</strong> the gene‑level model averages the hotspot away into a
+    barely‑significant ~0.6. The codon‑level model spikes the hotspot but has tons of noise
+    everywhere else. The window model captures the shape of the hotspot cleanly. This is the
+    central plot of Ioerger &amp; Shatby 2025.
+  </p>
+</div>
+
+</section>
+
+
+<section id="omegamap-vs-genomegamap" class="detail-section" data-summary="Open omegaMap vs GenomegaMap history" data-tag="Background">
+<h2>8. omegaMap vs GenomegaMap — what changed
+  <button class="section-complete" data-section="omegamap-vs-genomegamap">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    You'll see both names in the literature. Knowing the difference (and the year they
+    came out) is enough to navigate any methods discussion.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th></th><th>omegaMap (Wilson &amp; McVean 2006)</th><th>GenomegaMap (Wilson 2020)</th></tr></thead>
+  <tbody>
+    <tr><td>Likelihood</td><td>Li‑Stephens PAC approximation</td><td>Diffusion‑coalescent Multinomial‑Dirichlet</td></tr>
+    <tr><td>Sample size scaling</td><td><span class="pill">O(n²)</span> per evaluation</td><td><span class="pill accent">O(1)</span> per site</td></tr>
+    <tr><td>Phylogeny</td><td>Tree‑free, but expensive</td><td>Tree‑free</td></tr>
+    <tr><td>Recombination</td><td>Modeled explicitly</td><td>Robust without modeling it (assumes independence)</td></tr>
+    <tr><td>MCMC</td><td>Reversible‑jump MCMC over windows of dN/dS and recombination rate</td><td>RJ‑MCMC over window boundaries; standard MH for ω, κ, μ</td></tr>
+    <tr><td>Real‑world ceiling</td><td>~hundreds of sequences</td><td>10,000+ sequences</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Day to day in the lab, you will mostly invoke <strong>genomegaMap</strong> — but you will see
+  the older paper cited and you'll want to be able to explain the difference in a Slack thread.
+</p>
+
+</section>
+
+
+<section id="running">
+<h2>9. Running GenomegaMap in practice
+  <button class="section-complete" data-section="running">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why this section matters</span>
+  <p>
+    All the theory is great, but you need to actually <em>run</em> the tool. This is the
+    five‑step recipe for going from a multiple sequence alignment to a posterior on ω.
+  </p>
+</div>
+
+<p>
+  GenomegaMap is bundled in Daniel Wilson's <a href="https://github.com/danny-wilson/genomegaMap" target="_blank">genomegaMap</a> repo and ships with the <em>gcat</em> framework. Typical workflow:
+</p>
+
+<ol class="step-list">
+  <li><strong>Align CDSs.</strong> Multiple‑sequence‑align the coding sequence of one gene across all isolates (use the H37Rv codon coordinates as the reference frame in TB work). Mask gaps and premature stops.</li>
+  <li><strong>Convert to input format.</strong> Codon counts per site, packaged as a single XML file per gene (the format gcat expects).</li>
+  <li><strong>Run MCMC.</strong> ~100k iterations, sampling every ~250 (so you save ~400 samples after thinning).</li>
+  <li><strong>Discard burn‑in.</strong> Drop the first 20% of saved samples — the chain hadn't reached stationarity yet.</li>
+  <li><strong>Summarize the posterior.</strong> Read out posterior mean ω and its 95% credible interval. Flag genes with the entire CI &gt; 1 as positively selected.</li>
+</ol>
+
+<div class="tab-group">
+  <div class="tabs">
+    <button class="tab active">Python wrapper sketch</button>
+    <button class="tab">Bash invocation</button>
+    <button class="tab">Posterior post‑processing</button>
+  </div>
+
+  <div class="tabpanel active">
+<pre><code><span class="tok-c"># post‑MCMC analysis: read sampled omega values for one gene</span>
+<span class="tok-k">import</span> numpy <span class="tok-k">as</span> np, pandas <span class="tok-k">as</span> pd
+
+<span class="tok-c"># GenomegaMap writes one row per saved iteration; column 'mu_codon.omega' is ω</span>
+samples = pd.read_csv(<span class="tok-s">"rpoB.gcat.out"</span>, sep=<span class="tok-s">"\t"</span>)
+omega   = samples[<span class="tok-s">"mu_codon.omega"</span>].values
+
+<span class="tok-c"># Burn‑in: drop first 20% of post‑warmup samples</span>
+omega = omega[len(omega)//<span class="tok-n">5</span>:]
+
+mean_omega = omega.mean()
+lo, hi     = np.percentile(omega, [<span class="tok-n">2.5</span>, <span class="tok-n">97.5</span>])
+
+<span class="tok-c"># "Significantly under positive selection" if entire 95% CI &gt; 1</span>
+under_pos_sel = lo &gt; <span class="tok-n">1.0</span>
+
+<span class="tok-k">print</span>(<span class="tok-s">f"omega = {mean_omega:.2f}  CI=[{lo:.2f}, {hi:.2f}]  pos‑sel? {under_pos_sel}"</span>)
+</code></pre>
+  </div>
+
+  <div class="tabpanel">
+<pre><code><span class="tok-c"># Run gcat on a single gene's codon alignment</span>
+gcat \
+  --params  <span class="tok-s">params.xml</span>  \
+  --data    <span class="tok-s">rpoB_codons.txt</span>  \
+  --out     <span class="tok-s">rpoB.gcat.out</span>  \
+  --niter   <span class="tok-n">100000</span>  \
+  --thin    <span class="tok-n">250</span>  \
+  --seed    <span class="tok-n">42</span>
+
+<span class="tok-c"># For a 4000‑gene M. tuberculosis genome you'll want a job array on a cluster</span>
+sbatch --array=1‑3979 run_gene.slurm
+</code></pre>
+  </div>
+
+  <div class="tabpanel">
+<pre><code><span class="tok-c"># Compare two cohorts (e.g., diabetic vs non‑diabetic) for one gene</span>
+<span class="tok-k">import</span> numpy <span class="tok-k">as</span> np
+
+omega_d  = load_samples(<span class="tok-s">"rpoB_diabetes.out"</span>,  burn=<span class="tok-n">0.2</span>)
+omega_nd = load_samples(<span class="tok-s">"rpoB_nodiab.out"</span>,    burn=<span class="tok-n">0.2</span>)
+
+<span class="tok-c"># GenomegaMap doesn't natively compare cohorts. Bootstrap the difference distribution:</span>
+B = <span class="tok-n">10000</span>
+diffs = np.random.choice(omega_d, B) - np.random.choice(omega_nd, B)
+
+mean_diff = diffs.mean()
+lo, hi    = np.percentile(diffs, [<span class="tok-n">2.5</span>, <span class="tok-n">97.5</span>])
+p_d_gt_nd = (diffs &gt; <span class="tok-n">0</span>).mean()
+
+<span class="tok-k">print</span>(<span class="tok-s">f"Δω = {mean_diff:.2f}  95% CI [{lo:.2f}, {hi:.2f}]  P(d>nd)={p_d_gt_nd:.3f}"</span>)
+</code></pre>
+  </div>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Watch out</div>
+  GenomegaMap analyzes one population at a time. The two‑cohort comparison shown above is a
+  <em>post‑hoc bootstrap</em> over independently‑run chains — it's a reasonable approximation but
+  not as principled as a joint hierarchical model. The Shatby thesis is upfront about this
+  limitation.
+</div>
+
+</section>
+
+</main>
+</div>
+
+<footer>
+  Foundation paper (1 of 5) · <a href="index.html">back to overview</a> · <a href="02-tb-selection.html">next: Ioerger Lab · TB Scans →</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+<script>
+/* =================================================================
+   Page‑1 specific JS — codon table demo, NY98 matrix, manual dN/dS,
+   live MCMC, and three‑scale gene visualizer
+   ================================================================= */
+
+/* ---------- Codon table: synonymous vs nonsynonymous neighbors ---------- */
+const CODON_TABLE = {
+  TTT:'F', TTC:'F', TTA:'L', TTG:'L',
+  CTT:'L', CTC:'L', CTA:'L', CTG:'L',
+  ATT:'I', ATC:'I', ATA:'I', ATG:'M',
+  GTT:'V', GTC:'V', GTA:'V', GTG:'V',
+  TCT:'S', TCC:'S', TCA:'S', TCG:'S',
+  CCT:'P', CCC:'P', CCA:'P', CCG:'P',
+  ACT:'T', ACC:'T', ACA:'T', ACG:'T',
+  GCT:'A', GCC:'A', GCA:'A', GCG:'A',
+  TAT:'Y', TAC:'Y', TAA:'*', TAG:'*',
+  CAT:'H', CAC:'H', CAA:'Q', CAG:'Q',
+  AAT:'N', AAC:'N', AAA:'K', AAG:'K',
+  GAT:'D', GAC:'D', GAA:'E', GAG:'E',
+  TGT:'C', TGC:'C', TGA:'*', TGG:'W',
+  CGT:'R', CGC:'R', CGA:'R', CGG:'R',
+  AGT:'S', AGC:'S', AGA:'R', AGG:'R',
+  GGT:'G', GGC:'G', GGA:'G', GGG:'G'
+};
+const TRANSITIONS = { A:'G', G:'A', C:'T', T:'C' };
+const ALL_CODONS = Object.keys(CODON_TABLE);
+const NS_CODONS  = ALL_CODONS.filter(c => CODON_TABLE[c] !== '*');
+
+(function initCodonDemo() {
+  const sel = document.getElementById('codonSel');
+  if (!sel) return;
+  NS_CODONS.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c + ' → ' + CODON_TABLE[c];
+    sel.appendChild(o);
+  });
+  sel.value = 'CGT'; // arginine
+  sel.addEventListener('change', renderCodon);
+  renderCodon();
+
+  function renderCodon() {
+    const codon = sel.value;
+    const aa = CODON_TABLE[codon];
+    const grid = document.getElementById('codonGrid');
+    grid.innerHTML = '';
+    let n=0, s=0, stop=0;
+    for (let pos=0; pos<3; pos++) {
+      for (const b of ['A','C','G','T']) {
+        if (b === codon[pos]) continue;
+        const newCodon = codon.slice(0,pos) + b + codon.slice(pos+1);
+        const newAA = CODON_TABLE[newCodon];
+        const isStop = newAA === '*';
+        const isSyn = !isStop && newAA === aa;
+        if (isStop) stop++;
+        else if (isSyn) s++;
+        else n++;
+
+        const cell = document.createElement('div');
+        cell.style.padding = '8px 10px';
+        cell.style.borderRadius = '6px';
+        cell.style.border = '1px solid var(--border)';
+        cell.style.background = isStop ? 'rgba(120,120,120,0.18)' : (isSyn ? 'rgba(4,120,87,0.16)' : 'rgba(185,28,28,0.16)');
+        cell.style.color = isStop ? 'var(--text-faint)' : 'var(--text)';
+        cell.innerHTML = `<strong>pos ${pos+1}: ${codon[pos]}→${b}</strong><br/>${newCodon} <span style="opacity:0.7">→</span> ${newAA}<br/><span style="font-size:11px;opacity:0.75">${isStop?'STOP':isSyn?'synonymous':'nonsynonymous'}</span>`;
+        grid.appendChild(cell);
+      }
+    }
+    document.getElementById('codonN').textContent = n;
+    document.getElementById('codonS').textContent = s;
+    document.getElementById('codonStop').textContent = stop;
+  }
+})();
+
+/* ---------- NY98 rate matrix demo ---------- */
+(function initNY98() {
+  const sel = document.getElementById('qFrom');
+  if (!sel) return;
+  NS_CODONS.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c + ' (' + CODON_TABLE[c] + ')';
+    sel.appendChild(o);
+  });
+  sel.value = 'CGT';
+
+  const omegaIn = document.getElementById('qOmega');
+  const kappaIn = document.getElementById('qKappa');
+  const muIn = document.getElementById('qMu');
+
+  function update() {
+    document.getElementById('qOmegaV').textContent = (+omegaIn.value).toFixed(2);
+    document.getElementById('qKappaV').textContent = (+kappaIn.value).toFixed(2);
+    document.getElementById('qMuV').textContent = (+muIn.value).toFixed(2);
+    render();
+  }
+  [omegaIn, kappaIn, muIn, sel].forEach(el => el.addEventListener('input', update));
+
+  function render() {
+    const codon = sel.value;
+    const aa = CODON_TABLE[codon];
+    const omega = +omegaIn.value;
+    const kappa = +kappaIn.value;
+    const mu    = +muIn.value;
+    const piJ   = 1.0 / NS_CODONS.length; // assume uniform stationary
+
+    const rows = [];
+    rows.push(`<table style="font-size:13px;width:auto;margin:0 auto"><thead><tr><th>To codon</th><th>To AA</th><th>change</th><th>type</th><th>Q<sub>ij</sub></th></tr></thead><tbody>`);
+
+    let total = 0;
+    for (let pos=0; pos<3; pos++) {
+      for (const b of ['A','C','G','T']) {
+        if (b === codon[pos]) continue;
+        const newCodon = codon.slice(0,pos) + b + codon.slice(pos+1);
+        const newAA = CODON_TABLE[newCodon];
+        if (newAA === '*') continue;
+        const isSyn = newAA === aa;
+        const isTransition = TRANSITIONS[codon[pos]] === b;
+        let q = mu * piJ;
+        if (isTransition) q *= kappa;
+        if (!isSyn) q *= omega;
+        total += q;
+        const color = isSyn ? 'var(--good)' : 'var(--bad)';
+        const tag = (isSyn?'syn ':'nonsyn ') + (isTransition?'trs':'trv');
+        rows.push(`<tr><td><code>${newCodon}</code></td><td>${newAA}</td><td>${codon[pos]}→${b} (pos ${pos+1})</td><td style="color:${color}">${tag}</td><td><strong>${q.toFixed(4)}</strong></td></tr>`);
+      }
+    }
+    rows.push(`<tr style="background:var(--bg-elev-2)"><td colspan="4"><strong>row sum (≈ outflow rate from ${codon})</strong></td><td><strong>${total.toFixed(4)}</strong></td></tr>`);
+    rows.push('</tbody></table>');
+    document.getElementById('qMatrix').innerHTML = rows.join('');
+  }
+  update();
+})();
+
+/* ---------- Manual dN/dS calculator ---------- */
+(function initManual() {
+  const N = document.getElementById('manN');
+  const S = document.getElementById('manS');
+  if (!N) return;
+  function recomp() {
+    const n = +N.value, s = +S.value;
+    const raw = s === 0 ? '∞' : (n/s).toFixed(2);
+    const adj = ((n+2)/(s+1));
+    const lfc = Math.log2(adj);
+    const T = (n+2) + (s+1);
+    const eN = (2/3)*T, eS = (1/3)*T;
+    const chi = ((n+2-eN)**2/eN) + ((s+1-eS)**2/eS);
+    document.getElementById('manRaw').textContent = raw;
+    document.getElementById('manAdj').textContent = adj.toFixed(2);
+    document.getElementById('manLFC').textContent = lfc.toFixed(2);
+    document.getElementById('manChi').textContent = chi.toFixed(2);
+  }
+  N.addEventListener('input', recomp);
+  S.addEventListener('input', recomp);
+  recomp();
+})();
+
+/* ---------- MCMC visualizer: bimodal target on omega ---------- */
+(function initMH() {
+  const canvas = document.getElementById('mhCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Target: mixture of two log‑normals on omega
+  function logTarget(x) {
+    if (x <= 0) return -1e9;
+    const m1 = (Math.log(x) - Math.log(0.3)) / 0.4;
+    const m2 = (Math.log(x) - Math.log(2.5)) / 0.5;
+    const p1 = 0.55 * Math.exp(-0.5 * m1*m1) / (x * 0.4);
+    const p2 = 0.45 * Math.exp(-0.5 * m2*m2) / (x * 0.5);
+    return Math.log(p1 + p2 + 1e-30);
+  }
+
+  let theta = 1.0;
+  let accepted = 0, total = 0;
+  let trace = [];   // last N samples for histogram
+  const TRACE_MAX = 5000;
+
+  function reset() {
+    theta = 0.6 + Math.random()*0.5;
+    accepted = 0; total = 0; trace = []; lastMove = null;
+    update();
+    draw();
+  }
+
+  let lastMove = null;
+  function step() {
+    const sigma = +document.getElementById('mhStep').value;
+    // log‑space proposal
+    const proposal = Math.exp(Math.log(theta) + (Math.random()-0.5)*2*sigma);
+    // proposal density correction (log‑space symmetric in log θ; need Jacobian for natural θ)
+    const logA = (logTarget(proposal) - logTarget(theta)) + (Math.log(proposal) - Math.log(theta));
+    const accept = Math.log(Math.random()) < logA;
+    total++;
+    if (accept) { theta = proposal; accepted++; lastMove = {to:proposal, accepted:true}; }
+    else { lastMove = {to:proposal, accepted:false}; }
+    trace.push(theta);
+    if (trace.length > TRACE_MAX) trace.shift();
+  }
+
+  function update() {
+    const accRate = total ? (accepted/total*100).toFixed(1) : '—';
+    document.getElementById('mhAcc').textContent = accRate === '—' ? '—' : accRate + '%';
+    document.getElementById('mhN').textContent = total;
+    if (trace.length > 50) {
+      const sorted = trace.slice().sort((a,b)=>a-b);
+      const mean = trace.reduce((s,v)=>s+v,0)/trace.length;
+      const lo = sorted[Math.floor(0.025*sorted.length)];
+      const hi = sorted[Math.floor(0.975*sorted.length)];
+      document.getElementById('mhMean').textContent = mean.toFixed(2);
+      document.getElementById('mhCI').textContent = '[' + lo.toFixed(2) + ', ' + hi.toFixed(2) + ']';
+    }
+  }
+
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    const xMin = 0.01, xMax = 6;
+    const xToPx = x => 60 + (Math.log(x) - Math.log(xMin)) / (Math.log(xMax) - Math.log(xMin)) * (W - 90);
+
+    // Target curve (gray)
+    const tcol = themeColor('text-faint');
+    ctx.strokeStyle = tcol;
+    ctx.fillStyle = tcol + '33';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    let maxP = -Infinity;
+    const samp = [];
+    for (let i = 0; i <= 600; i++) {
+      const x = Math.exp(Math.log(xMin) + i/600 * (Math.log(xMax) - Math.log(xMin)));
+      const lp = logTarget(x);
+      samp.push({x, lp});
+      if (lp > maxP) maxP = lp;
+    }
+    samp.forEach((s,i)=>{
+      const y = H - 60 - Math.exp(s.lp - maxP) * (H - 100);
+      const px = xToPx(s.x);
+      if (i===0) ctx.moveTo(px,y); else ctx.lineTo(px,y);
+    });
+    ctx.lineTo(xToPx(xMax), H-60);
+    ctx.lineTo(xToPx(xMin), H-60);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // X axis with ω labels
+    ctx.strokeStyle = themeColor('border-strong');
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(60, H-60); ctx.lineTo(W-30, H-60); ctx.stroke();
+    ctx.fillStyle = themeColor('text');
+    ctx.font = '12px sans-serif';
+    [0.1, 0.3, 1, 3, 5].forEach(t=>{
+      if (t<xMin||t>xMax) return;
+      const px = xToPx(t);
+      ctx.beginPath(); ctx.moveTo(px,H-60); ctx.lineTo(px,H-55); ctx.stroke();
+      ctx.fillText('ω='+t, px-15, H-44);
+    });
+    // ω = 1 reference
+    const px1 = xToPx(1);
+    ctx.strokeStyle = themeColor('warn');
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(px1, H-60); ctx.lineTo(px1, 30); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = themeColor('warn');
+    ctx.fillText('ω=1 (neutral)', px1-30, 24);
+
+    // Histogram of trace
+    if (trace.length > 30) {
+      const bins = 50;
+      const counts = new Array(bins).fill(0);
+      trace.forEach(v => {
+        const u = (Math.log(v) - Math.log(xMin)) / (Math.log(xMax) - Math.log(xMin));
+        const i = Math.min(bins-1, Math.max(0, Math.floor(u * bins)));
+        counts[i]++;
+      });
+      const m = Math.max(...counts);
+      const accent = themeColor('accent');
+      ctx.fillStyle = accent + '55';
+      ctx.strokeStyle = accent;
+      for (let i=0;i<bins;i++) {
+        const x0 = xToPx(Math.exp(Math.log(xMin) + i/bins * (Math.log(xMax)-Math.log(xMin))));
+        const x1 = xToPx(Math.exp(Math.log(xMin) + (i+1)/bins * (Math.log(xMax)-Math.log(xMin))));
+        const h = (counts[i]/m) * (H-160);
+        ctx.fillRect(x0, H-60-h, x1-x0-1, h);
+      }
+    }
+
+    // Last move arrow
+    if (lastMove) {
+      const px = xToPx(lastMove.to);
+      ctx.fillStyle = lastMove.accepted ? themeColor('good') : themeColor('bad');
+      ctx.beginPath();
+      ctx.arc(px, H-60-8, 4, 0, 2*Math.PI);
+      ctx.fill();
+      if (!lastMove.accepted) {
+        ctx.strokeStyle = themeColor('bad');
+        ctx.beginPath(); ctx.moveTo(px-4,H-60-12); ctx.lineTo(px+4,H-60-4); ctx.moveTo(px+4,H-60-12); ctx.lineTo(px-4,H-60-4); ctx.stroke();
+      }
+    }
+
+    // Current state (red)
+    const pxc = xToPx(theta);
+    ctx.fillStyle = themeColor('accent-soft') || themeColor('accent');
+    ctx.beginPath(); ctx.arc(pxc, H-60-4, 7, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = themeColor('text');
+    ctx.fillText('current θ='+theta.toFixed(2), pxc-30, H-60-14);
+
+    // Title
+    ctx.fillStyle = themeColor('text-muted');
+    ctx.font = '13px sans-serif';
+    ctx.fillText('Posterior on ω (gray) ← histogram of MCMC samples (blue)', 60, 22);
+  }
+
+  let running = false, raf;
+  function tick() {
+    if (!running) return;
+    const speed = +document.getElementById('mhSpeed').value;
+    for (let i=0;i<speed;i++) step();
+    update(); draw();
+    raf = requestAnimationFrame(tick);
+  }
+  document.getElementById('mhStart').addEventListener('click', () => {
+    running = !running;
+    document.getElementById('mhStart').textContent = running ? '⏸ Pause' : '▶ Start';
+    if (running) tick();
+  });
+  document.getElementById('mhReset').addEventListener('click', reset);
+  ['mhStep','mhSpeed'].forEach(id => document.getElementById(id).addEventListener('input', e => {
+    document.getElementById(id+'V').textContent = (+e.target.value).toFixed(2);
+  }));
+  document.addEventListener('themechange', () => draw());
+  reset();
+})();
+
+/* ---------- Three‑scale gene visualization ---------- */
+(function initScales() {
+  const canvas = document.getElementById('scaleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const L = 600;        // codons
+  const HOTSPOT_CENTER = 270;
+
+  function trueOmega(i) {
+    const omegaH = +document.getElementById('scaleOmega').value;
+    const omegaB = +document.getElementById('scaleBg').value;
+    const w = +document.getElementById('scaleW').value;
+    return Math.abs(i - HOTSPOT_CENTER) <= w/2 ? omegaH : omegaB;
+  }
+
+  function simulate() {
+    // Simulate per‑codon counts -- not exact but visually instructive
+    const dataN = new Array(L), dataS = new Array(L);
+    for (let i=0; i<L; i++) {
+      const o = trueOmega(i);
+      // expected counts roughly proportional to omega
+      const muN = 0.1 + 0.4*o; const muS = 0.2;
+      dataN[i] = poisson(muN);
+      dataS[i] = poisson(muS);
+    }
+    return {dataN, dataS};
+  }
+  function poisson(lambda) {
+    let L0 = Math.exp(-lambda), k=0, p=1;
+    do { k++; p *= Math.random(); } while (p>L0);
+    return k-1;
+  }
+
+  function inferGene(dataN, dataS) {
+    let N=0,S=0;
+    for (let i=0;i<L;i++){N+=dataN[i];S+=dataS[i];}
+    return {omega: (N+2)/(S+1)/2, lo:(N+2)/(S+1)/2*0.7, hi:(N+2)/(S+1)/2*1.3};
+  }
+  function inferCodon(dataN, dataS) {
+    return new Array(L).fill(0).map((_,i) => (dataN[i]+1)/(dataS[i]+1)/2);
+  }
+  function inferWindow(dataN, dataS, win=20) {
+    return new Array(L).fill(0).map((_,i) => {
+      let n=0,s=0;
+      for (let k=Math.max(0,i-win/2); k<Math.min(L,i+win/2); k++){n+=dataN[k];s+=dataS[k];}
+      return (n+2)/(s+1)/2;
+    });
+  }
+
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const {dataN, dataS} = simulate();
+    const omegaCodon = inferCodon(dataN, dataS);
+    const omegaWindow = inferWindow(dataN, dataS, 24);
+    const omegaGene = inferGene(dataN, dataS);
+
+    const padL=70, padR=20, padT=44, padB=32;
+    const plotW = W - padL - padR, plotH = (H - padT - padB - 24) / 3;
+    const yMax = 5;
+
+    function drawAxis(yTop, label) {
+      ctx.strokeStyle = themeColor('border-strong');
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, yTop); ctx.lineTo(padL, yTop+plotH); ctx.lineTo(padL+plotW, yTop+plotH); ctx.stroke();
+      ctx.fillStyle = themeColor('text-faint');
+      ctx.font = '11px sans-serif';
+      [1,2,3,4].forEach(v=>{
+        const y = yTop + plotH - (v/yMax) * plotH;
+        ctx.beginPath(); ctx.moveTo(padL-3, y); ctx.lineTo(padL, y); ctx.stroke();
+        ctx.fillText('ω='+v, 40, y+3);
+      });
+      // ω=1 reference
+      ctx.strokeStyle = themeColor('warn');
+      ctx.setLineDash([3,3]);
+      const y1 = yTop + plotH - (1/yMax) * plotH;
+      ctx.beginPath(); ctx.moveTo(padL, y1); ctx.lineTo(padL+plotW, y1); ctx.stroke();
+      ctx.setLineDash([]);
+      // Title
+      ctx.fillStyle = themeColor('text');
+      ctx.font = '13px sans-serif';
+      ctx.fillText(label, padL, yTop-6);
+    }
+
+    function omegaToPx(yTop, o) { return yTop + plotH - Math.min(o, yMax)/yMax * plotH; }
+
+    // True ω trace overlay
+    function drawTrue(yTop, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      for (let i=0;i<L;i++) {
+        const px = padL + i/L*plotW;
+        const py = omegaToPx(yTop, trueOmega(i));
+        if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Plot 1: Gene‑level
+    let yT = padT;
+    drawAxis(yT, '1 ▸ Constant (gene‑level): ω = ' + omegaGene.omega.toFixed(2));
+    ctx.strokeStyle = themeColor('accent');
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(padL, omegaToPx(yT, omegaGene.omega)); ctx.lineTo(padL+plotW, omegaToPx(yT, omegaGene.omega)); ctx.stroke();
+    drawTrue(yT, themeColor('text-faint'));
+
+    // Plot 2: Codon‑level
+    yT = padT + plotH + 24;
+    drawAxis(yT, '2 ▸ Independent (codon‑level): noisy point estimates');
+    ctx.fillStyle = themeColor('bad') + 'aa';
+    for (let i=0;i<L;i++) {
+      const px = padL + i/L*plotW;
+      const py = omegaToPx(yT, omegaCodon[i]);
+      ctx.beginPath(); ctx.arc(px,py,1.6,0,2*Math.PI); ctx.fill();
+    }
+    drawTrue(yT, themeColor('text-faint'));
+
+    // Plot 3: Sliding window
+    yT = padT + 2*(plotH + 24);
+    drawAxis(yT, '3 ▸ Sliding window: localized signal, low noise');
+    ctx.strokeStyle = themeColor('good');
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (let i=0;i<L;i++) {
+      const px = padL + i/L*plotW;
+      const py = omegaToPx(yT, omegaWindow[i]);
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    drawTrue(yT, themeColor('text-faint'));
+
+    // X label
+    ctx.fillStyle = themeColor('text-faint');
+    ctx.font = '11px sans-serif';
+    ctx.fillText('codon index', padL+plotW/2-30, H-10);
+  }
+  ['scaleOmega','scaleW','scaleBg'].forEach(id => {
+    document.getElementById(id).addEventListener('input', e => {
+      document.getElementById(id+'V').textContent = (+e.target.value).toFixed(2);
+      draw();
+    });
+  });
+  document.addEventListener('themechange', () => draw());
+  draw();
+})();
+</script>
+
+</body>
+</html>

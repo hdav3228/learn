@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TANDEM TB-Diabetes Study · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn active">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html" class="active">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#why-this-paper">1. Why this paper matters</a></li>
+    <li><a href="#methods">2. Methods decoder</a></li>
+    <li><a href="#results">3. Results &amp; country variation</a></li>
+    <li><a href="#talk-track">4. Talk track</a></li>
+    <li><a href="#limitations">5. What not to overclaim</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Paper reading order">
+  <a class="step done" href="09-ballell-tb-drugs.html">Ballell drugs</a>
+  <span class="sep">→</span>
+  <span class="step here">TANDEM</span>
+  <span class="sep">→</span>
+  <a class="step" href="11-mexico-mtb-genomics.html">Mexico</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Paper 6 · Ugarte-Gil et al. 2020 · clinical TB-DM cohort</div>
+  <h1>Diabetes mellitus among pulmonary TB patients in four endemic countries</h1>
+  <p class="lede">
+    TANDEM is the clinical context paper explaining why diabetes status is a serious variable in TB biology, how diabetes is measured clinically, and why TB-DM characteristics vary across settings.
+  </p>
+  <div class="quickstart">
+    <a class="qpill" href="#methods">Methods</a>
+    <a class="qpill" href="#results">Results</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">Read this first — in plain English</span>
+  TANDEM says diabetes is not a side detail in TB. In a massive clinical study of 2,185 pulmonary TB patients across four countries, 12.5% had diabetes, and a third of those were newly diagnosed. Diabetic TB patients were older, heavier, and often severely hyperglycemic. This paper proves that the "diabetic host" is a biologically distinct, widespread environment for TB, which justifies our entire GenomegaMap project looking for genetic adaptations to that environment.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Clinical reason diabetes is a meaningful TB cohort split.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Cohort definitions and measurement differences matter.</td></tr>
+      <tr><th>Use this for</th><td>Use to justify diabetes/non-diabetes grouping.</td></tr>
+      <tr><th>Defer for now</th><td>Do not turn clinical background into mechanistic overclaims.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="why-this-paper">
+<h2>1. Why this paper matters
+  <button class="section-complete" data-section="why-this-paper">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Clinical foundation</span>
+  <p>
+    This paper does not tell you how to run GenomegaMap. It tells you why splitting TB genomes into diabetes vs non-diabetes groups is a valid scientific idea. It provides the epidemiological bedrock.
+  </p>
+</div>
+
+<div class="metric-strip">
+  <div class="metric-tile good">
+    <span class="kicker">Cohort</span>
+    <span class="big">2,185</span>
+    <span class="caption">Pulmonary TB patients.</span>
+  </div>
+  <div class="metric-tile note">
+    <span class="kicker">TB-DM prevalence</span>
+    <span class="big">12.5%</span>
+    <span class="caption">267 of 2,128 tested patients.</span>
+  </div>
+  <div class="metric-tile warn">
+    <span class="kicker">Newly diagnosed</span>
+    <span class="big">~1/3</span>
+    <span class="caption">A substantial share of diabetes was newly detected.</span>
+  </div>
+</div>
+</section>
+
+<section id="methods" class="detail-section" data-summary="Open diabetes measurement details" data-tag="Reference">
+<h2>2. Methods decoder: measuring diabetes
+  <button class="section-complete" data-section="methods">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why definitions matter</span>
+  <p>In medical records, "diabetic" can mean anything from "patient thinks they have it" to "lab-confirmed severe hyperglycemia." TANDEM used rigorous lab standards, which is why we must use our curated workbook, not loose clinical notes.</p>
+</div>
+
+<table>
+  <thead><tr><th>Measurement</th><th>What it is</th><th>Why it matters for us</th></tr></thead>
+  <tbody>
+    <tr><td><strong>HbA1c</strong></td><td>Glycated hemoglobin. Measures average blood sugar over the past 2-3 months.</td><td>The gold standard. If HbA1c is high, the TB bacteria have been living in a chronic high-sugar environment, forcing metabolic adaptation.</td></tr>
+    <tr><td><strong>FPG</strong></td><td>Fasting plasma glucose. Measures blood sugar at a single point in time.</td><td>Used when HbA1c was not feasible, but less indicative of the long-term environment TB experiences.</td></tr>
+    <tr><td><strong>New vs Known</strong></td><td>"Known" means previously diagnosed. "New" means caught by study screening.</td><td>TB-DM is underdiagnosed. Our own metadata might miss diabetes if patients weren't properly screened like they were in TANDEM.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">The metadata rule</div>
+  For our GenomegaMap project, do not infer diabetes status yourself. Rely entirely on the <code>diabetes.combined.xlsx</code> workbook and the <code>samplestatus=good</code> filter to define our cohorts.
+</div>
+</section>
+
+<section id="results" class="detail-section" data-summary="Open country-variation results" data-tag="Clinical detail">
+<h2>3. Results &amp; country variation
+  <button class="section-complete" data-section="results">Mark complete</button>
+</h2>
+
+<p>
+  TANDEM found a 12.5% overall diabetes prevalence among TB patients, but the crucial finding is how much it varied by geography and host phenotype.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>The Phenotype</h3>
+    <p>TB-DM patients were older and had higher BMIs than TB-only patients. The host metabolic state is fundamentally different.</p>
+  </div>
+  <div class="card">
+    <h3>The Geography</h3>
+    <p>Age-standardized prevalence varied wildly: Indonesia (19.7%), Peru (12.3%), Romania (12.3%), South Africa (10.9%).</p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: Framing a biological argument</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>The premise:</strong> We are running GenomegaMap to find genes evolving differently in TB from diabetic patients.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>The skeptics:</strong> A reviewer asks: "Why would diabetes affect TB evolution? Isn't it just a lung infection?"
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>The TANDEM defense:</strong> "As the TANDEM study established, diabetic TB patients are not just a minor subset — they make up nearly 20% of cases in some endemic regions, and they present a fundamentally different host environment, characterized by older age, higher BMI, and severe chronic hyperglycemia (high HbA1c). TB bacteria surviving in a diabetic lung must manage altered nutrient availability and oxidative stress, providing a clear biological mechanism for differential selection."
+    </div>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>Worked Interpretation: Defending against confounding</h4>
+  <div class="we-step">
+    <span class="we-num">1</span>
+    <div class="we-body">
+      <strong>The premise:</strong> You find a gene with high positive selection in the "diabetes" cohort.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">2</span>
+    <div class="we-body">
+      <strong>The geographic risk:</strong> TANDEM showed that Indonesia has almost double the diabetes prevalence of South Africa.
+    </div>
+  </div>
+  <div class="we-step">
+    <span class="we-num">3</span>
+    <div class="we-body">
+      <strong>The check:</strong> You must check the geographic origin of your cohort isolates. If your diabetes group is 90% Indonesian strains, and your non-diabetes group is 90% South African strains, your "diabetes" hit might actually just be an "Indonesian lineage" hit. This is why proper metadata balancing matters.
+    </div>
+  </div>
+</div>
+
+</section>
+
+<section id="talk-track">
+<h2>4. Talk track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What to say in a meeting</h3>
+  <p>"When framing our results, we should anchor them in the TANDEM study. TANDEM proved that diabetes is a major, common, and biologically distinct comorbidity in TB patients, with prevalence reaching nearly 20% in places like Indonesia. Our GenomegaMap work is the evolutionary corollary to TANDEM's clinical findings: we are looking for the genetic adaptations TB makes to survive in that specific, highly prevalent host environment."</p>
+</div>
+</section>
+
+<section id="limitations">
+<h2>5. What not to overclaim
+  <button class="section-complete" data-section="limitations">Mark complete</button>
+</h2>
+
+<div class="callout warn">
+  <div class="callout-title">What NOT to overclaim</div>
+  <ul style="margin:6px 0 0">
+    <li><strong>Mechanism:</strong> TANDEM does NOT prove that TB evolves differently in diabetics. It only proves that diabetics represent a large, distinct clinical subpopulation. TANDEM provides the <em>motivation</em>, not the <em>mechanism</em>.</li>
+    <li><strong>Isolate list:</strong> TANDEM is a clinical paper, not a genome sequencing paper. Do not pretend the patients in this paper are the exact same genomes we are analyzing. Our genomes come from other sources (like the Mexico paper and our combined workbook).</li>
+  </ul>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Built as preparation material · Texas A&amp;M Computer Science · Ioerger Lab
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

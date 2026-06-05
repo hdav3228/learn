@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Monday June 1 Meeting · Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <div class="dropdown">
+        <button class="dropbtn">Meetings</button>
+        <div class="dropdown-content">
+          <a href="06-monday-june-1-meeting.html" class="active">Monday June 1 Meeting</a>
+          <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+        </div>
+      </div>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#mission">Assignment</a></li>
+    <li><a href="#learn-map">Critical points</a></li>
+    <li><a href="#workflow">Faster run plan</a></li>
+    <li><a href="#questions">Questions for Dr. Ioerger</a></li>
+    <li class="toc-optional"><a href="#cleanup">Transcript cleanup</a></li>
+    <li class="toc-optional"><a href="#biology">Biology context</a></li>
+    <li class="toc-optional"><a href="#genomegamap">GenomegaMap refresher</a></li>
+    <li class="toc-optional"><a href="#compare">Cohort comparison</a></li>
+    <li class="toc-optional"><a href="#talk-track">Talk track</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where this meeting tab fits">
+  <a class="step done" href="index.html">Overview</a>
+  <span class="sep">→</span>
+  <a class="step done" href="01-dnds-bayesian.html">GenomegaMap foundation</a>
+  <span class="sep">→</span>
+  <a class="step done" href="02-tb-selection.html">TB selection scans</a>
+  <span class="sep">→</span>
+  <span class="step here">Monday June 1 Meeting</span>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Meeting prep · Monday, June 1 · GenomegaMap + TB diabetes project</div>
+  <h1>June 1: the assignment, without losing the plot</h1>
+  <p class="lede">
+    This page translates the messy transcript into the work you actually need to do. The point is
+    not to memorize every TB term. The point is to understand the computational assignment, run
+    GenomegaMap safely, and explain the posterior output using statistics language you already know.
+  </p>
+  <div class="quickstart">
+    <a class="qpill qpill-primary" href="#mission">Assignment</a>
+    <a class="qpill" href="#workflow">Faster plan</a>
+    <a class="qpill" href="#questions">Questions for Dr. Ioerger</a>
+    <a class="qpill" href="index.html#todo">Back to TODO</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Monday's assignment is: split TB gene files into diabetes and non-diabetes groups, run
+  GenomegaMap gene by gene, get a posterior distribution for &omega; in each group, and use those
+  distributions to rank genes that may be under different selection pressure.
+</div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Diabetes may change host selection pressure; track lineage/resistance confounding.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Posterior comparisons over ~4,018 embarrassingly parallel jobs.</td></tr>
+      <tr><th>Use this for</th><td>Assignment brief, Faster plan, and Dr. Ioerger question list.</td></tr>
+      <tr><th>Defer for now</th><td>Transcript cleanup, codon primer, downstream tool pages.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<section id="mission">
+<h2>Assignment brief
+  <button class="section-complete" data-section="mission">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the meeting actually assigned</span>
+  <p>
+    The immediate job is practical: get access to the HPRC Faster cluster, install or set up
+    GenomegaMap there, and run the <strong>constant model</strong> across the TB genes for
+    <strong>diabetes</strong> and <strong>non-diabetes</strong> cohorts separately. For your role,
+    this is primarily a reproducible batch-compute and Bayesian-output interpretation problem.
+  </p>
+</div>
+
+<div class="study-dashboard">
+  <h3>The deliverable</h3>
+  <p>
+    For each gene, you should eventually have two sampled posterior distributions:
+    one for the diabetic-patient isolate group and one for the non-diabetic-patient isolate group.
+    Those sampled distributions become the raw material for downstream comparisons.
+  </p>
+
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">First model</span>
+      <span class="big">Constant</span>
+      <span class="caption">One &omega; value per gene, not per codon or window.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Cohorts</span>
+      <span class="big">2</span>
+      <span class="caption">Diabetes vs non-diabetes first; drug resistance and lineage later.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Scale</span>
+      <span class="big">~4000</span>
+      <span class="caption">TB genes, run twice. This is why you need Faster.</span>
+    </div>
+    <div class="metric-tile">
+      <span class="kicker">Serial cost</span>
+      <span class="big">weeks</span>
+      <span class="caption">At roughly 15 minutes per gene, a laptop is the wrong tool.</span>
+    </div>
+  </div>
+</div>
+
+<h3>The critical meeting points</h3>
+<table>
+  <thead>
+    <tr><th>What Dr. Ioerger emphasized</th><th>What it means for you</th><th>What to work on</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Use GenomegaMap, not a hand-counting shortcut.</strong></td>
+      <td>The model accounts for codon structure, mutation bias, and uncertainty.</td>
+      <td>Learn the output columns and posterior summaries instead of trying to manually count mutations.</td>
+    </tr>
+    <tr>
+      <td><strong>Start with the constant model.</strong></td>
+      <td>One &omega; posterior per gene is the right first scale for ~4,000 genes.</td>
+      <td>Keep independent/window models mentally parked until the gene-level scan is working.</td>
+    </tr>
+    <tr>
+      <td><strong>Run diabetes and non-diabetes separately.</strong></td>
+      <td>You will compare two empirical posterior samples for the same gene.</td>
+      <td>Name files with both cohort and gene so analysis scripts can join outputs cleanly.</td>
+    </tr>
+    <tr>
+      <td><strong>Use Faster because serial runtime is too long.</strong></td>
+      <td>The workload is embarrassingly parallel, but the cluster budget is limited.</td>
+      <td>Test one gene, then a tiny array, before launching the whole gene set.</td>
+    </tr>
+    <tr>
+      <td><strong>Ask sharper questions by Wednesday.</strong></td>
+      <td>The blockers are concrete: files, XML settings, iterations, burn-in, thinning, and Slurm template.</td>
+      <td>Bring those exact questions instead of broad "what should I do?" uncertainty.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Your CS/stat lens</div>
+  Treat the project like a map-reduce pipeline: map one GenomegaMap job over each gene/cohort
+  input, then reduce the output traces into a summary table of posterior means, credible intervals,
+  QC flags, and diabetes vs non-diabetes difference scores.
+</div>
+
+<details class="deep-dive">
+  <summary><span class="summary-main">Open FASTA and vocabulary decoder</span><span class="deep-tag">Reference</span></summary>
+  <div class="deep-dive-body">
+    <h3>One-page decoder</h3>
+    <dl class="glossary">
+      <dt>TB gene</dt>
+      <dd>A protein-coding stretch of the M. tuberculosis genome. You run GenomegaMap gene by gene, not on the whole genome as one giant sequence.</dd>
+      <dt>Isolate</dt>
+      <dd>A TB sample from one patient. If a gene file has many isolate sequences, it means the same gene was collected from many patients' TB genomes.</dd>
+      <dt>FASTA file</dt>
+      <dd>A plain-text sequence file. Each sequence starts with a header line beginning with <code>&gt;</code>, followed by DNA letters like <code>A</code>, <code>C</code>, <code>G</code>, and <code>T</code>. People often say "fasta file," not "fast file."</dd>
+      <dt>Aligned FASTA</dt>
+      <dd>A FASTA file where all sequences have been lined up to the same coordinate system. Hyphens, <code>-</code>, are gaps or padding, not DNA bases. They keep every isolate aligned position-by-position.</dd>
+      <dt>FASTA vs FASTQ</dt>
+      <dd><strong>FASTA</strong> stores cleaned/assembled sequences and uses <code>&gt;</code> headers. <strong>FASTQ</strong> stores raw sequencing reads plus quality scores and usually uses <code>@</code> headers. Your pasted file is FASTA, not FASTQ.</dd>
+      <dt>SRR accession</dt>
+      <dd>An identifier for a sequencing run/sample from the Sequence Read Archive. In your pasted file, headers like <code>&gt;SRR10809201</code> are isolate/sample IDs.</dd>
+      <dt>Cohort</dt>
+      <dd>A group of samples chosen by a shared label. Here, one cohort is TB isolates from patients with diabetes, and the other is TB isolates from patients without diabetes.</dd>
+      <dt>Constant model</dt>
+      <dd>The GenomegaMap mode that gives one &omega; estimate for the whole gene. It does not tell you which exact codon is selected; it answers whether the gene overall has selection signal.</dd>
+      <dt>Sampled posterior distribution</dt>
+      <dd>A collection of many MCMC-sampled parameter values. If GenomegaMap saves 2000 &omega; samples, their histogram is the model's uncertainty about &omega; for that gene.</dd>
+      <dt>Faster</dt>
+      <dd>The HPRC supercomputer Dr. Ioerger wants you to use because thousands of gene runs are too slow on one desktop.</dd>
+    </dl>
+
+    <div class="worked-example">
+      <h4>What your pasted sequence file is</h4>
+      <div class="we-step">
+        <div class="we-num">1</div>
+        <div class="we-body">
+          <strong>It is an aligned FASTA file.</strong> The pasted file has many records that look like
+          <code>&gt;SRR10809201</code> followed by a long DNA sequence. That means one sequence from
+          one TB isolate.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">2</div>
+        <div class="we-body">
+          <strong>It is probably one gene across many isolates.</strong> Your pasted file has 178
+          sequence records, and each aligned sequence is 1521 characters long. That is the shape of
+          "same gene, many patient isolates," not "one whole genome."
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">3</div>
+        <div class="we-body">
+          <strong>The hyphens matter.</strong> A hyphen, <code>-</code>, is a gap/padding character.
+          It keeps sequences lined up so column 300 in one isolate corresponds to column 300 in the
+          others.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">4</div>
+        <div class="we-body">
+          <strong>This is what GenomegaMap needs.</strong> It looks across aligned codons and asks:
+          where do isolates differ, are those differences silent or protein-changing, and what
+          &omega; value explains that pattern?
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <div class="demo-title">Tiny FASTA example</div>
+        <span class="demo-tag">format decoder</span>
+      </div>
+<pre><code>&gt;SRR_sample_1
+ATG-GAACTT
+&gt;SRR_sample_2
+ATG-GAGCTT
+&gt;SRR_sample_3
+ATG-CAACTT
+</code></pre>
+      <p class="muted">
+        The <code>&gt;</code> lines are sample names. The letters are DNA bases. The hyphen is an
+        alignment gap. In this toy example, <code>GAA</code> vs <code>GAG</code> may be synonymous,
+        while <code>GAA</code> vs <code>CAA</code> may change the amino acid. GenomegaMap scales this
+        idea up across the whole gene and all isolates.
+      </p>
+    </div>
+  </div>
+</details>
+
+<div class="pathway" aria-label="Immediate project path">
+  <div class="path-step">
+    <strong>1. Access</strong>
+    <span>Renew or create the Faster account under Dr. Ioerger.</span>
+  </div>
+  <div class="path-step">
+    <strong>2. Install</strong>
+    <span>Follow the GenomegaMap setup instructions he will send.</span>
+  </div>
+  <div class="path-step">
+    <strong>3. Smoke test</strong>
+    <span>Run one tiny example before launching thousands of jobs.</span>
+  </div>
+  <div class="path-step">
+    <strong>4. Job array</strong>
+    <span>Submit many genes in parallel with Slurm, carefully.</span>
+  </div>
+  <div class="path-step">
+    <strong>5. Summarize</strong>
+    <span>Collect posterior samples, means, intervals, and group differences.</span>
+  </div>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Do not miss this</div>
+  The transcript repeatedly comes back to one operational risk: a cluster run can burn service
+  units if the Slurm array is wrong. Test one gene, then a handful of genes, then scale.
+</div>
+</section>
+
+<section id="learn-map">
+<h2>Critical points
+  <button class="section-complete" data-section="learn-map">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Your study priorities</span>
+  <p>
+    This section teaches only the vocabulary needed to execute the assignment. Treat the terms as
+    a chain: <strong>aligned gene FASTA files</strong> contain codon differences, those differences
+    define <strong>dN/dS</strong>, GenomegaMap estimates <strong>&omega;</strong> with a
+    <strong>Bayesian model</strong>, and <strong>MCMC</strong> is how the posterior distribution is
+    sampled.
+  </p>
+</div>
+
+<div class="two-col">
+  <div class="artifact-panel">
+    <h3>High priority now</h3>
+    <ul>
+      <li>FASTA vs FASTQ, aligned sequence files, and sample IDs.</li>
+      <li>dN/dS and why &omega; can be below, near, or above 1.</li>
+      <li>Bayesian posterior samples, MCMC traces, burn-in, and thinning.</li>
+      <li>Faster/Slurm job arrays and unique input/output paths.</li>
+      <li>Lineage/resistance confounding as a statistical design problem.</li>
+    </ul>
+  </div>
+  <div class="artifact-panel">
+    <h3>Lower priority for this week</h3>
+    <ul>
+      <li>Detailed TB pathogenesis and immune-cell biology.</li>
+      <li>Every codon table edge case.</li>
+      <li>Independent/window GenomegaMap models.</li>
+      <li>Boltz-2 structures, Keras molecule models, and permeability screens.</li>
+      <li>Wet-lab drug discovery details beyond basic TB context.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">If you only remember one sentence</div>
+  GenomegaMap asks: for each TB gene, are protein-changing mutations showing up more or less often
+  than silent mutations, and how uncertain are we about that answer?
+</div>
+
+<details class="deep-dive">
+  <summary><span class="summary-main">Open codon-level dN/dS primer</span><span class="deep-tag">Bio basics</span></summary>
+  <div class="deep-dive-body">
+    <div class="worked-example">
+      <h4>dN/dS and &omega; from zero</h4>
+      <div class="we-step">
+        <div class="we-num">1</div>
+        <div class="we-body">
+          <strong>Genes are read in codons.</strong> A codon is a 3-letter DNA word, like
+          <code>GAA</code> or <code>GAG</code>, that tells the cell which amino acid to put into a protein.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">2</div>
+        <div class="we-body">
+          <strong>Some DNA mutations are silent.</strong> If a codon changes but the amino acid stays
+          the same, that is a <strong>synonymous</strong> mutation. Example: <code>GAA</code> and
+          <code>GAG</code> both code for glutamate, so that change does not alter the protein.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">3</div>
+        <div class="we-body">
+          <strong>Some DNA mutations change the protein.</strong> If a codon change swaps one amino acid
+          for another, that is a <strong>nonsynonymous</strong> mutation. Those are the ones natural
+          selection can strongly favor or remove, because the protein itself changed.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">4</div>
+        <div class="we-body">
+          <strong>dN/dS compares those two rates.</strong> <strong>dN</strong> means the rate of
+          nonsynonymous change. <strong>dS</strong> means the rate of synonymous change.
+          <strong>&omega;</strong> is just another name for <strong>dN/dS</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details class="deep-dive">
+  <summary><span class="summary-main">Open &omega; interpretation and model modes</span><span class="deep-tag">Stats + models</span></summary>
+  <div class="deep-dive-body">
+    <table>
+      <thead>
+        <tr><th>&omega; value</th><th>Meaning</th><th>Plain-English interpretation</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>&omega; &lt; 1</strong></td>
+          <td>Purifying selection</td>
+          <td>Protein-changing mutations are being removed.</td>
+        </tr>
+        <tr>
+          <td><strong>&omega; = 1</strong></td>
+          <td>Neutral-ish evolution</td>
+          <td>Protein-changing mutations are not obviously favored or removed.</td>
+        </tr>
+        <tr>
+          <td><strong>&omega; &gt; 1</strong></td>
+          <td>Positive selection</td>
+          <td>Protein-changing mutations appear more often than expected.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <div class="callout-title">Why not just count mutations?</div>
+      Raw mutation counts are biased because most random codon changes alter the amino acid.
+      dN/dS corrects for possible silent vs protein-changing sites.
+    </div>
+
+    <h3>The three GenomegaMap modes</h3>
+    <table>
+      <thead>
+        <tr><th>Mode</th><th>What it estimates</th><th>Why you care right now</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Constant</strong></td>
+          <td>One &omega; for the whole gene.</td>
+          <td><strong>Current assignment.</strong> Run for every gene in both cohorts.</td>
+        </tr>
+        <tr>
+          <td><strong>Independent</strong></td>
+          <td>One &omega; per codon.</td>
+          <td>Useful later; noisier at genome scale.</td>
+        </tr>
+        <tr>
+          <td><strong>Window</strong></td>
+          <td>One &omega; for local stretches.</td>
+          <td>Useful for hotspots; not the first run.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>How this connects to the diabetes project</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="icon">A</div>
+        <h3>Diabetes cohort</h3>
+        <p>One posterior distribution for &omega; per gene using diabetes isolates only.</p>
+      </div>
+      <div class="card">
+        <div class="icon">B</div>
+        <h3>Non-diabetes cohort</h3>
+        <p>Same gene, second posterior distribution from non-diabetes isolates.</p>
+      </div>
+      <div class="card">
+        <div class="icon">C</div>
+        <h3>Compare distributions</h3>
+        <p>Large separation between posteriors flags a candidate condition-specific signal.</p>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details class="deep-dive">
+  <summary><span class="summary-main">Open Bayesian and MCMC refresher</span><span class="deep-tag">Stats depth</span></summary>
+  <div class="deep-dive-body">
+    <h3>Bayesian inference without panic</h3>
+    <div class="eli5">
+      <span class="eli5-tag">In plain English</span>
+      Bayesian inference means: start with possible parameter values, ask which values make the
+      observed data likely, then update your beliefs into a posterior distribution.
+    </div>
+
+    <div class="math">
+      posterior &propto; likelihood &times; prior
+    </div>
+
+    <dl class="glossary">
+      <dt>Parameter</dt>
+      <dd>An unknown number the model is trying to estimate. Here the important one is &omega;, but GenomegaMap also estimates &kappa; and &theta;.</dd>
+      <dt>Prior</dt>
+      <dd>What values the model thinks are reasonable before seeing this gene's data. It should be broad enough that the data can still speak.</dd>
+      <dt>Likelihood</dt>
+      <dd>A score for how well a proposed parameter value explains the observed gene sequences. If &omega; = 2 makes the observed codon changes more plausible than &omega; = 0.2, then &omega; = 2 has higher likelihood.</dd>
+      <dt>Posterior</dt>
+      <dd>The updated distribution after combining prior and likelihood. This is the answer GenomegaMap is trying to approximate.</dd>
+      <dt>Posterior mean</dt>
+      <dd>The average of the sampled posterior values. Useful as a summary, but not enough by itself.</dd>
+      <dt>Credible interval</dt>
+      <dd>A range containing most of the posterior probability, often 95%. If the interval crosses 1, the evidence for positive selection is weaker even if the mean is above 1.</dd>
+    </dl>
+
+    <div class="worked-example">
+      <h4>What the Bayesian model is doing for one gene</h4>
+      <div class="we-step">
+        <div class="we-num">1</div>
+        <div class="we-body">
+          <strong>Data:</strong> many TB isolates have the same gene sequence, with occasional mutations.
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">2</div>
+        <div class="we-body">
+          <strong>Question:</strong> what &omega; value would make this pattern of synonymous and
+          nonsynonymous mutations plausible?
+        </div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">3</div>
+        <div class="we-body">
+          <strong>Output:</strong> not one answer, but a distribution of possible &omega; values.
+          If the distribution is mostly below 1, think purifying selection. If it is mostly above 1,
+          think positive selection.
+        </div>
+      </div>
+    </div>
+
+    <h3>MCMC: why the output has lots of rows</h3>
+    <div class="concept-bridge">
+      <div class="concept-side good">
+        <h3>The problem</h3>
+        <p>
+          The posterior distribution is too complicated to calculate exactly. GenomegaMap cannot simply
+          write down a neat formula and finish.
+        </p>
+      </div>
+      <div class="concept-side warn">
+        <h3>The trick</h3>
+        <p>
+          MCMC walks around parameter space and saves many plausible values. The saved values behave
+          like samples from the posterior distribution.
+        </p>
+      </div>
+    </div>
+
+    <ol class="step-list">
+      <li><strong>Start somewhere.</strong> Pick initial values for &omega;, &kappa;, and &theta;.</li>
+      <li><strong>Propose a small change.</strong> Try a nearby value, like changing &omega; from 0.90 to 0.95.</li>
+      <li><strong>Score the new value.</strong> Use the likelihood to ask whether the new value explains the sequence data better.</li>
+      <li><strong>Accept or reject.</strong> Better proposals usually get accepted. Worse proposals can still sometimes be accepted so the chain does not get stuck.</li>
+      <li><strong>Repeat many times.</strong> The saved values form a histogram. That histogram is the posterior approximation.</li>
+    </ol>
+
+    <div class="callout note">
+      <div class="callout-title">Why repeated rows happen</div>
+      In an MCMC output file, a parameter may stay exactly the same from one saved row to the next.
+      That usually means a proposed move was rejected, so the chain kept the old value.
+    </div>
+  </div>
+</details>
+
+<div class="callout tip">
+  <div class="callout-title">If a term is still fuzzy</div>
+  Open the optional expanders above, then read <a href="01-dnds-bayesian.html">GenomegaMap</a> and
+  <a href="12-bayesian-inference.html">Bayesian inference</a> only as much as you need to explain
+  the trace output.
+</div>
+</section>
+
+<section id="cleanup" class="detail-section" data-summary="Open transcript cleanup table" data-tag="Appendix">
+<h2>3. Transcript cleanup
+  <button class="section-complete" data-section="cleanup">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The audio transcript was messy</span>
+  <p>
+    Below are the important corrections and inferred terms. Treat the "likely intended" column as
+    cleaned meeting notes, not a verbatim quote.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Transcript phrase</th><th>Likely intended</th><th>Why it matters</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gino Mega Map, Genomega Mac, Genomegamaps</td>
+      <td><strong>GenomegaMap</strong></td>
+      <td>The Bayesian dN/dS program you will run.</td>
+    </tr>
+    <tr>
+      <td>MCFC, MCFC methods</td>
+      <td><strong>MCMC</strong>, Markov chain Monte Carlo</td>
+      <td>The sampling method used to approximate the posterior distribution.</td>
+    </tr>
+    <tr>
+      <td>Instagram</td>
+      <td><strong>Histogram</strong></td>
+      <td>You were looking at the distribution of sampled &omega; values.</td>
+    </tr>
+    <tr>
+      <td>law likelihood, long likelihood</td>
+      <td><strong>Log-likelihood</strong></td>
+      <td>Likelihood products get tiny, so computations are usually done in log space.</td>
+    </tr>
+    <tr>
+      <td>deer-ishly multinomial distribution</td>
+      <td><strong>Dirichlet-multinomial / Multinomial-Dirichlet likelihood</strong></td>
+      <td>The GenomegaMap paper's likelihood model for codon allele counts.</td>
+    </tr>
+    <tr>
+      <td>nuclear hides</td>
+      <td><strong>Nucleotides</strong></td>
+      <td>DNA bases in each gene sequence.</td>
+    </tr>
+    <tr>
+      <td>Refampus and resistance</td>
+      <td><strong>Rifampicin / rifampin resistance</strong></td>
+      <td>One of the key TB drug-resistance categories.</td>
+    </tr>
+    <tr>
+      <td>Isenize it</td>
+      <td><strong>Isoniazid</strong></td>
+      <td>Another major first-line TB drug.</td>
+    </tr>
+    <tr>
+      <td>hypoclycemia in diabetes</td>
+      <td><strong>Hyperglycemia</strong></td>
+      <td>Diabetes is associated with high blood glucose, which may alter the host environment.</td>
+    </tr>
+    <tr>
+      <td>oxidated bursts</td>
+      <td><strong>Oxidative bursts / oxidative stress</strong></td>
+      <td>A host immune pressure that TB may adapt to.</td>
+    </tr>
+    <tr>
+      <td>hose</td>
+      <td><strong>Host</strong></td>
+      <td>The patient environment where the bacilli are evolving.</td>
+    </tr>
+    <tr>
+      <td>Grace, Greece, Faster, passcode</td>
+      <td><strong>Grace and Faster HPRC clusters</strong></td>
+      <td>Your old access may have been on Grace; Dr. Ioerger wants this project on Faster.</td>
+    </tr>
+    <tr>
+      <td>Cheeto Mega Maths C</td>
+      <td><strong>Dr. Ioerger's C reimplementation of GenomegaMap</strong></td>
+      <td>Not the starting tool yet; likely a later-summer path for a better two-group model.</td>
+    </tr>
+    <tr>
+      <td>Poor V3 / similar gene-example name</td>
+      <td><strong>Unclear small FASTA example</strong></td>
+      <td>The gene name is less important than the lesson: one FASTA per gene, many isolate sequences inside.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Careful inference</div>
+  The transcript is clear on the science and workflow, but some dataset labels and example file
+  names are not reliable enough to memorize. Use the Google Drive files and the instructions email
+  as the authority for exact filenames.
+</div>
+</section>
+
+<section id="biology" class="detail-section" data-summary="Open biology and cohort context" data-tag="Biology">
+<h2>4. Biology and cohorts
+  <button class="section-complete" data-section="biology">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why the biology matters</span>
+  <p>
+    GenomegaMap will give you numbers, but the project is about interpreting those numbers as
+    evolutionary pressure inside real TB patient populations.
+  </p>
+</div>
+
+<div class="two-col">
+  <div class="demo">
+    <div class="demo-header">
+      <div class="demo-title">The starting comparison</div>
+      <span class="demo-tag">diabetes</span>
+    </div>
+    <p>
+      The first project compares TB isolates from patients with diabetes against isolates from
+      patients without diabetes. The hypothesis is that diabetes creates a different host
+      environment, so mutations in some TB genes may become more advantageous in that group.
+    </p>
+    <ul>
+      <li>Hyperglycemia can change nutrient and stress conditions.</li>
+      <li>Immune and inflammatory responses can differ.</li>
+      <li>Oxidative stress may reshape which bacterial functions are beneficial.</li>
+      <li>The dataset may be too small to detect weak effects, so uncertainty matters.</li>
+    </ul>
+  </div>
+
+  <div class="demo">
+    <div class="demo-header">
+      <div class="demo-title">Later comparisons</div>
+      <span class="demo-tag">extensions</span>
+    </div>
+    <p>
+      After the diabetes analysis, the same machinery can be rerun by regrouping the same or
+      related sequences in biologically meaningful ways.
+    </p>
+    <ul>
+      <li>Drug resistant vs non-drug resistant isolates.</li>
+      <li>Lineage 2 vs Lineage 4, and eventually L2/L3/L4 comparisons.</li>
+      <li>Genes uniquely selected in one lineage or host condition.</li>
+      <li>Agreement or disagreement with Anthony Shatby's thesis results.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Key TB terms from the conversation</h3>
+<dl class="glossary">
+  <dt>Clinical isolate</dt>
+  <dd>A TB sample taken from a real patient and sequenced as a genome.</dd>
+  <dt>TBProfiler</dt>
+  <dd>A tool that reads TB sequencing data and reports lineage plus genetic markers of drug resistance.</dd>
+  <dt>Genotypic resistance</dt>
+  <dd>Resistance inferred from known mutations in the genome. This differs from phenotypic resistance, where the isolate is experimentally tested against a drug.</dd>
+  <dt>Lineage</dt>
+  <dd>A major branch of the M. tuberculosis family tree. Lineage composition can affect selection signals, so it must be tracked.</dd>
+  <dt>MTBC animal-associated species</dt>
+  <dd>The broader M. tuberculosis complex includes close relatives such as M. bovis in cattle, M. pinnipedii in seals, and M. microti in small mammals. These came up as context for ancient or animal-associated lineages.</dd>
+</dl>
+
+<div class="callout warn">
+  <div class="callout-title">Confounding risk</div>
+  A gene can look diabetes-associated if the diabetes and non-diabetes groups have different
+  lineage mixtures or drug-resistance mixtures. Keep asking: is this signal about diabetes, lineage,
+  resistance, geography, or sampling?
+</div>
+</section>
+
+<section id="genomegamap" class="detail-section" data-summary="Open GenomegaMap mechanics refresher" data-tag="Reference">
+<h2>5. GenomegaMap mechanics
+  <button class="section-complete" data-section="genomegamap">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The statistical core</span>
+  <p>
+    GenomegaMap estimates a posterior distribution over selection parameters. In the constant
+    model, the transcript highlighted three fitted parameters: &omega;, &kappa;, and &theta;.
+  </p>
+</div>
+
+<div class="concept-bridge">
+  <div class="concept-side good">
+    <h3>What &omega; tells you</h3>
+    <p>
+      &omega; is dN/dS. If it is below 1, nonsynonymous changes are being filtered out
+      by purifying selection. If it is around 1, the gene is roughly neutral. If it is above 1,
+      nonsynonymous changes are accumulating faster than expected, suggesting positive selection.
+    </p>
+  </div>
+  <div class="concept-side warn">
+    <h3>What the posterior adds</h3>
+    <p>
+      You do not just get one &omega;. You get many sampled &omega; values from MCMC. Their
+      histogram is an empirical approximation of uncertainty about &omega; after seeing the data.
+    </p>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Parameter</th><th>Plain-English meaning</th><th>Meeting-level interpretation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>&omega;</strong></td>
+      <td>dN/dS, the selection parameter.</td>
+      <td>The main biological output: purifying, neutral, or positive selection.</td>
+    </tr>
+    <tr>
+      <td><strong>&kappa;</strong></td>
+      <td>Transition/transversion rate ratio.</td>
+      <td>Controls mutation bias: some base changes happen more often than others.</td>
+    </tr>
+    <tr>
+      <td><strong>&theta;</strong></td>
+      <td>Population-scaled mutation/diversity parameter.</td>
+      <td>A nuisance but important parameter fit jointly with &omega; and &kappa;.</td>
+    </tr>
+    <tr>
+      <td><strong>log-likelihood</strong></td>
+      <td>How compatible the data are with the model at the current parameter values.</td>
+      <td>Useful for trace plots and diagnosing whether the chain has stabilized.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="worked-example">
+  <h4>Reading the constant-model output</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      <strong>Rows are saved MCMC samples.</strong> The example in the meeting saved every fifth
+      iteration out of 10,000 iterations, so the output table is a thinned trace.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      <strong>Columns are current parameter values.</strong> Some rows repeat because a proposed
+      parameter move was rejected, so the chain stayed at the old value.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      <strong>The histogram is the posterior approximation.</strong> If sampled &omega; values
+      cluster around 0.9 with occasional values above 1.5, the mean may be near neutral or slightly
+      purifying, but uncertainty still reaches into positive-selection territory.
+    </div>
+  </div>
+</div>
+
+<div class="tab-group">
+  <div class="tabs">
+    <button class="tab active">Constant</button>
+    <button class="tab">Independent</button>
+    <button class="tab">Window</button>
+  </div>
+
+  <div class="tabpanel active">
+    <p>
+      <strong>Use this first.</strong> One &omega; is fit for the whole gene. This is the right
+      first pass for ~4000 genes because it is simpler, faster, and directly supports a gene-level
+      diabetes vs non-diabetes comparison.
+    </p>
+  </div>
+
+  <div class="tabpanel">
+    <p>
+      One &omega; is fit for each codon. This can identify exact residues under selection, but each
+      codon has less information, so the results are noisier and more vulnerable to false positives.
+    </p>
+  </div>
+
+  <div class="tabpanel">
+    <p>
+      A local region shares an &omega;, and the window moves or is inferred across the sequence.
+      This is good for hotspots, but it is not the immediate first assignment from this meeting.
+    </p>
+  </div>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">The one-sentence version</div>
+  GenomegaMap uses MCMC to sample parameter values whose likelihood under the codon model is
+  high, and the cloud of accepted samples becomes the posterior distribution you interpret.
+</div>
+</section>
+
+<section id="workflow">
+<h2>Faster run plan
+  <button class="section-complete" data-section="workflow">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Practical next steps</span>
+  <p>
+    This is the concrete work plan implied by the meeting. Exact commands depend on the setup
+    instructions Dr. Ioerger sends, but the order should look like this.
+  </p>
+</div>
+
+<div class="two-col">
+  <div class="artifact-panel">
+    <h3>What Galaxy is for first</h3>
+    <p>
+      Galaxy is the safer place to reproduce Dr. Ioerger's known GenomegaMap setup path and test the
+      porB3-style example. Use it to make sure the executable, shared libraries, template, and
+      one XML file behave before treating Faster as the production engine.
+    </p>
+  </div>
+  <div class="artifact-panel">
+    <h3>What Faster is for after that</h3>
+    <p>
+      Faster is for throughput. Once the one-gene test works, Slurm can run many genes in parallel.
+      That power only helps after file paths, output names, resource requests, and logs have been
+      proven on a tiny array.
+    </p>
+  </div>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Workflow vocabulary</div>
+  <strong>SSH</strong> means logging into the cluster from your terminal.
+  <strong>Module/environment setup</strong> means loading the software GenomegaMap needs.
+  <strong>Slurm</strong> is the cluster's job scheduler. A <strong>job array</strong> is one
+  submission that runs the same script many times, usually once per gene. A <strong>log</strong>
+  is the text file that records what happened. <strong>Service units</strong> are the compute
+  budget you spend when jobs run.
+</div>
+
+<ol class="step-list">
+  <li><strong>Confirm Faster access.</strong> Finish the HPRC account application or renewal with Dr. Ioerger as PI.</li>
+  <li><strong>Set up GenomegaMap.</strong> Follow the emailed instructions before improvising; Anthony used that recipe successfully.</li>
+  <li><strong>Find the input gene files.</strong> Each gene should have a FASTA/alignment file containing that gene across many isolates.</li>
+  <li><strong>Separate cohorts.</strong> Make sure the diabetes and non-diabetes groups are split cleanly and consistently.</li>
+  <li><strong>Filter bad isolates.</strong> Use only good-sample IDs before creating production XML files.</li>
+  <li><strong>Generate XML configs.</strong> Each XML should point to one filtered FASTA and one unique output file.</li>
+  <li><strong>Run one example.</strong> Use a small gene/test file to verify paths, modules, output names, and runtime.</li>
+  <li><strong>Run a tiny array.</strong> Submit a few genes as a Slurm array and inspect logs before scaling.</li>
+  <li><strong>Launch the full array.</strong> Run all genes for diabetes and non-diabetes only after the small array behaves.</li>
+  <li><strong>Collect outputs.</strong> Build a summary table with gene, cohort, mean &omega;, credible interval, and sample file path.</li>
+</ol>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Slurm script mental model</div>
+    <span class="demo-tag">not exact commands</span>
+  </div>
+  <p class="muted">
+    You do not need to memorize exact Slurm syntax yet. You do need to understand the shape:
+    one array index maps to one gene; the script picks the right input file and writes a uniquely
+    named output file.
+  </p>
+<pre><code><span class="tok-c"># Conceptual only: use Dr. Ioerger's actual script/instructions</span>
+gene=$(sed -n "${SLURM_ARRAY_TASK_ID}p" gene_list.txt)
+cohort="diabetes"
+
+run_genomegamap_constant \
+  --input "inputs/${cohort}/${gene}.fasta" \
+  --output "posterior/${cohort}/${gene}.constant.tsv" \
+  --iterations 10000 \
+  --sample-every 5
+</code></pre>
+</div>
+
+<div class="callout bad">
+  <div class="callout-title">Cluster caution</div>
+  Never submit thousands of jobs until one job and one mini-array have produced the exact output
+  table you expect. The meeting explicitly warned that a bad array wastes service units.
+</div>
+
+<div class="checkpoint">
+  <h4>CS-style failure modes</h4>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> every result has the same file size and same first rows</div>
+    <div class="cp-arrow">-></div>
+    <div class="cp-action"><strong>Check:</strong> the array index may be reusing one XML for every gene.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> missing outputs but successful Slurm status</div>
+    <div class="cp-arrow">-></div>
+    <div class="cp-action"><strong>Check:</strong> relative XML paths may be resolving from the wrong working directory.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> one cohort has different sample counts by gene</div>
+    <div class="cp-arrow">-></div>
+    <div class="cp-action"><strong>Check:</strong> FASTA filtering and missing sample IDs before interpreting biology.</div>
+  </div>
+</div>
+</section>
+
+<section id="compare" class="detail-section" data-summary="Open downstream cohort-comparison detail" data-tag="Stats follow-up">
+<h2>7. Comparing cohorts
+  <button class="section-complete" data-section="compare">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What happens after the runs finish</span>
+  <p>
+    GenomegaMap gives one posterior distribution per gene per cohort. The science question is
+    whether those distributions differ enough to suggest condition-specific selection.
+  </p>
+</div>
+
+<div class="two-col">
+  <div class="artifact-panel">
+    <h3>Easy ad hoc comparison</h3>
+    <p>
+      Run GenomegaMap separately in each group, then compare the sampled &omega; distributions.
+      You can compare means, overlaps, a sampled difference distribution, or the probability that
+      &omega;<sub>diabetes</sub> is greater than &omega;<sub>non-diabetes</sub>.
+    </p>
+  </div>
+  <div class="artifact-panel">
+    <h3>More principled future model</h3>
+    <p>
+      Dr. Ioerger's C reimplementation may eventually let the model fit separate group parameters
+      jointly. That would be a cleaner Bayesian comparison than two separate runs plus post-hoc
+      overlap tests.
+    </p>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Gene</th><th>Diabetes posterior</th><th>Non-diabetes posterior</th><th>Meeting interpretation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gene A</td>
+      <td>Mean &omega; = 1.35, wide interval</td>
+      <td>Mean &omega; = 0.80, wide interval</td>
+      <td>Suggestive, but overlap may be too large to claim a difference.</td>
+    </tr>
+    <tr>
+      <td>Gene B</td>
+      <td>Mean &omega; = 1.80, most samples &gt; 1</td>
+      <td>Mean &omega; = 0.45, most samples &lt; 1</td>
+      <td>Candidate diabetes-associated selection signal.</td>
+    </tr>
+    <tr>
+      <td>Gene C</td>
+      <td>Mean &omega; = 0.35</td>
+      <td>Mean &omega; = 0.32</td>
+      <td>Both groups show purifying selection; probably not a diabetes-specific hit.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="worked-example">
+  <h4>How to think about posterior overlap</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body">
+      Sample one &omega; value from the diabetes posterior and one from the non-diabetes posterior.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body">
+      Subtract them to get one sampled difference, &Delta;&omega; =
+      &omega;<sub>diabetes</sub> - &omega;<sub>non-diabetes</sub>.
+    </div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body">
+      Repeat many times. If nearly all sampled differences are positive, the diabetes group likely
+      has higher selection for that gene. If the difference distribution crosses zero heavily, be cautious.
+    </div>
+  </div>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Multiple testing</div>
+  Thousands of genes means some will look interesting by chance. A final analysis needs ranking,
+  false-discovery control, biological validation, and checks for lineage/drug-resistance confounding.
+</div>
+</section>
+
+<section id="questions">
+<h2>Questions for Dr. Ioerger
+  <button class="section-complete" data-section="questions">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Arrive with specifics</span>
+  <p>
+    These are the highest-value questions to bring to the next meeting. They turn vague confusion
+    into concrete decisions.
+  </p>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">Best way to ask</div>
+  Ask for decisions, not lectures. The useful question shape is: "I have this exact input path,
+  this XML field, and this proposed output summary. Is this the production setting you want?"
+</div>
+
+<ol class="reader-path">
+  <li>
+    <strong>Which exact input files are authoritative?</strong>
+    This means: which files should be treated as the real source of truth? You do not want to
+    accidentally run an old copy, a test example, or a partially filtered dataset.
+  </li>
+  <li>
+    <strong>What output columns should I preserve?</strong>
+    This means: when GenomegaMap writes a table, which columns matter for analysis? At minimum,
+    you care about iteration/sample number, log-likelihood, &omega;, &kappa;, &theta;, model type,
+    gene name, and cohort.
+  </li>
+  <li>
+    <strong>How many MCMC iterations should the real run use?</strong>
+    This means: how long should each chain run? More iterations usually give a better posterior
+    approximation, but they cost more cluster time.
+  </li>
+  <li>
+    <strong>What burn-in and thinning should I use?</strong>
+    <strong>Burn-in</strong> is the early part of the chain you throw away because it may not have
+    settled yet. <strong>Thinning</strong> means saving every nth sample instead of every sample.
+  </li>
+  <li>
+    <strong>What is the approved Slurm template?</strong>
+    This means: ask for the exact job-array script pattern Dr. Ioerger trusts, including memory,
+    time limit, output folders, and how the array index chooses a gene.
+  </li>
+  <li>
+    <strong>Should I run/test on Galaxy first, Faster first, or both?</strong>
+    This means: separate "known install recipe" from "production cluster run" so you do not debug
+    installation and Slurm scaling at the same time.
+  </li>
+  <li>
+    <strong>Should the XML paths be relative to <code>Ioerger's Lab</code>, absolute on Faster, or copied into scratch?</strong>
+    This means: prevent jobs from silently failing because the XML resolves paths from the wrong
+    working directory.
+  </li>
+  <li>
+    <strong>How do we adjust for lineage and drug resistance?</strong>
+    This means: check that a diabetes signal is not secretly caused by the diabetes group having
+    different TB lineages or more drug-resistant isolates.
+  </li>
+  <li>
+    <strong>What counts as a hit?</strong>
+    A <strong>hit</strong> is a gene worth following up. Ask whether to rank genes by mean
+    &omega; difference, posterior probability, credible interval separation, low overlap, or a
+    combined score.
+  </li>
+</ol>
+</section>
+
+<section id="talk-track" class="detail-section" data-summary="Open meeting talk track and mini glossary" data-tag="Optional">
+<h2>Talk track
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>What you should be able to say out loud</h3>
+  <p>
+    We are using GenomegaMap to estimate the posterior distribution of &omega; for each TB gene.
+    We start with the constant model because it gives one gene-wide selection estimate and is
+    feasible to run across the whole genome. The first comparison is diabetes versus non-diabetes;
+    later we can regroup by drug resistance or lineage. The key output is not just a mean &omega;,
+    but the whole posterior distribution, because that lets us compare uncertainty between cohorts.
+  </p>
+</div>
+
+<h3>Mini glossary</h3>
+<dl class="glossary">
+  <dt>Purifying selection</dt>
+  <dd>Selection removing amino-acid-changing mutations; &omega; &lt; 1.</dd>
+  <dt>Positive selection</dt>
+  <dd>Selection favoring amino-acid-changing mutations; &omega; &gt; 1.</dd>
+  <dt>Posterior distribution</dt>
+  <dd>The probability distribution over parameters after combining prior assumptions, the model, and observed data.</dd>
+  <dt>Likelihood</dt>
+  <dd>The probability of the observed data under a model and a specific parameter setting.</dd>
+  <dt>Burn-in</dt>
+  <dd>Early MCMC samples discarded because the chain may not yet represent the target posterior.</dd>
+  <dt>Thinning</dt>
+  <dd>Saving every nth MCMC sample to reduce file size and autocorrelation.</dd>
+  <dt>Service units</dt>
+  <dd>HPC compute allocation currency. A bad large run can waste them quickly.</dd>
+</dl>
+
+<div class="checkpoint">
+  <h4>Recognize problems before they become results</h4>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> all genes have identical output files</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> the Slurm array index may not be selecting different genes.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> one cohort has far fewer sequences</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> whether the comparison has enough power or needs balancing.</div>
+  </div>
+  <div class="cp-row">
+    <div class="cp-trigger"><strong>If you see:</strong> a strong hit only in one lineage-heavy cohort</div>
+    <div class="cp-arrow">→</div>
+    <div class="cp-action"><strong>Check:</strong> lineage confounding before calling it a diabetes effect.</div>
+  </div>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Monday June 1 meeting prep · <a href="index.html">back to overview</a> · <a href="01-dnds-bayesian.html">review GenomegaMap foundation</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ioerger Lab · Research Cockpit</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">Ω</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">Ω</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html" class="active">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <div class="dropdown">
+        <button class="dropbtn">Meetings</button>
+        <div class="dropdown-content">
+          <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+          <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+        </div>
+      </div>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#start" class="active">Start here</a></li>
+    <li><a href="#todo">TODO list</a></li>
+    <li><a href="#working-order">Where to start</a></li>
+    <li><a href="#ioerger-points">Dr. Ioerger's critical points</a></li>
+    <li><a href="#cs-map">CS/stat map</a></li>
+    <li><a href="#tools-to-use">Galaxy + Faster</a></li>
+    <li><a href="#deliverables">Deliverables</a></li>
+    <li class="toc-optional"><a href="#site-map">Site map</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+  <div class="page-progress" aria-hidden="true">
+    <div class="bar"></div>
+    <div class="label">0 / 0 sections complete</div>
+  </div>
+
+  <section class="hero hero-cockpit">
+    <div class="eyebrow">Summer research · CS/statistics route through TB genomics</div>
+    <h1>Start here: what to do, what to learn, and what to ignore for now</h1>
+    <div class="status-strip" role="status">
+      <span class="status-label">Next action</span>
+      <span class="status-text">Run <code>python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001</code> — expect 178 diabetes and 175 non-diabetes good samples.</span>
+    </div>
+    <p class="lede">
+      This is the one-page cockpit for the project. Your job is not to become a biologist first.
+      Your job is to build a careful computational pipeline, understand the Bayesian output, and
+      ask enough biology-aware questions that the results do not become misleading.
+    </p>
+    <div class="quickstart">
+      <a class="qpill qpill-primary" href="#todo">TODO list</a>
+      <a class="qpill" href="#working-order">Where to start</a>
+      <a class="qpill" href="#ioerger-points">Dr. Ioerger's points</a>
+      <a class="qpill" href="#tools-to-use">Galaxy + Faster</a>
+      <a class="qpill" href="06-monday-june-1-meeting.html">June 1 brief</a>
+      <a class="qpill" href="13-wednesday-june-3-meeting.html">June 3 build</a>
+    </div>
+  </section>
+
+  <section id="start">
+    <h2>Start Here
+      <button class="section-complete" data-section="start">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">The role fit</span>
+      <p>
+        You have a Stanford CS/statistics background. Treat this project as a
+        <strong>large-scale Bayesian workflow engineering problem</strong> with a light biology
+        wrapper: aligned DNA files go in, GenomegaMap posterior samples come out, and the analysis
+        asks whether diabetes vs non-diabetes cohorts show different selection signals.
+      </p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="icon">1</div>
+        <h3>Pipeline owner</h3>
+        <p>Make the data split, XML generation, Slurm array, and output collection reproducible.</p>
+      </div>
+      <div class="card">
+        <div class="icon">2</div>
+        <h3>Statistical interpreter</h3>
+        <p>Explain posterior samples, burn-in, thinning, credible intervals, and cohort comparisons.</p>
+      </div>
+      <div class="card">
+        <div class="icon">3</div>
+        <h3>Biology-aware skeptic</h3>
+        <p>Know enough TB biology to avoid overclaiming diabetes signals caused by lineage or resistance.</p>
+      </div>
+    </div>
+
+    <div class="eli5">
+      <span class="eli5-tag">Plain English</span>
+      You are comparing two piles of TB genomes. For each gene, GenomegaMap estimates a distribution
+      for &omega; (dN/dS), which is a selection score. Then you compare the diabetes distribution
+      to the non-diabetes distribution and ask which genes look meaningfully different.
+    </div>
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Project map only: TB diabetes/non-diabetes selection scan.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Think pipeline + Bayesian traces + confounding checks.</td></tr>
+      <tr><th>Use this for</th><td>Start with the meeting briefs, generator dry-run, then one tiny run.</td></tr>
+      <tr><th>Defer for now</th><td>Do not start with downstream drug/structure pages.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+    <div class="callout note">
+      <div class="callout-title">Right now</div>
+      Your bottleneck is pipeline correctness: good-sample filtering, XML generation, one tiny
+      GenomegaMap run, then a 3–5 gene array. Biology vocabulary only needs to stay basic until
+      traces and cohort comparisons make sense.
+    </div>
+  </section>
+
+  <section id="todo">
+    <h2>TODO List
+      <button class="section-complete" data-section="todo">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">Stable task list</span>
+      <p>
+        Use this list no matter what day it is. The goal is to make the project operational before
+        you spend time on extra biology or downstream tools.
+      </p>
+    </div>
+
+    <ol class="step-list priority-list">
+      <li><strong>Read the project brief pages.</strong> Focus only on the assignment, XML/config generation, good-isolate filtering, Bayesian traces, and tiny-run strategy.</li>
+      <li><strong>Confirm the data rule.</strong> Use only <code>samplestatus=good</code>: 178 diabetes samples and 175 non-diabetes samples.</li>
+      <li><strong>Run the generator dry run locally.</strong> Use <code>python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001</code>. It validates sample lists, FASTA headers, and expected good-sample counts without writing outputs.</li>
+      <li><strong>Inspect one generated XML and FASTA.</strong> Make sure the XML points to one filtered FASTA and one unique output file.</li>
+      <li><strong>Run exactly one tiny GenomegaMap test.</strong> Galaxy or Faster is fine. The output should include <code>iteration</code>, <code>loglikelihood</code>, <code>theta</code>, <code>kappa</code>, and <code>omega0</code>.</li>
+      <li><strong>Only then prepare a mini-array.</strong> Use 3-5 genes, separate logs, separate outputs, conservative resources, and no large launch until the mini-array behaves.</li>
+      <li><strong>Write down the decisions you need from Dr. Ioerger.</strong> Production XML template, iteration count, burn-in, thinning, Slurm resources, output summary format, and hit definition.</li>
+    </ol>
+
+    <div class="callout bad">
+      <div class="callout-title">The hard rule</div>
+      Do not submit thousands of Faster jobs until one job and a tiny 3-5 gene array produce the
+      exact files you expect. The expensive mistake is not misunderstanding a codon; it is burning
+      service units with a bad path, bad XML, or overwritten output file.
+    </div>
+  </section>
+
+  <section id="working-order">
+    <h2>Where To Start
+      <button class="section-complete" data-section="working-order">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">General order, not a day-by-day schedule</span>
+      <p>
+        Move through these in order. Each block has one practical output and one concept you should
+        be able to explain before moving on.
+      </p>
+    </div>
+
+    <div class="roadmap">
+      <div class="roadmap-item">
+        <div class="roadmap-day">Start</div>
+        <div class="roadmap-body">
+          <h3>Understand the assignment</h3>
+          <p><strong>Output:</strong> a clear statement of the project: run the constant GenomegaMap model separately on diabetes and non-diabetes genes.</p>
+          <p><strong>Concept:</strong> &omega; is dN/dS, and the constant model returns one gene-wide &omega; distribution.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-day">Next</div>
+        <div class="roadmap-body">
+          <h3>Learn the minimum biology and stats</h3>
+          <p><strong>Output:</strong> personal notes defining FASTA, isolate, cohort, codon, synonymous/nonsynonymous, posterior, MCMC, burn-in, and thinning.</p>
+          <p><strong>Concept:</strong> the result is a posterior distribution, not a single magic number.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-day">Build</div>
+        <div class="roadmap-body">
+          <h3>Turn notes into automation</h3>
+          <p><strong>Output:</strong> verified good-sample lists, one generated filtered FASTA, and one generated XML config.</p>
+          <p><strong>Concept:</strong> XML files are config objects; each gene/cohort job needs unique input and output paths.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-day">Test</div>
+        <div class="roadmap-body">
+          <h3>Prepare the run strategy</h3>
+          <p><strong>Output:</strong> a gene list, output folder plan, tiny-run checklist, and a draft Slurm mental model.</p>
+          <p><strong>Concept:</strong> this is an embarrassingly parallel map over genes, but path mistakes scale just as fast as correct jobs.</p>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-day">Scale</div>
+        <div class="roadmap-body">
+          <h3>Ask for production settings before scaling</h3>
+          <p><strong>Output:</strong> approved Slurm template and approved GenomegaMap settings.</p>
+          <p><strong>Concept:</strong> cluster resource requests are part of the analysis design because runtime, failure recovery, and output collection determine whether the study is reproducible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ioerger-points">
+    <h2>Critical Points From Dr. Ioerger
+      <button class="section-complete" data-section="ioerger-points">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">What the meetings were really saying</span>
+      <p>
+        These are the points that matter most for your next moves. Everything else is supporting
+        context unless it helps you execute or explain these.
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Critical point</th><th>Why it matters to you</th><th>Concrete action</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Use the constant GenomegaMap model first.</strong></td>
+          <td>It gives one gene-level &omega; posterior, which is the simplest scalable comparison across thousands of genes.</td>
+          <td>Use the constant Bayesian XML template unless Dr. Ioerger approves different settings.</td>
+        </tr>
+        <tr>
+          <td><strong>Run diabetes and non-diabetes separately.</strong></td>
+          <td>The first analysis is two posterior distributions per gene, one per cohort.</td>
+          <td>Keep cohort labels explicit in file paths, result tables, and plots.</td>
+        </tr>
+        <tr>
+          <td><strong>Filter bad isolates.</strong></td>
+          <td>Low-coverage or mixed-lineage samples can corrupt the comparison.</td>
+          <td>Use only <code>samplestatus=good</code>: 178 diabetes and 175 non-diabetes samples.</td>
+        </tr>
+        <tr>
+          <td><strong>There are 4,018 ORF files per cohort.</strong></td>
+          <td>This is a batch-compute problem, not a hand-run problem.</td>
+          <td>Generate configs programmatically and submit small Slurm arrays before scaling.</td>
+        </tr>
+        <tr>
+          <td><strong>Every XML needs unique paths.</strong></td>
+          <td>Parallel jobs can accidentally read the same input or overwrite the same output.</td>
+          <td>Verify one generated XML has the right filtered FASTA path and result path.</td>
+        </tr>
+        <tr>
+          <td><strong>Understand Jun Liu / Bayesian MCMC enough to explain it.</strong></td>
+          <td>Dr. Ioerger does not want black-box tool usage. Your strength is explaining the inference.</td>
+          <td>Be able to whiteboard prior x likelihood -> posterior and Gibbs vs Metropolis-Hastings.</td>
+        </tr>
+        <tr>
+          <td><strong>Do not trust a hit without confounding checks.</strong></td>
+          <td>Lineage, resistance, geography, and sample composition can masquerade as diabetes effects.</td>
+          <td>Track lineage and resistance metadata when ranking genes.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="talk-track">
+      <h3>Meeting-safe summary</h3>
+      <p>
+        The immediate plan is to generate filtered per-gene FASTA files and constant-model
+        GenomegaMap XML configs for diabetes and non-diabetes cohorts. We validate one gene
+        locally or on Galaxy, then test a tiny Slurm array on Faster before scaling to all 4,018
+        genes per cohort. After burn-in, the <code>omega0</code> samples are the posterior
+        distribution we compare between cohorts.
+      </p>
+    </div>
+  </section>
+
+  <section id="cs-map">
+    <h2>CS And Statistics Map
+      <button class="section-complete" data-section="cs-map">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">Use your existing strengths</span>
+      <p>
+        Most of the biology words can be translated into familiar CS/statistics objects. Use this
+        map when the vocabulary starts feeling like noise.
+      </p>
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card">
+        <h3>FASTA alignment</h3>
+        <p><strong>CS translation:</strong> a keyed table of strings where each row is an isolate and each column is an aligned genome position.</p>
+        <p><strong>Why it matters:</strong> GenomegaMap compares columns/codons across samples, so alignment quality is data quality.</p>
+      </div>
+      <div class="concept-card">
+        <h3>Gene-by-gene scan</h3>
+        <p><strong>CS translation:</strong> a map operation over ~4,018 independent input files per cohort.</p>
+        <p><strong>Why it matters:</strong> Slurm arrays are the natural execution model, but each task needs isolated input/output paths.</p>
+      </div>
+      <div class="concept-card">
+        <h3>Bayesian model</h3>
+        <p><strong>Stats translation:</strong> posterior is proportional to likelihood times prior.</p>
+        <p><strong>Why it matters:</strong> you interpret a distribution over &omega;, not only a mean.</p>
+      </div>
+      <div class="concept-card">
+        <h3>MCMC output</h3>
+        <p><strong>Stats translation:</strong> a dependent sample from a hard-to-compute posterior.</p>
+        <p><strong>Why it matters:</strong> repeated rows, burn-in, and autocorrelation are diagnostics, not weird file noise.</p>
+      </div>
+      <div class="concept-card">
+        <h3>Cohort comparison</h3>
+        <p><strong>Stats translation:</strong> compare two empirical posterior samples, e.g. &Delta;&omega; = &omega;<sub>D</sub> - &omega;<sub>ND</sub>.</p>
+        <p><strong>Why it matters:</strong> overlap and uncertainty matter more than one ranked point estimate.</p>
+      </div>
+      <div class="concept-card">
+        <h3>HPRC Faster</h3>
+        <p><strong>Systems translation:</strong> a remote batch scheduler with a compute budget.</p>
+        <p><strong>Why it matters:</strong> correctness, resource limits, logging, and restartability are part of the research method.</p>
+      </div>
+    </div>
+
+    <details class="deep-dive">
+      <summary><span class="summary-main">Biology minimum (30 seconds)</span><span class="deep-tag">Bio basics</span></summary>
+      <div class="deep-dive-body">
+        <dl class="glossary compact-glossary">
+          <dt>Isolate</dt><dd>One patient's TB sample; each FASTA row is one isolate's copy of a gene.</dd>
+          <dt>Codon / dN/dS</dt><dd>DNA is read in 3-letter words; dN/dS compares protein-changing vs silent changes.</dd>
+          <dt>&omega;</dt><dd>Selection ratio. &lt;1 purifying, ≈1 neutral, &gt;1 positive.</dd>
+          <dt>Confounding</dt><dd>Lineage or resistance mix can fake a diabetes signal — treat as a stats design problem.</dd>
+        </dl>
+      </div>
+    </details>
+
+    <div class="worked-example">
+      <h4>How to compare one gene after both cohorts finish</h4>
+      <div class="we-step">
+        <div class="we-num">1</div>
+        <div class="we-body"><strong>Read both trace files.</strong> One file is diabetes, one file is non-diabetes, both for the same gene.</div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">2</div>
+        <div class="we-body"><strong>Discard burn-in.</strong> Drop the early chain samples according to the setting Dr. Ioerger approves.</div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">3</div>
+        <div class="we-body"><strong>Summarize <code>omega0</code>.</strong> Compute mean, median, 95% credible interval, and probability that &omega; is above 1.</div>
+      </div>
+      <div class="we-step">
+        <div class="we-num">4</div>
+        <div class="we-body"><strong>Sample a difference.</strong> Pair posterior samples to estimate <code>P(omega_diabetes &gt; omega_nondiabetes)</code> and a credible interval for the difference.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools-to-use">
+    <h2>Galaxy, Faster, And Scripts
+      <button class="section-complete" data-section="tools-to-use">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">What each tool is for</span>
+      <p>
+        You already have Galaxy and Faster/HPRC access in motion. The key is not "which one is
+        better"; it is using each environment at the right scale.
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Environment</th><th>Use it for</th><th>Do not use it for yet</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Local machine</strong></td>
+          <td>Reading files, dry-running the XML generator, checking sample counts, building summary scripts.</td>
+          <td>Thousands of production GenomegaMap runs.</td>
+        </tr>
+        <tr>
+          <td><strong>Galaxy</strong></td>
+          <td>Following Dr. Ioerger's known install recipe and testing a tiny GenomegaMap example.</td>
+          <td>Assuming the Galaxy build automatically solves Faster deployment.</td>
+        </tr>
+        <tr>
+          <td><strong>Faster / HPRC</strong></td>
+          <td>Running many independent genes with Slurm once one-gene and mini-array tests pass.</td>
+          <td>Debugging the first version of a script by launching thousands of jobs.</td>
+        </tr>
+        <tr>
+          <td><strong><code>generate_xml.py</code></strong></td>
+          <td>Filtering FASTA records to good samples and creating per-gene XML configs.</td>
+          <td>Changing priors, iterations, or thinning without approval.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="demo">
+      <div class="demo-header">
+        <div class="demo-title">Safe command order</div>
+        <span class="demo-tag">no cluster spend</span>
+      </div>
+<pre><code><span class="tok-c"># From the repo root: validate one gene without writing generated files.</span>
+python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001
+
+<span class="tok-c"># Then, if approved, generate configs from inside the lab folder paths.</span>
+python3 "Ioerger's Lab/generate_xml.py" --gene Rv0001
+
+<span class="tok-c"># Full generation comes later, after the one-gene path is correct.</span>
+python3 "Ioerger's Lab/generate_xml.py"
+</code></pre>
+      <p class="muted">
+        The script resolves paths relative to <code>Ioerger's Lab</code> and expects the generated
+        XML to be run from that folder so relative paths resolve correctly.
+      </p>
+    </div>
+
+    <div class="checkpoint">
+      <h4>What to inspect before asking Faster to work hard</h4>
+      <div class="cp-row">
+        <div class="cp-trigger"><strong>If you see:</strong> generated FASTA count is not 178 or 175</div>
+        <div class="cp-arrow">-></div>
+        <div class="cp-action"><strong>Check:</strong> sample filtering and whether bad isolates slipped in.</div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-trigger"><strong>If you see:</strong> all XML files point to the same input</div>
+        <div class="cp-arrow">-></div>
+        <div class="cp-action"><strong>Check:</strong> XML substitution logic before launching an array.</div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-trigger"><strong>If you see:</strong> every job writes to one output file</div>
+        <div class="cp-arrow">-></div>
+        <div class="cp-action"><strong>Check:</strong> output path includes both cohort and gene.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="deliverables">
+    <h2>Deliverables
+      <button class="section-complete" data-section="deliverables">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">What good work looks like</span>
+      <p>
+        The project becomes real when it produces auditable files and summaries, not just notes.
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Deliverable</th><th>What it should contain</th><th>Why Dr. Ioerger will care</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Input inventory</strong></td>
+          <td>Counts of genes, cohort sample counts, and paths for raw ORFs, filtered FASTAs, XML configs, and outputs.</td>
+          <td>Shows you know what exists before launching compute.</td>
+        </tr>
+        <tr>
+          <td><strong>Generator validation</strong></td>
+          <td>Dry-run output proving each generated gene keeps 178 diabetes or 175 non-diabetes samples.</td>
+          <td>Protects the analysis from bad isolates and path mistakes.</td>
+        </tr>
+        <tr>
+          <td><strong>Tiny run result</strong></td>
+          <td>One GenomegaMap trace file with expected columns and sane <code>omega0</code>, <code>theta</code>, and <code>kappa</code> behavior.</td>
+          <td>Proves the environment and XML are correct before scaling.</td>
+        </tr>
+        <tr>
+          <td><strong>Slurm mini-array result</strong></td>
+          <td>3-5 genes, separate logs, separate outputs, runtime estimate, memory estimate, and failure notes.</td>
+          <td>Turns cluster uncertainty into a controlled production plan.</td>
+        </tr>
+        <tr>
+          <td><strong>Results summary table</strong></td>
+          <td>Gene, cohort, sample count, posterior mean/median, credible interval, burn-in rule, output path, and QC flags.</td>
+          <td>Creates the table you need for ranking candidate diabetes-associated selection signals.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="site-map" class="detail-section" data-summary="Open site map: papers, meetings, tools, sources" data-tag="Reference">
+    <h2>Site Map
+      <button class="section-complete" data-section="site-map">Mark complete</button>
+    </h2>
+
+    <div class="section-intro">
+      <span class="intro-label">Everything else lives here</span>
+      <p>
+        Use this when you need background, not when you are deciding what to do next. Each page
+        keeps a personal research lens and hides long biology or methods detail behind optional
+        expanders.
+      </p>
+    </div>
+
+    <h3 id="papers">Papers</h3>
+    <div class="cards tool-cards">
+      <a class="page-card" href="01-dnds-bayesian.html">
+        <div class="card">
+          <h3>GenomegaMap</h3>
+          <p>The method paper: Bayesian dN/dS, MCMC output, constant vs independent vs window models.</p>
+          <div class="meta">Read first for model mechanics</div>
+        </div>
+      </a>
+      <a class="page-card" href="12-bayesian-inference.html">
+        <div class="card">
+          <h3>Bayesian Inference</h3>
+          <p>Jun Liu and Lawrence: priors, likelihoods, Gibbs sampling, and Metropolis-Hastings.</p>
+          <div class="meta">Read for Bayesian/MCMC explanation</div>
+        </div>
+      </a>
+      <a class="page-card" href="02-tb-selection.html">
+        <div class="card">
+          <h3>Ioerger TB Scans</h3>
+          <p>The closest published model for using GenomegaMap on clinical TB genomes.</p>
+          <div class="meta">Read after GenomegaMap basics</div>
+        </div>
+      </a>
+      <a class="page-card" href="07-shatby-diabetes-thesis.html">
+        <div class="card">
+          <h3>Shatby Thesis</h3>
+          <p>Project-specific diabetes/TB framing and candidate signals.</p>
+          <div class="meta">Use for diabetes context</div>
+        </div>
+      </a>
+      <a class="page-card" href="10-tandem-tb-diabetes.html">
+        <div class="card">
+          <h3>TANDEM</h3>
+          <p>Clinical TB-diabetes cohort background and why diabetes is a meaningful split.</p>
+          <div class="meta">Use for cohort justification</div>
+        </div>
+      </a>
+      <a class="page-card" href="11-mexico-mtb-genomics.html">
+        <div class="card">
+          <h3>Mexico Mtb</h3>
+          <p>Lineage and resistance context for avoiding confounded selection claims.</p>
+          <div class="meta">Use for confounding checks</div>
+        </div>
+      </a>
+      <a class="page-card" href="08-cole-h37rv-genome.html">
+        <div class="card">
+          <h3>Cole H37Rv</h3>
+          <p>Reference-genome orientation and gene annotation background.</p>
+          <div class="meta">Use when gene labels matter</div>
+        </div>
+      </a>
+      <a class="page-card" href="09-ballell-tb-drugs.html">
+        <div class="card">
+          <h3>Ballell TB Drugs</h3>
+          <p>Scoped TB drug and cell-wall context for downstream interpretation.</p>
+          <div class="meta">Use later, not first</div>
+        </div>
+      </a>
+    </div>
+
+    <h3 id="meetings">Meetings</h3>
+    <div class="two-col">
+      <div class="artifact-panel">
+        <h3>Monday June 1</h3>
+        <p>
+          The project brief: understand GenomegaMap, renew/setup Faster access, run the constant
+          model over diabetes and non-diabetes cohorts, and avoid wasting cluster budget.
+        </p>
+        <div class="source-actions">
+          <a href="06-monday-june-1-meeting.html">open Monday notes</a>
+        </div>
+      </div>
+      <div class="artifact-panel">
+        <h3>Wednesday June 3</h3>
+        <p>
+          The execution/statistics meeting: generate XML configs, filter bad isolates, understand
+          Jun Liu Bayesian/MCMC ideas, and prepare tiny-safe Slurm arrays.
+        </p>
+        <div class="source-actions">
+          <a href="13-wednesday-june-3-meeting.html">open Wednesday notes</a>
+        </div>
+      </div>
+    </div>
+
+    <h3 id="tools">Downstream tools</h3>
+    <p class="muted">Park these until GenomegaMap runs are stable.</p>
+    <div class="cards tool-cards">
+      <a class="page-card" href="03-boltz2.html">
+        <div class="card">
+          <h3>Boltz-2</h3>
+          <p>Structure and affinity prediction once a selected gene/protein needs follow-up.</p>
+          <div class="meta">Later: structure + binding</div>
+        </div>
+      </a>
+      <a class="page-card" href="04-keras-cheminformatics.html">
+        <div class="card">
+          <h3>Keras MPNN</h3>
+          <p>Molecule graphs, fingerprints, and neural message passing for compound modeling.</p>
+          <div class="meta">Later: molecule ML</div>
+        </div>
+      </a>
+      <a class="page-card" href="05-smiles-permeability.html">
+        <div class="card">
+          <h3>SMILES Permeability</h3>
+          <p>Descriptor, fingerprint, and SMILES-based permeability classifiers.</p>
+          <div class="meta">Later: permeability screen</div>
+        </div>
+      </a>
+    </div>
+
+    <h3 id="sources">Source files</h3>
+    <p class="muted">
+      Local source set: study guides, PDFs, extracted text helpers, data README, good-isolate lists,
+      generator script, GenomegaMap template, and porB3 example output.
+    </p>
+
+    <div class="sources-grid">
+      <div class="source-item">
+        <strong>Project README</strong>
+        <span>Start here when confused about the folder structure.</span>
+        <a href="../START_HERE.md" target="_blank">START_HERE</a>
+        <a href="../data/diabetes-cohort/README.md" target="_blank">data README</a>
+      </div>
+      <div class="source-item">
+        <strong>XML generator</strong>
+        <span>Filters good samples and writes per-gene GenomegaMap XML configs.</span>
+        <a href="../generate_xml.py" target="_blank">script</a>
+      </div>
+      <div class="source-item">
+        <strong>Good sample lists</strong>
+        <span>178 diabetes and 175 non-diabetes isolates with <code>samplestatus=good</code>.</span>
+        <a href="../data/diabetes-cohort/metadata/good-isolate-lists/diabetes.good.samples.txt" target="_blank">diabetes</a>
+        <a href="../data/diabetes-cohort/metadata/good-isolate-lists/nondiabetes.good.samples.txt" target="_blank">non-diabetes</a>
+      </div>
+      <div class="source-item">
+        <strong>Combined workbook</strong>
+        <span>Use only rows where <code>samplestatus=good</code>.</span>
+        <a href="../data/diabetes-cohort/metadata/diabetes.combined.xlsx" target="_blank">workbook</a>
+        <a href="../data/diabetes-cohort/metadata/exported-csv/diabetes.combined__nondiabetes-tbprofiler__good.csv" target="_blank">good-only CSV</a>
+      </div>
+      <div class="source-item">
+        <strong>GenomegaMap template</strong>
+        <span>Constant Bayesian XML template currently used by the generator.</span>
+        <a href="../genomegaMap/examples/porB3.genomegaMapConstant.a.xml" target="_blank">XML</a>
+      </div>
+      <div class="source-item">
+        <strong>porB3 output</strong>
+        <span>Example constant-model MCMC trace with 2,000 saved samples.</span>
+        <a href="../data/diabetes-cohort/results/porB3.genomegaMapConstant.a.mcmc.txt" target="_blank">trace</a>
+      </div>
+      <div class="source-item">
+        <strong>Install instructions</strong>
+        <span>Dr. Ioerger's forwarded GenomegaMap/Galaxy setup notes.</span>
+        <a href="../references/instructions/instructionsgenomemegamap.txt" target="_blank">instructions</a>
+      </div>
+      <div class="source-item">
+        <strong>Reference inventory</strong>
+        <span>Current local paper and workbook inventory.</span>
+        <a href="../references/instructions/reference-inventory.md" target="_blank">inventory</a>
+      </div>
+    </div>
+
+    <details class="deep-dive">
+      <summary><span class="summary-main">Why pages are shorter by default</span><span class="deep-tag">Triage</span></summary>
+      <div class="deep-dive-body">
+        <table>
+          <thead>
+            <tr><th>Page</th><th>Read first</th><th>Expand when needed</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Overview</strong></td><td>TODO, Ioerger meeting points, tools, deliverables</td><td>Site map only</td></tr>
+            <tr><td><strong>Meetings</strong></td><td>Assignment, XML, run prep, Slurm checklist</td><td>Transcript cleanup, MCMC depth, inventory</td></tr>
+            <tr><td><strong>GenomegaMap / TB scans</strong></td><td>Posterior output, workflow, confounding</td><td>Codon math, TB background, drug catalog</td></tr>
+            <tr><td><strong>Paper guides</strong></td><td>Why it matters for this project</td><td>Methods, figures, gene stories</td></tr>
+            <tr><td><strong>Boltz-2 / Keras / SMILES</strong></td><td>Purpose and when to use</td><td>Architecture and code internals</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+</main>
+</div>
+
+<footer>
+  Ioerger Lab research cockpit · <a href="#todo">TODO list</a> · <a href="06-monday-june-1-meeting.html">June 1 brief</a> · <a href="13-wednesday-june-3-meeting.html">June 3 build</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>
