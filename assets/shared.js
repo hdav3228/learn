@@ -48,6 +48,7 @@
       links: [
         { href: '06-monday-june-1-meeting.html', label: 'June 1 meeting', note: 'Project brief' },
         { href: '13-wednesday-june-3-meeting.html', label: 'June 3 meeting', note: 'XML + Slurm prep' },
+        { href: '14-friday-june-5-meeting.html', label: 'June 5 meeting', note: 'Slurm + Faster run' },
       ],
     },
     {
@@ -210,7 +211,11 @@
   }
 
   function inferActiveGroup(file, hash) {
-    if (file === '06-monday-june-1-meeting.html' || file === '13-wednesday-june-3-meeting.html') return 'meetings';
+    if (
+      file === '06-monday-june-1-meeting.html' ||
+      file === '13-wednesday-june-3-meeting.html' ||
+      file === '14-friday-june-5-meeting.html'
+    ) return 'meetings';
     if (file === '03-boltz2.html' || file === '04-keras-cheminformatics.html' || file === '05-smiles-permeability.html') return 'tools';
     if (file === '02-tb-selection.html' && hash === '#workflow') return 'tools';
     if (

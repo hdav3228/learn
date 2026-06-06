@@ -21,6 +21,7 @@
         <div class="dropdown-content">
           <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
           <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+          <a href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
         </div>
       </div>
       <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
@@ -73,7 +74,7 @@
     <h1>Start here: what to do, what to learn, and what to ignore for now</h1>
     <div class="status-strip" role="status">
       <span class="status-label">Next action</span>
-      <span class="status-text">Run <code>python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001</code> — expect 178 diabetes and 175 non-diabetes good samples.</span>
+      <span class="status-text">Run the 10-gene Faster Slurm constant-model test with 10,000 iterations, then summarize post-burn-in <code>omega0</code> traces.</span>
     </div>
     <p class="lede">
       This is the one-page cockpit for the project. Your job is not to become a biologist first.
@@ -87,6 +88,7 @@
       <a class="qpill" href="#tools-to-use">Galaxy + Faster</a>
       <a class="qpill" href="06-monday-june-1-meeting.html">June 1 brief</a>
       <a class="qpill" href="13-wednesday-june-3-meeting.html">June 3 build</a>
+      <a class="qpill" href="14-friday-june-5-meeting.html">June 5 Slurm</a>
     </div>
   </section>
 
@@ -135,7 +137,7 @@
     <tbody>
       <tr><th>Biology to know</th><td>Project map only: TB diabetes/non-diabetes selection scan.</td></tr>
       <tr><th>Stats/CS focus</th><td>Think pipeline + Bayesian traces + confounding checks.</td></tr>
-      <tr><th>Use this for</th><td>Start with the meeting briefs, generator dry-run, then one tiny run.</td></tr>
+      <tr><th>Use this for</th><td>Start with the meeting briefs, generator dry-run, one tiny run, then the 10-gene Slurm test.</td></tr>
       <tr><th>Defer for now</th><td>Do not start with downstream drug/structure pages.</td></tr>
     </tbody>
   </table>
@@ -145,7 +147,7 @@
     <div class="callout note">
       <div class="callout-title">Right now</div>
       Your bottleneck is pipeline correctness: good-sample filtering, XML generation, one tiny
-      GenomegaMap run, then a 3–5 gene array. Biology vocabulary only needs to stay basic until
+      GenomegaMap run, then a 10-gene Slurm test. Biology vocabulary only needs to stay basic until
       traces and cohort comparisons make sense.
     </div>
   </section>
@@ -164,18 +166,20 @@
     </div>
 
     <ol class="step-list priority-list">
-      <li><strong>Read the project brief pages.</strong> Focus only on the assignment, XML/config generation, good-isolate filtering, Bayesian traces, and tiny-run strategy.</li>
+      <li><strong>Read the project brief pages.</strong> Focus only on the assignment, XML/config generation, good-isolate filtering, Bayesian traces, and 10-gene Slurm strategy.</li>
       <li><strong>Confirm the data rule.</strong> Use only <code>samplestatus=good</code>: 178 diabetes samples and 175 non-diabetes samples.</li>
       <li><strong>Run the generator dry run locally.</strong> Use <code>python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001</code>. It validates sample lists, FASTA headers, and expected good-sample counts without writing outputs.</li>
       <li><strong>Inspect one generated XML and FASTA.</strong> Make sure the XML points to one filtered FASTA and one unique output file.</li>
       <li><strong>Run exactly one tiny GenomegaMap test.</strong> Galaxy or Faster is fine. The output should include <code>iteration</code>, <code>loglikelihood</code>, <code>theta</code>, <code>kappa</code>, and <code>omega0</code>.</li>
-      <li><strong>Only then prepare a mini-array.</strong> Use 3-5 genes, separate logs, separate outputs, conservative resources, and no large launch until the mini-array behaves.</li>
-      <li><strong>Write down the decisions you need from Dr. Ioerger.</strong> Production XML template, iteration count, burn-in, thinning, Slurm resources, output summary format, and hit definition.</li>
+      <li><strong>Prepare the 10-gene Slurm test.</strong> Use exact gene names, separate logs, separate outputs, conservative resources, and no large launch until the small job behaves.</li>
+      <li><strong>Run production-like constant settings on the 10-gene test.</strong> Use 10,000 iterations and a clear burn-in rule, either in XML or during post-processing.</li>
+      <li><strong>Write the first output summarizer.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short trace files.</li>
+      <li><strong>Write down the remaining decisions you need from Dr. Ioerger.</strong> Production XML template, final burn-in/thinning rule, Slurm batch size, output summary format, and hit definition.</li>
     </ol>
 
     <div class="callout bad">
       <div class="callout-title">The hard rule</div>
-      Do not submit thousands of Faster jobs until one job and a tiny 3-5 gene array produce the
+      Do not submit thousands of Faster jobs until one job and the 10-gene Slurm test produce the
       exact files you expect. The expensive mistake is not misunderstanding a codon; it is burning
       service units with a bad path, bad XML, or overwritten output file.
     </div>
@@ -223,7 +227,7 @@
         <div class="roadmap-day">Test</div>
         <div class="roadmap-body">
           <h3>Prepare the run strategy</h3>
-          <p><strong>Output:</strong> a gene list, output folder plan, tiny-run checklist, and a draft Slurm mental model.</p>
+          <p><strong>Output:</strong> a gene list, output folder plan, 10-gene test checklist, and a draft Slurm mental model.</p>
           <p><strong>Concept:</strong> this is an embarrassingly parallel map over genes, but path mistakes scale just as fast as correct jobs.</p>
         </div>
       </div>
@@ -277,6 +281,16 @@
           <td>Generate configs programmatically and submit small Slurm arrays before scaling.</td>
         </tr>
         <tr>
+          <td><strong>Use Slurm for real compute, not the login node.</strong></td>
+          <td>Login nodes are for editing, transfers, and small preprocessing; compute nodes are scheduled through <code>sbatch</code>.</td>
+          <td>Run XML/FASTA generation on the login node only because it is lightweight; run GenomegaMap through Slurm.</td>
+        </tr>
+        <tr>
+          <td><strong>Resource requests are part of the analysis plan.</strong></td>
+          <td>Walltime, task count, memory, exclusive access, and disk pressure affect cost, scheduling, and failure risk.</td>
+          <td>Use the June 5 10-gene run to estimate production walltime and load-balance long genes.</td>
+        </tr>
+        <tr>
           <td><strong>Every XML needs unique paths.</strong></td>
           <td>Parallel jobs can accidentally read the same input or overwrite the same output.</td>
           <td>Verify one generated XML has the right filtered FASTA path and result path.</td>
@@ -297,11 +311,10 @@
     <div class="talk-track">
       <h3>Meeting-safe summary</h3>
       <p>
-        The immediate plan is to generate filtered per-gene FASTA files and constant-model
-        GenomegaMap XML configs for diabetes and non-diabetes cohorts. We validate one gene
-        locally or on Galaxy, then test a tiny Slurm array on Faster before scaling to all 4,018
-        genes per cohort. After burn-in, the <code>omega0</code> samples are the posterior
-        distribution we compare between cohorts.
+        The immediate plan is to use the generated constant-model XML configs in a 10-gene Faster
+        Slurm test, verify that every gene writes a unique output, and summarize post-burn-in
+        <code>omega0</code> samples. That small run should produce runtime estimates, trace
+        diagnostics, and the first summary table before scaling to all 4,018 genes per cohort.
       </p>
     </div>
   </section>
@@ -415,7 +428,7 @@
         </tr>
         <tr>
           <td><strong>Faster / HPRC</strong></td>
-          <td>Running many independent genes with Slurm once one-gene and mini-array tests pass.</td>
+          <td>Running many independent genes with Slurm once the 10-gene test and output summarizer pass.</td>
           <td>Debugging the first version of a script by launching thousands of jobs.</td>
         </tr>
         <tr>
@@ -439,6 +452,10 @@ python3 "Ioerger's Lab/generate_xml.py" --gene Rv0001
 
 <span class="tok-c"># Full generation comes later, after the one-gene path is correct.</span>
 python3 "Ioerger's Lab/generate_xml.py"
+
+<span class="tok-c"># On Faster, submit only the small Slurm test first.</span>
+sbatch constant.slurm
+squeue -u hdav3228
 </code></pre>
       <p class="muted">
         The script resolves paths relative to <code>Ioerger's Lab</code> and expects the generated
@@ -499,8 +516,8 @@ python3 "Ioerger's Lab/generate_xml.py"
           <td>Proves the environment and XML are correct before scaling.</td>
         </tr>
         <tr>
-          <td><strong>Slurm mini-array result</strong></td>
-          <td>3-5 genes, separate logs, separate outputs, runtime estimate, memory estimate, and failure notes.</td>
+          <td><strong>10-gene Slurm result</strong></td>
+          <td>10 genes, separate logs, separate outputs, runtime estimate, memory estimate, and failure notes.</td>
           <td>Turns cluster uncertainty into a controlled production plan.</td>
         </tr>
         <tr>
@@ -608,6 +625,16 @@ python3 "Ioerger's Lab/generate_xml.py"
           <a href="13-wednesday-june-3-meeting.html">open Wednesday notes</a>
         </div>
       </div>
+      <div class="artifact-panel">
+        <h3>Friday June 5</h3>
+        <p>
+          The Slurm/HPRC operations meeting: login vs compute nodes, home vs scratch, <code>sbatch</code>,
+          <code>squeue</code>, 10-gene tests, load balancing, and MCMC post-processing.
+        </p>
+        <div class="source-actions">
+          <a href="14-friday-june-5-meeting.html">open Friday notes</a>
+        </div>
+      </div>
     </div>
 
     <h3 id="tools">Downstream tools</h3>
@@ -711,7 +738,7 @@ python3 "Ioerger's Lab/generate_xml.py"
 </div>
 
 <footer>
-  Ioerger Lab research cockpit · <a href="#todo">TODO list</a> · <a href="06-monday-june-1-meeting.html">June 1 brief</a> · <a href="13-wednesday-june-3-meeting.html">June 3 build</a>
+  Ioerger Lab research cockpit · <a href="#todo">TODO list</a> · <a href="06-monday-june-1-meeting.html">June 1 brief</a> · <a href="13-wednesday-june-3-meeting.html">June 3 build</a> · <a href="14-friday-june-5-meeting.html">June 5 Slurm</a>
 </footer>
 
 <script src="assets/shared.js"></script>

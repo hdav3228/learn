@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Friday June 5 Meeting &middot; Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">%CE%A9</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">&Omega;</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <div class="dropdown">
+        <button class="dropbtn">Meetings</button>
+        <div class="dropdown-content">
+          <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+          <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+          <a href="14-friday-june-5-meeting.html" class="active">Friday June 5 Meeting</a>
+        </div>
+      </div>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#mission">Slurm objective</a></li>
+    <li><a href="#cluster-model">Faster mental model</a></li>
+    <li><a href="#script-template">Script template</a></li>
+    <li><a href="#files">Files and paths</a></li>
+    <li><a href="#scale">Scaling strategy</a></li>
+    <li><a href="#mcmc">MCMC output</a></li>
+    <li><a href="#next-actions">Next actions</a></li>
+    <li class="toc-optional"><a href="#cleanup">Transcript cleanup</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where this meeting tab fits">
+  <a class="step done" href="index.html">Overview</a>
+  <span class="sep">&rarr;</span>
+  <a class="step done" href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+  <span class="sep">&rarr;</span>
+  <a class="step done" href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+  <span class="sep">&rarr;</span>
+  <span class="step here">Friday June 5 Meeting</span>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Meeting notes &middot; Friday, June 5 &middot; Slurm + Faster operations</div>
+  <h1>June 5: submit small Slurm jobs before scaling GenomegaMap</h1>
+  <p class="lede">
+    This meeting moved the project from local/Galaxy setup into real HPRC execution. The goal is
+    to use Faster correctly: preprocess cheaply on the login node, submit GenomegaMap runs through
+    Slurm, watch resource requests, and summarize MCMC traces before launching thousands of genes.
+  </p>
+  <div class="quickstart">
+    <a class="qpill qpill-primary" href="#script-template">Slurm template</a>
+    <a class="qpill" href="#scale">Scaling strategy</a>
+    <a class="qpill" href="#mcmc">MCMC output</a>
+    <a class="qpill" href="index.html#todo">Back to TODO</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  Slurm is the line you stand in before using Faster's compute nodes. Do quick file generation and
+  editing on the login node, then submit batches of independent gene jobs with <code>sbatch</code>
+  so the cluster can schedule them across real compute cores.
+</div>
+
+<div class="role-lens">
+  <div class="role-lens-title">Personal research lens</div>
+  <table>
+    <tbody>
+      <tr><th>Biology to know</th><td>Gene length matters mostly because longer genes run longer.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Slurm resource requests, load balancing, trace burn-in, and posterior summaries.</td></tr>
+      <tr><th>Use this for</th><td>10-gene Faster test, production Slurm shape, and output post-processing plan.</td></tr>
+      <tr><th>Defer for now</th><td>Full 4,018-gene launches until the 10-gene test and summary script are stable.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<section id="mission">
+<h2>Slurm Objective
+  <button class="section-complete" data-section="mission">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the meeting actually accomplished</span>
+  <p>
+    The practical outcome was a working pattern for a small Faster run: copy a few XML and FASTA
+    files over, submit one Slurm script for 10 genes, check <code>squeue</code>, inspect the Slurm
+    output file, and confirm that separate GenomegaMap output files are written.
+  </p>
+</div>
+
+<div class="study-dashboard">
+  <h3>The deliverable</h3>
+  <p>
+    The next useful deliverable is a 10-gene constant-model Slurm test with production-like MCMC
+    settings, followed by a post-processing script that extracts <code>omega0</code> from each
+    trace and writes a small summary table.
+  </p>
+
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">Test size</span>
+      <span class="big">10 genes</span>
+      <span class="caption">Small enough to debug paths, large enough to test parallel launch.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Scheduler</span>
+      <span class="big">Slurm</span>
+      <span class="caption"><code>sbatch</code> submits; <code>squeue -u hdav3228</code> monitors.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Constant model</span>
+      <span class="big">10,000</span>
+      <span class="caption">Use the default iteration count unless Dr. Ioerger changes it.</span>
+    </div>
+    <div class="metric-tile">
+      <span class="kicker">Burn-in</span>
+      <span class="big">20%</span>
+      <span class="caption">Either set 2,000 in XML or discard it during post-processing.</span>
+    </div>
+  </div>
+</div>
+
+<h3>Meeting points that changed the plan</h3>
+<table>
+  <thead>
+    <tr><th>Point</th><th>Meaning</th><th>Concrete action</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Do not run heavy GenomegaMap jobs on the login node.</strong></td>
+      <td>Login nodes are for editing, small checks, transfers, and lightweight preprocessing.</td>
+      <td>Generate XML/filtered FASTA there only because it takes seconds; submit compute through Slurm.</td>
+    </tr>
+    <tr>
+      <td><strong>Set a working directory inside the Slurm script.</strong></td>
+      <td>Jobs may not start where <code>sbatch</code> was called.</td>
+      <td>Use an explicit <code>cd</code> before relative XML/input/output paths.</td>
+    </tr>
+    <tr>
+      <td><strong>Start with non-exclusive 10-task jobs.</strong></td>
+      <td>Requesting a full exclusive node for 10 genes wastes the rest of the cores.</td>
+      <td>Use <code>--ntasks-per-node=10</code>, <code>--cpus-per-task=1</code>, and no <code>--exclusive</code> for the smoke test.</td>
+    </tr>
+    <tr>
+      <td><strong>Use realistic walltime, not the maximum every time.</strong></td>
+      <td>Too-short walltime kills jobs; too-large walltime can delay scheduling.</td>
+      <td>Use 1 hour for the 10-gene test, then estimate production walltime from output timestamps.</td>
+    </tr>
+    <tr>
+      <td><strong>Separate diabetes and non-diabetes production jobs.</strong></td>
+      <td>The cohorts share gene names but should not share output files or logs.</td>
+      <td>Use separate Slurm submissions and cohort-specific paths.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="cluster-model">
+<h2>Faster Mental Model
+  <button class="section-complete" data-section="cluster-model">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">How to think about HPRC</span>
+  <p>
+    Faster has login nodes, compute nodes, home storage, and scratch storage. The cluster may feel
+    slow even when you are not computing because shared storage can be hammered by other users'
+    jobs.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Component</th><th>Use it for</th><th>Watch out for</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Login node</strong></td>
+      <td>Shell work, editing scripts, checking files, small Python preprocessing.</td>
+      <td>Do not run large GenomegaMap workloads here.</td>
+    </tr>
+    <tr>
+      <td><strong>Compute node</strong></td>
+      <td>Actual GenomegaMap runs submitted through Slurm.</td>
+      <td>You request cores, memory, walltime, and possibly exclusive access.</td>
+    </tr>
+    <tr>
+      <td><strong>Home directory</strong></td>
+      <td>Small scripts, important notes, and files worth backing up.</td>
+      <td>Quota is small. Do not unpack large ORF/result folders here long term.</td>
+    </tr>
+    <tr>
+      <td><strong>Scratch</strong></td>
+      <td>Large data, temporary ORFs, batch outputs, and generated run folders.</td>
+      <td>No backup guarantee. Keep crucial scripts/results copied elsewhere.</td>
+    </tr>
+    <tr>
+      <td><strong>Slurm queue</strong></td>
+      <td>Scheduling jobs onto available compute resources.</td>
+      <td>Scheduling is not pure first-come first-served; walltime/resource requests matter.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Commands from the meeting</div>
+    <span class="demo-tag">Faster shell</span>
+  </div>
+<pre><code><span class="tok-c"># Submit the Slurm script.</span>
+sbatch constant.slurm
+
+<span class="tok-c"># Show only your queued/running jobs.</span>
+squeue -u hdav3228
+
+<span class="tok-c"># Sort files by timestamp, newest at the bottom.</span>
+ls -ltr
+
+<span class="tok-c"># Inspect scheduler/stdout/stderr output for one job.</span>
+cat slurm-&lt;jobid&gt;.out
+
+<span class="tok-c"># Estimate disk use for the current directory.</span>
+du -sh .
+</code></pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Easy-to-miss Slurm failure</div>
+  If <code>sbatch</code> says a directive is invalid, check for copied non-breaking spaces or odd
+  dash characters in the <code>#SBATCH</code> lines. Re-typing the directives directly in the
+  terminal editor fixed that issue during the meeting.
+</div>
+</section>
+
+<section id="script-template">
+<h2>Script Template
+  <button class="section-complete" data-section="script-template">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The shape of the 10-gene job</span>
+  <p>
+    The exact paths will depend on where GenomegaMap, gcat, XML files, and FASTA files live on
+    Faster. The stable pattern is: define Slurm resources first, load environment paths, <code>cd</code>
+    to the run directory, start one backgrounded <code>gcat</code> process per gene, then <code>wait</code>.
+  </p>
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">10-gene constant-model skeleton</div>
+    <span class="demo-tag">adjust paths</span>
+  </div>
+<pre><code>#!/usr/bin/env bash
+#SBATCH --job-name=genomegamap_constant_test
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=10
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=25G
+#SBATCH --time=01:00:00
+#SBATCH --output=slurm-%j.out
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=&lt;your-email&gt;@tamu.edu
+
+set -euo pipefail
+
+<span class="tok-c"># Adjust these to the actual Faster install paths.</span>
+export LD_LIBRARY_PATH="$HOME/software/gcat-project/lib:$HOME/software/genomegamap/build/genomegaMap/lib:${LD_LIBRARY_PATH:-}"
+
+<span class="tok-c"># Make relative XML/input/output paths unambiguous.</span>
+cd "$HOME/JaegerTest"
+
+genes=(Rv0001 Rv0002 Rv0003 Rv0004 Rv0005 Rv0006 Rv0007 Rv0008c Rv0009 Rv0010c)
+
+for gene in "${genes[@]}"; do
+  "$HOME/software/gcat-project/gcat" "configs/diabetes/genomegamap.constant.${gene}.xml" &amp;
+done
+
+wait
+</code></pre>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Line</th><th>Meeting rule</th><th>Reason</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>#SBATCH</code> block</td>
+      <td>All Slurm directives must come before ordinary shell commands.</td>
+      <td>Slurm parses these before running the script.</td>
+    </tr>
+    <tr>
+      <td><code>--ntasks-per-node=10</code></td>
+      <td>Use 10 for the small test.</td>
+      <td>One GenomegaMap process uses one core, so 10 genes use roughly 10 cores.</td>
+    </tr>
+    <tr>
+      <td><code>--mem=25G</code></td>
+      <td>Start small for 10 jobs.</td>
+      <td>The full-node example used much larger memory, but the 10-gene smoke test does not need that.</td>
+    </tr>
+    <tr>
+      <td><code>LD_LIBRARY_PATH</code></td>
+      <td>Point to gcat/GenomegaMap dynamic libraries.</td>
+      <td>The first run failed until the correct nested GenomegaMap library path was included.</td>
+    </tr>
+    <tr>
+      <td><code>&amp;</code> and <code>wait</code></td>
+      <td>Background each gene run, then wait for all of them.</td>
+      <td>This creates parallel work inside one Slurm job without letting the script exit early.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Conda note</div>
+  Conda may auto-activate in an interactive shell, but Slurm jobs do not always run the same shell
+  startup files. If the executable or libraries are missing inside Slurm, explicitly source the
+  right conda activation script in the Slurm file before running <code>gcat</code>.
+</div>
+</section>
+
+<section id="files">
+<h2>Files And Paths
+  <button class="section-complete" data-section="files">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Transfer fewer files on purpose</span>
+  <p>
+    The meeting exposed how painful repeated <code>scp</code> can be with Duo prompts. When moving
+    multiple XML or FASTA files, tar them on the source machine, copy one tar file, then untar on
+    Faster.
+  </p>
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Tar/SCP pattern</div>
+    <span class="demo-tag">many files</span>
+  </div>
+<pre><code><span class="tok-c"># On the source machine, from the directory with XML files:</span>
+tar -cvf xml.tar *.xml
+scp xml.tar hdav3228@faster.hprc.tamu.edu:
+
+<span class="tok-c"># On Faster:</span>
+mkdir -p "$HOME/JaegerTest/configs/diabetes"
+mv "$HOME/xml.tar" "$HOME/JaegerTest/configs/diabetes/"
+cd "$HOME/JaegerTest/configs/diabetes"
+tar -xvf xml.tar
+rm xml.tar
+</code></pre>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Path rule</th><th>Why it mattered</th><th>Action</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Keep test files close together.</strong></td>
+      <td>Deep mixed paths made the first Slurm test harder to debug.</td>
+      <td>For the 10-gene test, keep XML, FASTA, and output directories simple and predictable.</td>
+    </tr>
+    <tr>
+      <td><strong>Create output directories before running.</strong></td>
+      <td>The first successful-looking run did not write expected outputs until output folders existed.</td>
+      <td>Use <code>mkdir -p outputs/runs/diabetes</code> or update XML output paths to an existing directory.</td>
+    </tr>
+    <tr>
+      <td><strong>Watch <code>Rv0008c</code> and <code>Rv0010c</code>.</strong></td>
+      <td>Some early gene names include the <code>c</code> suffix.</td>
+      <td>Use exact filenames from the ORF folder or generated gene list, not guessed names.</td>
+    </tr>
+    <tr>
+      <td><strong>Delete large unpacked test tarballs when done.</strong></td>
+      <td>Home quota is small and ORF archives expand quickly.</td>
+      <td>Use <code>du -sh .</code> to confirm what is consuming space.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="scale">
+<h2>Scaling Strategy
+  <button class="section-complete" data-section="scale">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">How to avoid wasting service units</span>
+  <p>
+    GenomegaMap is not internally parallel for one gene, but the project is parallel across genes.
+    The hard part is keeping cores busy without launching a fragile, disk-heavy, hard-to-debug run.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Scaling issue</th><th>Meeting guidance</th><th>Project implication</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Diabetes vs non-diabetes</strong></td>
+      <td>Submit separate jobs for the two cohorts.</td>
+      <td>Separate outputs, logs, and summary tables stay easier to audit.</td>
+    </tr>
+    <tr>
+      <td><strong>Exclusive nodes</strong></td>
+      <td>Use only when you can keep most cores busy.</td>
+      <td>Do not request exclusive access for 10 jobs; consider it for production batches near 60+ tasks.</td>
+    </tr>
+    <tr>
+      <td><strong>Task count</strong></td>
+      <td>One gene run uses one core, but Linux can run more processes than cores via time slicing.</td>
+      <td>You can submit hundreds in one script, but test carefully before starting very large batches.</td>
+    </tr>
+    <tr>
+      <td><strong>Stragglers</strong></td>
+      <td>Runtime scales mainly with gene length, so long genes can keep a node busy after short genes finish.</td>
+      <td>Estimate runtime from timestamps and consider batching by expected gene length.</td>
+    </tr>
+    <tr>
+      <td><strong>Disk pressure</strong></td>
+      <td>Many jobs starting together all read inputs and write outputs at once.</td>
+      <td>Starting 1,000 processes at once may stress shared storage even if CPU scheduling works.</td>
+    </tr>
+    <tr>
+      <td><strong>Walltime</strong></td>
+      <td>Build in buffer, but do not always request the maximum.</td>
+      <td>The queue may schedule shorter jobs sooner; jobs are killed if the time limit is reached.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="worked-example">
+  <h4>Load-balancing logic</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body"><strong>Start with 10 genes.</strong> This proves Slurm, paths, libraries, output folders, and basic runtime.</div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body"><strong>Use timestamps.</strong> After the run, compare output file modification times to estimate per-gene durations.</div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body"><strong>Relate duration to gene length.</strong> Plot runtime versus sequence length so production walltime is based on evidence.</div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">4</div>
+    <div class="we-body"><strong>Scale in cohorts.</strong> Run diabetes and non-diabetes as separate batches once the small run and summary script are stable.</div>
+  </div>
+</div>
+</section>
+
+<section id="mcmc">
+<h2>MCMC Output
+  <button class="section-complete" data-section="mcmc">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">How to read the trace files</span>
+  <p>
+    The meeting tied Slurm execution back to statistics. A GenomegaMap output file is an MCMC trace:
+    early samples may be burn-in, saved rows may be thinned, and <code>omega0</code> should be
+    summarized as a posterior distribution.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Topic</th><th>Meeting note</th><th>Use in analysis</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Constant iterations</strong></td>
+      <td>The constant-model default is 10,000 iterations.</td>
+      <td>Use 10,000 for the next 10-gene test unless changed.</td>
+    </tr>
+    <tr>
+      <td><strong>Window iterations</strong></td>
+      <td>The window-model default is much larger, around 1,000,000; prior work may have used fewer.</td>
+      <td>Do not switch to sliding/window until the constant model works.</td>
+    </tr>
+    <tr>
+      <td><strong>Burn-in</strong></td>
+      <td>Discard early samples while the chain moves from random initialization toward equilibrium.</td>
+      <td>For 10,000 iterations, 2,000 is a reasonable 20% test burn-in.</td>
+    </tr>
+    <tr>
+      <td><strong>XML vs post hoc burn-in</strong></td>
+      <td>You can set burn-in in XML, or keep all rows and discard during post-processing.</td>
+      <td>Keeping all rows preserves trace diagnostics; post-processing can enforce the final rule.</td>
+    </tr>
+    <tr>
+      <td><strong>Thinning</strong></td>
+      <td>A thinning value of 5 saves every fifth sample.</td>
+      <td>Remember this when translating iteration count into saved row count.</td>
+    </tr>
+    <tr>
+      <td><strong>Diagnostics</strong></td>
+      <td>Line plots, heat maps, autocorrelation, and replicate chains help check convergence.</td>
+      <td>At minimum, plot <code>omega0</code> over iterations for the 10-gene test.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Credible intervals</div>
+  For each gene, sort post-burn-in <code>omega0</code> samples and report a credible interval plus
+  a mean/median. Conventionally, a 95% credible interval uses the 2.5% and 97.5% quantiles; if Dr.
+  Ioerger wants a different middle interval, record that rule explicitly.
+</div>
+
+<div class="talk-track">
+  <h3>Interpretation target</h3>
+  <p>
+    Values below 1 suggest purifying selection, values near 1 suggest neutral evolution, and values
+    above 1 suggest positive selection. Dr. Ioerger expects the first 10 genes to be unremarkable,
+    so they are mainly an engineering and diagnostics test rather than a biological discovery set.
+  </p>
+</div>
+</section>
+
+<section id="next-actions">
+<h2>Next Actions
+  <button class="section-complete" data-section="next-actions">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What to do after this meeting</span>
+  <p>
+    The next work should produce evidence that the Slurm path is ready for production, not just a
+    successful-looking job submission.
+  </p>
+</div>
+
+<ol class="step-list priority-list">
+  <li><strong>Clean the 10-gene test folder.</strong> Keep only the exact XML, FASTA, Slurm script, and output directories needed for the test.</li>
+  <li><strong>Run the 10-gene constant model with production-like settings.</strong> Use 10,000 iterations and either XML burn-in of 2,000 or post-hoc burn-in removal.</li>
+  <li><strong>Check every expected output file exists.</strong> Confirm one file per gene and no overwritten/shared output path.</li>
+  <li><strong>Record runtime per gene.</strong> Use output timestamps and gene lengths to estimate production walltime.</li>
+  <li><strong>Write a post-processing script.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short traces.</li>
+  <li><strong>Plot one or two traces.</strong> Use a line plot or heat map to show burn-in and equilibrium behavior before relying on summaries.</li>
+  <li><strong>Scale only after the summary table works.</strong> Move from 10 genes to a larger but still bounded batch, then diabetes and non-diabetes production runs.</li>
+</ol>
+</section>
+
+<section id="cleanup" class="detail-section" data-summary="Open transcript cleanup appendix" data-tag="Appendix">
+<h2>Appendix: Transcript Cleanup
+  <button class="section-complete" data-section="cleanup">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Audio corrections</span>
+  <p>
+    The transcript had several speech-to-text errors. These are the terms that matter for future
+    commands and notes.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Transcript phrase</th><th>Likely intended</th><th>Context</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>slark / slurn / sperm script</td>
+      <td><strong>Slurm script</strong></td>
+      <td>Batch scheduler script submitted with <code>sbatch</code>.</td>
+    </tr>
+    <tr>
+      <td>S batch</td>
+      <td><strong><code>sbatch</code></strong></td>
+      <td>Command used to submit a Slurm job.</td>
+    </tr>
+    <tr>
+      <td>SQ</td>
+      <td><strong><code>squeue</code></strong></td>
+      <td>Command used to inspect queued and running jobs.</td>
+    </tr>
+    <tr>
+      <td>Genomega map / genomegamath</td>
+      <td><strong>GenomegaMap</strong></td>
+      <td>The Bayesian dN/dS program being run gene by gene.</td>
+    </tr>
+    <tr>
+      <td>g cat</td>
+      <td><strong><code>gcat</code></strong></td>
+      <td>Executable used to run a GenomegaMap XML config.</td>
+    </tr>
+    <tr>
+      <td>Sikhs / seeks</td>
+      <td><strong><code>seqs</code></strong></td>
+      <td>Sequence input file setting inside the XML.</td>
+    </tr>
+    <tr>
+      <td>road library path</td>
+      <td><strong><code>LD_LIBRARY_PATH</code></strong></td>
+      <td>Environment variable needed for dynamic libraries.</td>
+    </tr>
+    <tr>
+      <td>weight command</td>
+      <td><strong><code>wait</code></strong></td>
+      <td>Shell command that waits for background jobs started with <code>&amp;</code>.</td>
+    </tr>
+    <tr>
+      <td>one D curve</td>
+      <td><strong>1D trace plot</strong></td>
+      <td>Plot parameter value over MCMC iteration to inspect burn-in and mixing.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Friday June 5 Slurm meeting &middot; <a href="index.html">back to overview</a> &middot; <a href="13-wednesday-june-3-meeting.html">review June 3 build notes</a> &middot; <a href="#script-template">Slurm template</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>
