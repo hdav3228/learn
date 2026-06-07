@@ -74,7 +74,7 @@
     <h1>Start here: what to do, what to learn, and what to ignore for now</h1>
     <div class="status-strip" role="status">
       <span class="status-label">Next action</span>
-      <span class="status-text">Run the 10-gene Faster Slurm constant-model test with 10,000 iterations, then summarize post-burn-in <code>omega0</code> traces.</span>
+      <span class="status-text">Build the DB/NDB synonymous vs non-synonymous mutation tally, while keeping the 10-gene Faster Slurm and <code>omega0</code> summary path stable.</span>
     </div>
     <p class="lede">
       This is the one-page cockpit for the project. Your job is not to become a biologist first.
@@ -89,6 +89,7 @@
       <a class="qpill" href="06-monday-june-1-meeting.html">June 1 brief</a>
       <a class="qpill" href="13-wednesday-june-3-meeting.html">June 3 build</a>
       <a class="qpill" href="14-friday-june-5-meeting.html">June 5 Slurm</a>
+      <a class="qpill" href="14-friday-june-5-meeting.html#pnps-challenge">Ad-hoc pN/pS</a>
     </div>
   </section>
 
@@ -136,8 +137,8 @@
   <table>
     <tbody>
       <tr><th>Biology to know</th><td>Project map only: TB diabetes/non-diabetes selection scan.</td></tr>
-      <tr><th>Stats/CS focus</th><td>Think pipeline + Bayesian traces + confounding checks.</td></tr>
-      <tr><th>Use this for</th><td>Start with the meeting briefs, generator dry-run, one tiny run, then the 10-gene Slurm test.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Think pipeline + Bayesian traces + mutation-count sanity checks + confounding checks.</td></tr>
+      <tr><th>Use this for</th><td>Start with the meeting briefs, generator dry-run, one tiny run, the 10-gene Slurm test, and the DB/NDB S-vs-NS tally.</td></tr>
       <tr><th>Defer for now</th><td>Do not start with downstream drug/structure pages.</td></tr>
     </tbody>
   </table>
@@ -147,8 +148,8 @@
     <div class="callout note">
       <div class="callout-title">Right now</div>
       Your bottleneck is pipeline correctness: good-sample filtering, XML generation, one tiny
-      GenomegaMap run, then a 10-gene Slurm test. Biology vocabulary only needs to stay basic until
-      traces and cohort comparisons make sense.
+      GenomegaMap run, then a 10-gene Slurm test. In parallel, build the ad-hoc S/NS mutation
+      counter so Dr. Ioerger can compare a quick pN/pS-style ranking against GenomegaMap.
     </div>
   </section>
 
@@ -174,6 +175,8 @@
       <li><strong>Prepare the 10-gene Slurm test.</strong> Use exact gene names, separate logs, separate outputs, conservative resources, and no large launch until the small job behaves.</li>
       <li><strong>Run production-like constant settings on the 10-gene test.</strong> Use 10,000 iterations and a clear burn-in rule, either in XML or during post-processing.</li>
       <li><strong>Write the first output summarizer.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short trace files.</li>
+      <li><strong>Build the ad-hoc S/NS mutation counter.</strong> For each gene, tally synonymous and non-synonymous mutations independently in DB and NDB sequence files.</li>
+      <li><strong>Rank the independent pN/pS-style results.</strong> Report highest DB NS/S enrichment, biggest DB-vs-NDB score difference, and later overlap with GenomegaMap hits.</li>
       <li><strong>Write down the remaining decisions you need from Dr. Ioerger.</strong> Production XML template, final burn-in/thinning rule, Slurm batch size, output summary format, and hit definition.</li>
     </ol>
 
@@ -291,6 +294,11 @@
           <td>Use the June 5 10-gene run to estimate production walltime and load-balance long genes.</td>
         </tr>
         <tr>
+          <td><strong>Use an independent ad-hoc check too.</strong></td>
+          <td>Dr. Ioerger wants S/NS mutation counts as a second method to compare with GenomegaMap.</td>
+          <td>Write a per-gene DB/NDB table with S count, NS count, NS/S score, and DB-vs-NDB difference.</td>
+        </tr>
+        <tr>
           <td><strong>Every XML needs unique paths.</strong></td>
           <td>Parallel jobs can accidentally read the same input or overwrite the same output.</td>
           <td>Verify one generated XML has the right filtered FASTA path and result path.</td>
@@ -313,8 +321,9 @@
       <p>
         The immediate plan is to use the generated constant-model XML configs in a 10-gene Faster
         Slurm test, verify that every gene writes a unique output, and summarize post-burn-in
-        <code>omega0</code> samples. That small run should produce runtime estimates, trace
-        diagnostics, and the first summary table before scaling to all 4,018 genes per cohort.
+        <code>omega0</code> samples. In parallel, build an ad-hoc synonymous/non-synonymous
+        mutation-count table for DB and NDB sequence files so the quick pN/pS-style ranking can
+        be compared with the Bayesian results.
       </p>
     </div>
   </section>
@@ -357,6 +366,11 @@
         <h3>Cohort comparison</h3>
         <p><strong>Stats translation:</strong> compare two empirical posterior samples, e.g. &Delta;&omega; = &omega;<sub>D</sub> - &omega;<sub>ND</sub>.</p>
         <p><strong>Why it matters:</strong> overlap and uncertainty matter more than one ranked point estimate.</p>
+      </div>
+      <div class="concept-card">
+        <h3>Ad-hoc mutation tally</h3>
+        <p><strong>CS translation:</strong> parse codons, translate them, classify each observed change as synonymous or non-synonymous, then aggregate by gene and cohort.</p>
+        <p><strong>Why it matters:</strong> this gives an independent ranking to compare against GenomegaMap before treating any hit as real.</p>
       </div>
       <div class="concept-card">
         <h3>HPRC Faster</h3>
@@ -418,7 +432,7 @@
       <tbody>
         <tr>
           <td><strong>Local machine</strong></td>
-          <td>Reading files, dry-running the XML generator, checking sample counts, building summary scripts.</td>
+          <td>Reading files, dry-running the XML generator, checking sample counts, building summary scripts and the S/NS mutation counter.</td>
           <td>Thousands of production GenomegaMap runs.</td>
         </tr>
         <tr>
@@ -525,6 +539,11 @@ squeue -u hdav3228
           <td>Gene, cohort, sample count, posterior mean/median, credible interval, burn-in rule, output path, and QC flags.</td>
           <td>Creates the table you need for ranking candidate diabetes-associated selection signals.</td>
         </tr>
+        <tr>
+          <td><strong>Ad-hoc S/NS mutation table</strong></td>
+          <td>Gene, cohort, sample count, S count, NS count, NS/S score, skipped codons, DB-vs-NDB difference, and ranking fields.</td>
+          <td>Gives Dr. Ioerger a fast independent method to compare against GenomegaMap hits.</td>
+        </tr>
       </tbody>
     </table>
   </section>
@@ -629,7 +648,8 @@ squeue -u hdav3228
         <h3>Friday June 5</h3>
         <p>
           The Slurm/HPRC operations meeting: login vs compute nodes, home vs scratch, <code>sbatch</code>,
-          <code>squeue</code>, 10-gene tests, load balancing, and MCMC post-processing.
+          <code>squeue</code>, 10-gene tests, MCMC post-processing, and the ad-hoc S/NS mutation
+          tally Dr. Ioerger asked for as an independent comparison.
         </p>
         <div class="source-actions">
           <a href="14-friday-june-5-meeting.html">open Friday notes</a>

@@ -48,7 +48,7 @@
       links: [
         { href: '06-monday-june-1-meeting.html', label: 'June 1 meeting', note: 'Project brief' },
         { href: '13-wednesday-june-3-meeting.html', label: 'June 3 meeting', note: 'XML + Slurm prep' },
-        { href: '14-friday-june-5-meeting.html', label: 'June 5 meeting', note: 'Slurm + Faster run' },
+        { href: '14-friday-june-5-meeting.html', label: 'June 5 meeting', note: 'Slurm + pN/pS check' },
       ],
     },
     {

@@ -57,6 +57,7 @@
     <li><a href="#files">Files and paths</a></li>
     <li><a href="#scale">Scaling strategy</a></li>
     <li><a href="#mcmc">MCMC output</a></li>
+    <li><a href="#pnps-challenge">Ad-hoc pN/pS challenge</a></li>
     <li><a href="#next-actions">Next actions</a></li>
     <li class="toc-optional"><a href="#cleanup">Transcript cleanup</a></li>
   </ol>
@@ -80,17 +81,19 @@
 </div>
 
 <section class="hero">
-  <div class="eyebrow">Meeting notes &middot; Friday, June 5 &middot; Slurm + Faster operations</div>
-  <h1>June 5: submit small Slurm jobs before scaling GenomegaMap</h1>
+  <div class="eyebrow">Meeting notes &middot; Friday, June 5 &middot; Slurm + Faster operations + pN/pS challenge</div>
+  <h1>June 5: scale GenomegaMap carefully and add an independent mutation-count check</h1>
   <p class="lede">
     This meeting moved the project from local/Galaxy setup into real HPRC execution. The goal is
     to use Faster correctly: preprocess cheaply on the login node, submit GenomegaMap runs through
-    Slurm, watch resource requests, and summarize MCMC traces before launching thousands of genes.
+    Slurm, watch resource requests, summarize MCMC traces, and now build a separate synonymous vs
+    non-synonymous mutation tally that can be compared against GenomegaMap rankings.
   </p>
   <div class="quickstart">
     <a class="qpill qpill-primary" href="#script-template">Slurm template</a>
     <a class="qpill" href="#scale">Scaling strategy</a>
     <a class="qpill" href="#mcmc">MCMC output</a>
+    <a class="qpill" href="#pnps-challenge">Ad-hoc pN/pS</a>
     <a class="qpill" href="index.html#todo">Back to TODO</a>
   </div>
 </section>
@@ -107,8 +110,8 @@
   <table>
     <tbody>
       <tr><th>Biology to know</th><td>Gene length matters mostly because longer genes run longer.</td></tr>
-      <tr><th>Stats/CS focus</th><td>Slurm resource requests, load balancing, trace burn-in, and posterior summaries.</td></tr>
-      <tr><th>Use this for</th><td>10-gene Faster test, production Slurm shape, and output post-processing plan.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Slurm resource requests, load balancing, trace burn-in, posterior summaries, and codon-change classification.</td></tr>
+      <tr><th>Use this for</th><td>10-gene Faster test, production Slurm shape, omega output post-processing, and the ad-hoc DB/NDB mutation tally.</td></tr>
       <tr><th>Defer for now</th><td>Full 4,018-gene launches until the 10-gene test and summary script are stable.</td></tr>
     </tbody>
   </table>
@@ -128,12 +131,13 @@
   </p>
 </div>
 
-<div class="study-dashboard">
+  <div class="study-dashboard">
   <h3>The deliverable</h3>
   <p>
     The next useful deliverable is a 10-gene constant-model Slurm test with production-like MCMC
-    settings, followed by a post-processing script that extracts <code>omega0</code> from each
-    trace and writes a small summary table.
+    settings, followed by two small summary scripts: one that extracts <code>omega0</code> from
+    each trace, and one that independently tallies synonymous and non-synonymous mutations from
+    the sequence files for diabetes and non-diabetes cohorts.
   </p>
 
   <div class="metric-strip">
@@ -190,6 +194,11 @@
       <td><strong>Separate diabetes and non-diabetes production jobs.</strong></td>
       <td>The cohorts share gene names but should not share output files or logs.</td>
       <td>Use separate Slurm submissions and cohort-specific paths.</td>
+    </tr>
+    <tr>
+      <td><strong>Add an independent mutation-count check.</strong></td>
+      <td>Dr. Ioerger wants an ad-hoc method to compare against GenomegaMap.</td>
+      <td>For each gene, tally synonymous and non-synonymous mutations separately in DB and NDB samples.</td>
     </tr>
   </tbody>
 </table>
@@ -563,6 +572,114 @@ rm xml.tar
 </div>
 </section>
 
+<section id="pnps-challenge">
+<h2>Ad-Hoc pN/pS Challenge
+  <button class="section-complete" data-section="pnps-challenge">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">New task from Dr. Ioerger</span>
+  <p>
+    Build a lightweight independent calculation from the sequence files: for every gene, count
+    synonymous and non-synonymous mutations in the diabetes cohort and repeat the same calculation
+    in the non-diabetes cohort. This gives a quick sanity-check ranking that can be compared to
+    the more rigorous GenomegaMap output.
+  </p>
+</div>
+
+<div class="study-dashboard">
+  <h3>What the first table should answer</h3>
+  <p>
+    The table should make it easy to rank genes by NS-over-S enrichment in diabetes and by the
+    biggest DB-vs-NDB difference in a pN/pS-like score.
+  </p>
+
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">Per gene</span>
+      <span class="big">S + NS</span>
+      <span class="caption">Count synonymous and non-synonymous observed changes.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Cohorts</span>
+      <span class="big">DB / NDB</span>
+      <span class="caption">Run the tally independently for diabetes and non-diabetes samples.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Rank 1</span>
+      <span class="big">DB NS/S</span>
+      <span class="caption">Find genes with the strongest NS-over-S enrichment in diabetes.</span>
+    </div>
+    <div class="metric-tile">
+      <span class="kicker">Rank 2</span>
+      <span class="big">&Delta;pN/pS</span>
+      <span class="caption">Find genes with the largest cohort difference.</span>
+    </div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Piece</th><th>First implementation rule</th><th>Why it matters</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Inputs</strong></td>
+      <td>Use the per-gene sequence files for DB and NDB after the same good-sample filtering rule.</td>
+      <td>The ad-hoc method should compare the same cohorts as GenomegaMap.</td>
+    </tr>
+    <tr>
+      <td><strong>Reference codon</strong></td>
+      <td>Compare each sample codon to the reference/aligned gene codon in frame.</td>
+      <td>Synonymous vs non-synonymous classification only makes sense at codon boundaries.</td>
+    </tr>
+    <tr>
+      <td><strong>Classification</strong></td>
+      <td>Translate reference and alternate codons; same amino acid means S, different amino acid means NS.</td>
+      <td>This is the biology core of the script and should be easy to unit test.</td>
+    </tr>
+    <tr>
+      <td><strong>Ambiguous sites</strong></td>
+      <td>Skip gaps, partial codons, stop-codon surprises, and ambiguous bases in the first pass.</td>
+      <td>A clean first table is better than quietly counting uncertain calls.</td>
+    </tr>
+    <tr>
+      <td><strong>Counting rule</strong></td>
+      <td>Record both unique mutation counts and per-isolate counts if possible; pick one as the displayed ranking rule.</td>
+      <td>Unique events and repeated observations answer slightly different questions.</td>
+    </tr>
+    <tr>
+      <td><strong>Output columns</strong></td>
+      <td>Gene, cohort, sample count, S count, NS count, NS/S score, skipped codons, and notes.</td>
+      <td>These fields make later ranking and QC transparent.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="worked-example">
+  <h4>Ranking formulas to keep explicit</h4>
+  <div class="we-step">
+    <div class="we-num">1</div>
+    <div class="we-body"><strong>DB enrichment.</strong> Rank genes by <code>(NS_DB + 0.5) / (S_DB + 0.5)</code> so zero-count genes do not explode.</div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">2</div>
+    <div class="we-body"><strong>Cohort difference.</strong> Compare <code>log2((NS_DB + 0.5)/(S_DB + 0.5))</code> against the same score in NDB.</div>
+  </div>
+  <div class="we-step">
+    <div class="we-num">3</div>
+    <div class="we-body"><strong>Cross-method check.</strong> After GenomegaMap finishes, compare the top ad-hoc genes with the top <code>omega0</code> or DB-vs-NDB omega-difference genes.</div>
+  </div>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">How to present it</div>
+  Call this an independent ad-hoc sanity check, not a replacement for GenomegaMap. The value is
+  speed and interpretability: if both methods point to similar genes, those hits become easier to
+  prioritize for deeper review.
+</div>
+</section>
+
 <section id="next-actions">
 <h2>Next Actions
   <button class="section-complete" data-section="next-actions">Mark complete</button>
@@ -582,6 +699,8 @@ rm xml.tar
   <li><strong>Check every expected output file exists.</strong> Confirm one file per gene and no overwritten/shared output path.</li>
   <li><strong>Record runtime per gene.</strong> Use output timestamps and gene lengths to estimate production walltime.</li>
   <li><strong>Write a post-processing script.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short traces.</li>
+  <li><strong>Write the ad-hoc mutation counter.</strong> For each gene and cohort, classify codon changes as synonymous or non-synonymous and write a first ranking table.</li>
+  <li><strong>Compare the two independent rankings.</strong> Look for genes that rank high by DB NS/S enrichment, DB-vs-NDB pN/pS difference, and GenomegaMap <code>omega0</code>.</li>
   <li><strong>Plot one or two traces.</strong> Use a line plot or heat map to show burn-in and equilibrium behavior before relying on summaries.</li>
   <li><strong>Scale only after the summary table works.</strong> Move from 10 genes to a larger but still bounded batch, then diabetes and non-diabetes production runs.</li>
 </ol>
@@ -658,7 +777,7 @@ rm xml.tar
 </div>
 
 <footer>
-  Friday June 5 Slurm meeting &middot; <a href="index.html">back to overview</a> &middot; <a href="13-wednesday-june-3-meeting.html">review June 3 build notes</a> &middot; <a href="#script-template">Slurm template</a>
+  Friday June 5 Slurm meeting &middot; <a href="index.html">back to overview</a> &middot; <a href="13-wednesday-june-3-meeting.html">review June 3 build notes</a> &middot; <a href="#pnps-challenge">ad-hoc pN/pS challenge</a>
 </footer>
 
 <script src="assets/shared.js"></script>
