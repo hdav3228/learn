@@ -52,6 +52,7 @@
   <h4>On this page</h4>
   <ol>
     <li><a href="#mission">Slurm objective</a></li>
+    <li><a href="#current-status">Current implementation status</a></li>
     <li><a href="#cluster-model">Faster mental model</a></li>
     <li><a href="#script-template">Script template</a></li>
     <li><a href="#files">Files and paths</a></li>
@@ -111,8 +112,8 @@
     <tbody>
       <tr><th>Biology to know</th><td>Gene length matters mostly because longer genes run longer.</td></tr>
       <tr><th>Stats/CS focus</th><td>Slurm resource requests, load balancing, trace burn-in, posterior summaries, and codon-change classification.</td></tr>
-      <tr><th>Use this for</th><td>10-gene Faster test, production Slurm shape, omega output post-processing, and the ad-hoc DB/NDB mutation tally.</td></tr>
-      <tr><th>Defer for now</th><td>Full 4,018-gene launches until the 10-gene test and summary script are stable.</td></tr>
+      <tr><th>Use this for</th><td>Production Slurm shape, omega output post-processing, and the ad-hoc DB/NDB mutation tally.</td></tr>
+      <tr><th>Defer for now</th><td>Biological hit interpretation until the all-gene FASTER outputs have been post-processed and audited.</td></tr>
     </tbody>
   </table>
 </div>
@@ -134,17 +135,17 @@
   <div class="study-dashboard">
   <h3>The deliverable</h3>
   <p>
-    The next useful deliverable is a 10-gene constant-model Slurm test with production-like MCMC
-    settings, followed by two small summary scripts: one that extracts <code>omega0</code> from
-    each trace, and one that independently tallies synonymous and non-synonymous mutations from
-    the sequence files for diabetes and non-diabetes cohorts.
+    The next useful deliverable is the all-gene constant-model Slurm run using the generated
+    filtered XML/FASTA inputs, followed by post-processing that extracts <code>omega0</code>
+    summaries from each trace and compares them against the independent synonymous/non-synonymous
+    mutation-count ranking.
   </p>
 
   <div class="metric-strip">
     <div class="metric-tile good">
-      <span class="kicker">Test size</span>
-      <span class="big">10 genes</span>
-      <span class="caption">Small enough to debug paths, large enough to test parallel launch.</span>
+      <span class="kicker">Local inputs</span>
+      <span class="big">4,018 x 2</span>
+      <span class="caption">Generated filtered XML/FASTA inputs for both cohorts.</span>
     </div>
     <div class="metric-tile note">
       <span class="kicker">Scheduler</span>
@@ -202,6 +203,71 @@
     </tr>
   </tbody>
 </table>
+</section>
+
+<section id="current-status">
+<h2>Current Implementation Status
+  <button class="section-complete" data-section="current-status">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Updated June 8, 2026</span>
+  <p>
+    The local preprocessing and independent count table are now implemented. The full all-gene
+    GenomegaMap MCMC run on FASTER is still the remaining production step.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Workstream</th><th>Done locally</th><th>Still needed</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Filtered FASTA/XML inputs</strong></td>
+      <td>Generated 4,018 diabetes and 4,018 non-diabetes filtered FASTAs plus matching XML configs.</td>
+      <td>Transfer/run the generated inputs from the correct FASTER working directory.</td>
+    </tr>
+    <tr>
+      <td><strong>Bad-isolate filtering</strong></td>
+      <td>Diabetes keeps 178 records per gene; non-diabetes keeps 175 and drops 60,270 bad-isolate records total.</td>
+      <td>Keep using only the good-isolate lists for any regenerated inputs.</td>
+    </tr>
+    <tr>
+      <td><strong>Ad-hoc S/NS table</strong></td>
+      <td><code>scripts/diabetes_gene_analysis.py mutation-counts</code> generated a first all-gene report.</td>
+      <td>Use the report as a sanity-check ranking after GenomegaMap outputs exist.</td>
+    </tr>
+    <tr>
+      <td><strong>GenomegaMap post-processing</strong></td>
+      <td><code>scripts/diabetes_gene_analysis.py postprocess</code> can summarize MCMC traces, flag missing/short traces, and optionally write trace/heatmap plots.</td>
+      <td>Run it after FASTER writes per-gene MCMC output files under <code>results/{diabetes,nondiabetes}/</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>All-gene FASTER run</strong></td>
+      <td>Not done.</td>
+      <td>Launch with the tested Slurm setup; do not describe local generation as completed FASTER MCMC results.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Local commands behind the status</div>
+    <span class="demo-tag">repo root</span>
+  </div>
+<pre><code>python3 "Ioerger's Lab/generate_xml.py"
+python3 scripts/diabetes_gene_analysis.py mutation-counts \
+  --output "Ioerger's Lab/data/diabetes-cohort/results/ad_hoc_pnps_mutation_counts.txt"
+python3 scripts/diabetes_gene_analysis.py postprocess
+</code></pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Status language</div>
+  Say that the local filtered inputs and first ad-hoc S/NS table are ready. Do not say that
+  GenomegaMap has been run across all genes on FASTER until the per-gene MCMC outputs exist.
+</div>
 </section>
 
 <section id="cluster-model">
@@ -694,15 +760,15 @@ rm xml.tar
 </div>
 
 <ol class="step-list priority-list">
-  <li><strong>Clean the 10-gene test folder.</strong> Keep only the exact XML, FASTA, Slurm script, and output directories needed for the test.</li>
-  <li><strong>Run the 10-gene constant model with production-like settings.</strong> Use 10,000 iterations and either XML burn-in of 2,000 or post-hoc burn-in removal.</li>
+  <li><strong>Keep the FASTER run folder clean.</strong> Transfer only the generated XMLs, filtered FASTAs, Slurm script, and output directories needed for the production run.</li>
+  <li><strong>Launch the all-gene constant model through Slurm.</strong> Use the tested Slurm setup, separate diabetes/non-diabetes outputs, and production-like MCMC settings.</li>
   <li><strong>Check every expected output file exists.</strong> Confirm one file per gene and no overwritten/shared output path.</li>
   <li><strong>Record runtime per gene.</strong> Use output timestamps and gene lengths to estimate production walltime.</li>
-  <li><strong>Write a post-processing script.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short traces.</li>
-  <li><strong>Write the ad-hoc mutation counter.</strong> For each gene and cohort, classify codon changes as synonymous or non-synonymous and write a first ranking table.</li>
+  <li><strong>Run the post-processing script after outputs exist.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short traces.</li>
+  <li><strong>Keep the ad-hoc mutation counter output current.</strong> Regenerate the S/NS table if the input filtering or cohort lists change.</li>
   <li><strong>Compare the two independent rankings.</strong> Look for genes that rank high by DB NS/S enrichment, DB-vs-NDB pN/pS difference, and GenomegaMap <code>omega0</code>.</li>
-  <li><strong>Plot one or two traces.</strong> Use a line plot or heat map to show burn-in and equilibrium behavior before relying on summaries.</li>
-  <li><strong>Scale only after the summary table works.</strong> Move from 10 genes to a larger but still bounded batch, then diabetes and non-diabetes production runs.</li>
+  <li><strong>Plot representative traces.</strong> Use 1D trace plots and heat maps to show burn-in and equilibrium behavior before relying on summaries.</li>
+  <li><strong>Audit the production run before interpreting biology.</strong> Check missing files, short traces, failed Slurm logs, and suspicious outliers before ranking genes as hits.</li>
 </ol>
 </section>
 
