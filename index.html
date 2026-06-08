@@ -151,7 +151,8 @@
       <div class="callout-title">Right now</div>
       The local preprocessing pieces are ready: all-gene filtered FASTAs/XMLs exist locally, and
       the ad-hoc S/NS mutation counter has produced a first all-gene DB/NDB ranking. The remaining
-      bottleneck is the full FASTER GenomegaMap run and post-processing its MCMC traces.
+      bottleneck is the full FASTER GenomegaMap run. The postprocessor is ready to compare paired
+      DB/NDB omega results with the independent mutation-count direction.
     </div>
   </section>
 
@@ -200,7 +201,7 @@
         </tr>
         <tr>
           <td><strong>Analysis helper</strong></td>
-          <td>One script handles mutation counts and future GenomegaMap trace summaries/plots.</td>
+          <td>One script handles mutation counts, trace summaries/plots, and omega-versus-S/NS direction checks.</td>
           <td><code>scripts/diabetes_gene_analysis.py</code></td>
         </tr>
         <tr>
@@ -250,8 +251,8 @@ python3 scripts/diabetes_gene_analysis.py postprocess
       <li><strong>Spot-check generated XML and FASTA after refreshes.</strong> Make sure XMLs point to filtered FASTAs and unique output files.</li>
       <li><strong>Keep the tested Slurm setup as the template.</strong> Use exact gene names, separate logs, separate outputs, and conservative production resources.</li>
       <li><strong>Launch the full all-gene FASTER run.</strong> Use the tested Slurm setup, separate cohorts, and existing filtered XML/FASTA inputs.</li>
-      <li><strong>Run the postprocessor after MCMC outputs exist.</strong> Extract <code>omega0</code>, discard burn-in, compute mean/median/credible interval, and flag missing or short trace files.</li>
-      <li><strong>Compare the independent pN/pS-style results.</strong> Report highest DB NS/S enrichment, biggest DB-vs-NDB score difference, and later overlap with GenomegaMap hits.</li>
+      <li><strong>Run the postprocessor after paired MCMC outputs exist.</strong> Use <code>python3 scripts/diabetes_gene_analysis.py postprocess --check-missing</code> to summarize <code>omega0</code>, flag missing/short traces, and compare DB-vs-NDB omega direction with the independent S/NS direction.</li>
+      <li><strong>Review the comparison groups separately.</strong> Start with supported concordant genes; do not mix them with low-count concordant, discordant, or shared-high mutation signals.</li>
       <li><strong>Write down the remaining decisions you need from Dr. Ioerger.</strong> Production XML template, final burn-in/thinning rule, Slurm batch size, output summary format, and hit definition.</li>
     </ol>
 
