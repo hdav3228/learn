@@ -29,11 +29,6 @@
       href: 'index.html',
     },
     {
-      id: 'next-update',
-      label: 'Next Update',
-      href: '15-next-update.html',
-    },
-    {
       id: 'papers',
       label: 'Papers',
       links: [
@@ -53,7 +48,6 @@
       links: [
         { href: '06-monday-june-1-meeting.html', label: 'June 1 meeting', note: 'Project brief' },
         { href: '13-wednesday-june-3-meeting.html', label: 'June 3 meeting', note: 'XML + Slurm prep' },
-        { href: '14-friday-june-5-meeting.html', label: 'June 5 meeting', note: 'Slurm + pN/pS check' },
       ],
     },
     {
@@ -65,6 +59,11 @@
         { href: '04-keras-cheminformatics.html', label: 'Keras MPNN', note: 'Molecule graphs' },
         { href: '05-smiles-permeability.html', label: 'SMILES', note: 'Permeability screen' },
       ],
+    },
+    {
+      id: 'next-update',
+      label: 'Next Update',
+      href: '15-next-update.html',
     },
   ];
 
@@ -216,6 +215,7 @@
   }
 
   function inferActiveGroup(file, hash) {
+    if (file === '15-next-update.html') return 'next-update';
     if (
       file === '06-monday-june-1-meeting.html' ||
       file === '13-wednesday-june-3-meeting.html' ||

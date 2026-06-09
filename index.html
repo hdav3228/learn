@@ -21,13 +21,13 @@
         <div class="dropdown-content">
           <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
           <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
-          <a href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
         </div>
       </div>
       <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
       <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
       <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
-      <div class="dropdown">
+      <a href="15-next-update.html">Next Update</a>
+<div class="dropdown">
         <button class="dropbtn">Papers</button>
         <div class="dropdown-content">
           <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
@@ -52,7 +52,6 @@
   <h4>On this page</h4>
   <ol>
     <li><a href="#start" class="active">Start here</a></li>
-    <li><a href="#current-status">Current status</a></li>
     <li><a href="#todo">TODO list</a></li>
     <li><a href="#working-order">Where to start</a></li>
     <li><a href="#ioerger-points">Dr. Ioerger's critical points</a></li>
@@ -75,7 +74,7 @@
     <h1>Start here: what to do, what to learn, and what to ignore for now</h1>
     <div class="status-strip" role="status">
       <span class="status-label">Next action</span>
-      <span class="status-text">Launch the full FASTER GenomegaMap run from the filtered all-gene inputs; local XML/FASTA generation and the ad-hoc DB/NDB S-vs-NS table are done.</span>
+      <span class="status-text">Run <code>python3 "cleaned-genes/generate_xml.py" --dry-run --gene Rv0001</code> — expect 178 diabetes and 175 non-diabetes good samples.</span>
     </div>
     <p class="lede">
       This is the one-page cockpit for the project. Your job is not to become a biologist first.
@@ -84,14 +83,12 @@
     </p>
     <div class="quickstart">
       <a class="qpill qpill-primary" href="#todo">TODO list</a>
-      <a class="qpill" href="#current-status">Current status</a>
       <a class="qpill" href="#working-order">Where to start</a>
       <a class="qpill" href="#ioerger-points">Dr. Ioerger's points</a>
       <a class="qpill" href="#tools-to-use">Galaxy + Faster</a>
+      <a class="qpill" href="15-next-update.html">Next meeting update</a>
       <a class="qpill" href="06-monday-june-1-meeting.html">June 1 brief</a>
       <a class="qpill" href="13-wednesday-june-3-meeting.html">June 3 build</a>
-      <a class="qpill" href="14-friday-june-5-meeting.html">June 5 Slurm</a>
-      <a class="qpill" href="14-friday-june-5-meeting.html#pnps-challenge">Ad-hoc pN/pS</a>
     </div>
   </section>
 
@@ -139,8 +136,8 @@
   <table>
     <tbody>
       <tr><th>Biology to know</th><td>Project map only: TB diabetes/non-diabetes selection scan.</td></tr>
-      <tr><th>Stats/CS focus</th><td>Think pipeline + Bayesian traces + mutation-count sanity checks + confounding checks.</td></tr>
-      <tr><th>Use this for</th><td>Launch the all-gene FASTER run from the filtered inputs, then compare GenomegaMap summaries against the DB/NDB S-vs-NS tally.</td></tr>
+      <tr><th>Stats/CS focus</th><td>Think pipeline + Bayesian traces + confounding checks.</td></tr>
+      <tr><th>Use this for</th><td>Start with the meeting briefs, generator dry-run, then one tiny run.</td></tr>
       <tr><th>Defer for now</th><td>Do not start with downstream drug/structure pages.</td></tr>
     </tbody>
   </table>
@@ -149,85 +146,9 @@
 
     <div class="callout note">
       <div class="callout-title">Right now</div>
-      The local preprocessing pieces are ready: all-gene filtered FASTAs/XMLs exist locally, and
-      the ad-hoc S/NS mutation counter has produced a first all-gene DB/NDB ranking. The remaining
-      bottleneck is the full FASTER GenomegaMap run. The postprocessor is ready to compare paired
-      DB/NDB omega results with the independent mutation-count direction.
-    </div>
-  </section>
-
-  <section id="current-status">
-    <h2>Current Status
-      <button class="section-complete" data-section="current-status">Mark complete</button>
-    </h2>
-
-    <div class="section-intro">
-      <span class="intro-label">Updated June 8, 2026</span>
-      <p>
-        This is the durable handoff state for future work. It separates what has been generated
-        locally from what still needs to run on FASTER.
-      </p>
-    </div>
-
-    <table>
-      <thead>
-        <tr><th>Item</th><th>Status</th><th>Path or command</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Filtered GenomegaMap FASTAs</strong></td>
-          <td>Generated locally for all 4,018 genes in DB and NDB.</td>
-          <td><code>data/diabetes-cohort/filtered-orfs/{diabetes,nondiabetes}/</code></td>
-        </tr>
-        <tr>
-          <td><strong>XML configs</strong></td>
-          <td>Generated locally for all 4,018 genes in DB and NDB.</td>
-          <td><code>configs/{diabetes,nondiabetes}/</code></td>
-        </tr>
-        <tr>
-          <td><strong>Good-isolate counts</strong></td>
-          <td>DB keeps 178 records per gene; NDB keeps 175 records per gene.</td>
-          <td><code>python3 "Ioerger's Lab/generate_xml.py" --dry-run</code></td>
-        </tr>
-        <tr>
-          <td><strong>Bad-isolate filtering</strong></td>
-          <td>NDB generation drops 60,270 records total, which is 15 bad isolates across 4,018 genes.</td>
-          <td><code>python3 "Ioerger's Lab/generate_xml.py"</code></td>
-        </tr>
-        <tr>
-          <td><strong>Ad-hoc S/NS mutation table</strong></td>
-          <td>First all-gene DB/NDB ranking generated locally.</td>
-          <td><code>data/diabetes-cohort/results/ad_hoc_pnps_mutation_counts.txt</code></td>
-        </tr>
-        <tr>
-          <td><strong>Analysis helper</strong></td>
-          <td>One script handles mutation counts, trace summaries/plots, and omega-versus-S/NS direction checks.</td>
-          <td><code>scripts/diabetes_gene_analysis.py</code></td>
-        </tr>
-        <tr>
-          <td><strong>All-gene FASTER GenomegaMap run</strong></td>
-          <td>Not complete yet.</td>
-          <td>Use the tested Slurm setup, then post-process MCMC outputs.</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="demo">
-      <div class="demo-header">
-        <div class="demo-title">Commands to regenerate local summaries</div>
-        <span class="demo-tag">repo root</span>
-      </div>
-<pre><code>python3 "Ioerger's Lab/generate_xml.py"
-python3 scripts/diabetes_gene_analysis.py mutation-counts \
-  --output "Ioerger's Lab/data/diabetes-cohort/results/ad_hoc_pnps_mutation_counts.txt"
-python3 scripts/diabetes_gene_analysis.py postprocess
-</code></pre>
-    </div>
-
-    <div class="callout warn">
-      <div class="callout-title">Do not overclaim</div>
-      Local filtered XML/FASTA generation and the ad-hoc mutation table are complete. The full
-      FASTER GenomegaMap MCMC run across all genes is still a separate unfinished step.
+      Your bottleneck is pipeline correctness: good-sample filtering, XML generation, one tiny
+      GenomegaMap run, then a 3–5 gene array. Biology vocabulary only needs to stay basic until
+      traces and cohort comparisons make sense.
     </div>
   </section>
 
@@ -245,22 +166,20 @@ python3 scripts/diabetes_gene_analysis.py postprocess
     </div>
 
     <ol class="step-list priority-list">
-      <li><strong>Keep the data rule fixed.</strong> Use only <code>samplestatus=good</code>: 178 diabetes samples and 175 non-diabetes samples.</li>
-      <li><strong>Regenerate local inputs only when needed.</strong> Use <code>python3 "Ioerger's Lab/generate_xml.py"</code>; it writes all filtered FASTAs and XML configs locally.</li>
-      <li><strong>Keep the ad-hoc mutation table current.</strong> Use <code>python3 scripts/diabetes_gene_analysis.py mutation-counts</code> after any input refresh.</li>
-      <li><strong>Spot-check generated XML and FASTA after refreshes.</strong> Make sure XMLs point to filtered FASTAs and unique output files.</li>
-      <li><strong>Keep the tested Slurm setup as the template.</strong> Use exact gene names, separate logs, separate outputs, and conservative production resources.</li>
-      <li><strong>Launch the full all-gene FASTER run.</strong> Use the tested Slurm setup, separate cohorts, and existing filtered XML/FASTA inputs.</li>
-      <li><strong>Run the postprocessor after paired MCMC outputs exist.</strong> Use <code>python3 scripts/diabetes_gene_analysis.py postprocess --check-missing</code> to summarize <code>omega0</code>, flag missing/short traces, and compare DB-vs-NDB omega direction with the independent S/NS direction.</li>
-      <li><strong>Review the comparison groups separately.</strong> Start with supported concordant genes; do not mix them with low-count concordant, discordant, or shared-high mutation signals.</li>
-      <li><strong>Write down the remaining decisions you need from Dr. Ioerger.</strong> Production XML template, final burn-in/thinning rule, Slurm batch size, output summary format, and hit definition.</li>
+      <li><strong>Read the project brief pages.</strong> Focus only on the assignment, XML/config generation, good-isolate filtering, Bayesian traces, and tiny-run strategy.</li>
+      <li><strong>Confirm the data rule.</strong> Use only <code>samplestatus=good</code>: 178 diabetes samples and 175 non-diabetes samples.</li>
+      <li><strong>Run the generator dry run locally.</strong> Use <code>python3 "cleaned-genes/generate_xml.py" --dry-run --gene Rv0001</code>. It validates sample lists, FASTA headers, and expected good-sample counts without writing outputs.</li>
+      <li><strong>Inspect one generated XML and FASTA.</strong> Make sure the XML points to one filtered FASTA and one unique output file.</li>
+      <li><strong>Run exactly one tiny GenomegaMap test.</strong> Galaxy or Faster is fine. The output should include <code>iteration</code>, <code>loglikelihood</code>, <code>theta</code>, <code>kappa</code>, and <code>omega0</code>.</li>
+      <li><strong>Only then prepare a mini-array.</strong> Use 3-5 genes, separate logs, separate outputs, conservative resources, and no large launch until the mini-array behaves.</li>
+      <li><strong>Write down the decisions you need from Dr. Ioerger.</strong> Production XML template, iteration count, burn-in, thinning, Slurm resources, output summary format, and hit definition.</li>
     </ol>
 
     <div class="callout bad">
       <div class="callout-title">The hard rule</div>
-      Do not interpret biology until the full FASTER run has been audited for missing outputs,
-      short traces, failed Slurm logs, and overwritten paths. The expensive mistake is not
-      misunderstanding a codon; it is trusting incomplete or malformed production output.
+      Do not submit thousands of Faster jobs until one job and a tiny 3-5 gene array produce the
+      exact files you expect. The expensive mistake is not misunderstanding a codon; it is burning
+      service units with a bad path, bad XML, or overwritten output file.
     </div>
   </section>
 
@@ -305,16 +224,16 @@ python3 scripts/diabetes_gene_analysis.py postprocess
       <div class="roadmap-item">
         <div class="roadmap-day">Test</div>
         <div class="roadmap-body">
-          <h3>Preserve the tested run strategy</h3>
-          <p><strong>Output:</strong> exact Slurm shape, cohort-specific output folders, and a production gene list based on the generated configs.</p>
+          <h3>Prepare the run strategy</h3>
+          <p><strong>Output:</strong> a gene list, output folder plan, tiny-run checklist, and a draft Slurm mental model.</p>
           <p><strong>Concept:</strong> this is an embarrassingly parallel map over genes, but path mistakes scale just as fast as correct jobs.</p>
         </div>
       </div>
       <div class="roadmap-item">
         <div class="roadmap-day">Scale</div>
         <div class="roadmap-body">
-          <h3>Run and audit production</h3>
-          <p><strong>Output:</strong> all-gene MCMC traces, post-processed omega summaries, missing/short-trace flags, and a comparison to the S/NS ranking.</p>
+          <h3>Ask for production settings before scaling</h3>
+          <p><strong>Output:</strong> approved Slurm template and approved GenomegaMap settings.</p>
           <p><strong>Concept:</strong> cluster resource requests are part of the analysis design because runtime, failure recovery, and output collection determine whether the study is reproducible.</p>
         </div>
       </div>
@@ -357,22 +276,7 @@ python3 scripts/diabetes_gene_analysis.py postprocess
         <tr>
           <td><strong>There are 4,018 ORF files per cohort.</strong></td>
           <td>This is a batch-compute problem, not a hand-run problem.</td>
-          <td>Use the generated configs and the tested Slurm pattern; keep cohort outputs separate.</td>
-        </tr>
-        <tr>
-          <td><strong>Use Slurm for real compute, not the login node.</strong></td>
-          <td>Login nodes are for editing, transfers, and small preprocessing; compute nodes are scheduled through <code>sbatch</code>.</td>
-          <td>Run XML/FASTA generation on the login node only because it is lightweight; run GenomegaMap through Slurm.</td>
-        </tr>
-        <tr>
-          <td><strong>Resource requests are part of the analysis plan.</strong></td>
-          <td>Walltime, task count, memory, exclusive access, and disk pressure affect cost, scheduling, and failure risk.</td>
-          <td>Use the tested Slurm setup and output timestamps to estimate production walltime and load-balance long genes.</td>
-        </tr>
-        <tr>
-          <td><strong>Use an independent ad-hoc check too.</strong></td>
-          <td>Dr. Ioerger wants S/NS mutation counts as a second method to compare with GenomegaMap.</td>
-          <td>Use the generated per-gene DB/NDB table with S count, NS count, NS/S score, and DB-vs-NDB difference.</td>
+          <td>Generate configs programmatically and submit small Slurm arrays before scaling.</td>
         </tr>
         <tr>
           <td><strong>Every XML needs unique paths.</strong></td>
@@ -395,10 +299,11 @@ python3 scripts/diabetes_gene_analysis.py postprocess
     <div class="talk-track">
       <h3>Meeting-safe summary</h3>
       <p>
-        The immediate plan is to launch the all-gene constant-model FASTER run from the generated
-        filtered XML/FASTA inputs, verify that every gene writes a unique MCMC output, and summarize
-        post-burn-in <code>omega0</code> samples. The ad-hoc synonymous/non-synonymous DB/NDB
-        mutation-count table is already available as the quick pN/pS-style comparison.
+        The immediate plan is to generate filtered per-gene FASTA files and constant-model
+        GenomegaMap XML configs for diabetes and non-diabetes cohorts. We validate one gene
+        locally or on Galaxy, then test a tiny Slurm array on Faster before scaling to all 4,018
+        genes per cohort. After burn-in, the <code>omega0</code> samples are the posterior
+        distribution we compare between cohorts.
       </p>
     </div>
   </section>
@@ -441,11 +346,6 @@ python3 scripts/diabetes_gene_analysis.py postprocess
         <h3>Cohort comparison</h3>
         <p><strong>Stats translation:</strong> compare two empirical posterior samples, e.g. &Delta;&omega; = &omega;<sub>D</sub> - &omega;<sub>ND</sub>.</p>
         <p><strong>Why it matters:</strong> overlap and uncertainty matter more than one ranked point estimate.</p>
-      </div>
-      <div class="concept-card">
-        <h3>Ad-hoc mutation tally</h3>
-        <p><strong>CS translation:</strong> parse codons, translate them, classify each observed change as synonymous or non-synonymous, then aggregate by gene and cohort.</p>
-        <p><strong>Why it matters:</strong> this gives an independent ranking to compare against GenomegaMap before treating any hit as real.</p>
       </div>
       <div class="concept-card">
         <h3>HPRC Faster</h3>
@@ -507,7 +407,7 @@ python3 scripts/diabetes_gene_analysis.py postprocess
       <tbody>
         <tr>
           <td><strong>Local machine</strong></td>
-          <td>Reading files, dry-running the XML generator, checking sample counts, building summary scripts and the S/NS mutation counter.</td>
+          <td>Reading files, dry-running the XML generator, checking sample counts, building summary scripts.</td>
           <td>Thousands of production GenomegaMap runs.</td>
         </tr>
         <tr>
@@ -517,7 +417,7 @@ python3 scripts/diabetes_gene_analysis.py postprocess
         </tr>
         <tr>
           <td><strong>Faster / HPRC</strong></td>
-          <td>Running many independent genes with Slurm using the tested setup, then collecting MCMC outputs.</td>
+          <td>Running many independent genes with Slurm once one-gene and mini-array tests pass.</td>
           <td>Debugging the first version of a script by launching thousands of jobs.</td>
         </tr>
         <tr>
@@ -533,18 +433,17 @@ python3 scripts/diabetes_gene_analysis.py postprocess
         <div class="demo-title">Safe command order</div>
         <span class="demo-tag">no cluster spend</span>
       </div>
-<pre><code><span class="tok-c"># From the repo root: regenerate all filtered FASTAs and XML configs.</span>
-python3 "Ioerger's Lab/generate_xml.py"
+<pre><code><span class="tok-c"># From the repo root: validate one gene without writing generated files.</span>
+python3 "cleaned-genes/generate_xml.py" --dry-run --gene Rv0001
 
-<span class="tok-c"># Regenerate the local independent mutation-count table.</span>
-python3 scripts/diabetes_gene_analysis.py mutation-counts
+<span class="tok-c"># Then, if approved, generate configs from inside the lab folder paths.</span>
+python3 "cleaned-genes/generate_xml.py" --gene Rv0001
 
-<span class="tok-c"># On Faster, submit the production Slurm job using the tested setup.</span>
-sbatch constant.slurm
-squeue -u hdav3228
+<span class="tok-c"># Full generation comes later, after the one-gene path is correct.</span>
+python3 "cleaned-genes/generate_xml.py"
 </code></pre>
       <p class="muted">
-        The script resolves paths relative to <code>Ioerger's Lab</code> and expects the generated
+        The script resolves paths relative to <code>cleaned-genes</code> and expects the generated
         XML to be run from that folder so relative paths resolve correctly.
       </p>
     </div>
@@ -597,19 +496,19 @@ squeue -u hdav3228
           <td>Protects the analysis from bad isolates and path mistakes.</td>
         </tr>
         <tr>
-          <td><strong>Production Slurm result</strong></td>
-          <td>All expected gene outputs, separate cohort folders, Slurm logs, runtime estimates, memory notes, and failure flags.</td>
-          <td>Turns the tested setup into auditable production evidence.</td>
+          <td><strong>Tiny run result</strong></td>
+          <td>One GenomegaMap trace file with expected columns and sane <code>omega0</code>, <code>theta</code>, and <code>kappa</code> behavior.</td>
+          <td>Proves the environment and XML are correct before scaling.</td>
+        </tr>
+        <tr>
+          <td><strong>Slurm mini-array result</strong></td>
+          <td>3-5 genes, separate logs, separate outputs, runtime estimate, memory estimate, and failure notes.</td>
+          <td>Turns cluster uncertainty into a controlled production plan.</td>
         </tr>
         <tr>
           <td><strong>Results summary table</strong></td>
           <td>Gene, cohort, sample count, posterior mean/median, credible interval, burn-in rule, output path, and QC flags.</td>
           <td>Creates the table you need for ranking candidate diabetes-associated selection signals.</td>
-        </tr>
-        <tr>
-          <td><strong>Ad-hoc S/NS mutation table</strong></td>
-          <td>Gene, cohort, sample count, S count, NS count, NS/S score, skipped codons, DB-vs-NDB difference, and ranking fields.</td>
-          <td>Gives Dr. Ioerger a fast independent method to compare against GenomegaMap hits.</td>
         </tr>
       </tbody>
     </table>
@@ -709,17 +608,6 @@ squeue -u hdav3228
         </p>
         <div class="source-actions">
           <a href="13-wednesday-june-3-meeting.html">open Wednesday notes</a>
-        </div>
-      </div>
-      <div class="artifact-panel">
-        <h3>Friday June 5</h3>
-        <p>
-          The Slurm/HPRC operations meeting: login vs compute nodes, home vs scratch, <code>sbatch</code>,
-          <code>squeue</code>, 10-gene tests, MCMC post-processing, and the ad-hoc S/NS mutation
-          tally Dr. Ioerger asked for as an independent comparison.
-        </p>
-        <div class="source-actions">
-          <a href="14-friday-june-5-meeting.html">open Friday notes</a>
         </div>
       </div>
     </div>
@@ -825,7 +713,7 @@ squeue -u hdav3228
 </div>
 
 <footer>
-  Ioerger Lab research cockpit · <a href="#todo">TODO list</a> · <a href="06-monday-june-1-meeting.html">June 1 brief</a> · <a href="13-wednesday-june-3-meeting.html">June 3 build</a> · <a href="14-friday-june-5-meeting.html">June 5 Slurm</a>
+  Ioerger Lab research cockpit · <a href="#todo">TODO list</a> · <a href="06-monday-june-1-meeting.html">June 1 brief</a> · <a href="13-wednesday-june-3-meeting.html">June 3 build</a>
 </footer>
 
 <script src="assets/shared.js"></script>

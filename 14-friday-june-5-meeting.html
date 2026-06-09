@@ -27,7 +27,8 @@
       <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
       <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
       <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
-      <div class="dropdown">
+      <a href="15-next-update.html">Next Update</a>
+<div class="dropdown">
         <button class="dropbtn">Papers</button>
         <div class="dropdown-content">
           <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
@@ -256,9 +257,9 @@
     <div class="demo-title">Local commands behind the status</div>
     <span class="demo-tag">repo root</span>
   </div>
-<pre><code>python3 "Ioerger's Lab/generate_xml.py"
+<pre><code>python3 "cleaned-genes/generate_xml.py"
 python3 scripts/diabetes_gene_analysis.py mutation-counts \
-  --output "Ioerger's Lab/data/diabetes-cohort/results/ad_hoc_pnps_mutation_counts.txt"
+  --output "cleaned-genes/reports/ad_hoc_pnps_mutation_counts.txt"
 python3 scripts/diabetes_gene_analysis.py postprocess
 </code></pre>
 </div>
@@ -388,7 +389,7 @@ cd "$HOME/JaegerTest"
 genes=(Rv0001 Rv0002 Rv0003 Rv0004 Rv0005 Rv0006 Rv0007 Rv0008c Rv0009 Rv0010c)
 
 for gene in "${genes[@]}"; do
-  "$HOME/software/gcat-project/gcat" "configs/diabetes/genomegamap.constant.${gene}.xml" &amp;
+  "$HOME/software/gcat-project/gcat" "xml/diabetes/genomegamap.constant.${gene}.xml" &amp;
 done
 
 wait
@@ -460,9 +461,9 @@ tar -cvf xml.tar *.xml
 scp xml.tar hdav3228@faster.hprc.tamu.edu:
 
 <span class="tok-c"># On Faster:</span>
-mkdir -p "$HOME/JaegerTest/configs/diabetes"
-mv "$HOME/xml.tar" "$HOME/JaegerTest/configs/diabetes/"
-cd "$HOME/JaegerTest/configs/diabetes"
+mkdir -p "$HOME/JaegerTest/xml/diabetes"
+mv "$HOME/xml.tar" "$HOME/JaegerTest/xml/diabetes/"
+cd "$HOME/JaegerTest/xml/diabetes"
 tar -xvf xml.tar
 rm xml.tar
 </code></pre>
@@ -481,7 +482,7 @@ rm xml.tar
     <tr>
       <td><strong>Create output directories before running.</strong></td>
       <td>The first successful-looking run did not write expected outputs until output folders existed.</td>
-      <td>Use <code>mkdir -p outputs/runs/diabetes</code> or update XML output paths to an existing directory.</td>
+      <td>Use <code>mkdir -p outputs/diabetes</code> or update XML output paths to an existing directory.</td>
     </tr>
     <tr>
       <td><strong>Watch <code>Rv0008c</code> and <code>Rv0010c</code>.</strong></td>

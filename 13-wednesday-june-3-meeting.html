@@ -21,13 +21,13 @@
         <div class="dropdown-content">
           <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
           <a href="13-wednesday-june-3-meeting.html" class="active">Wednesday June 3 Meeting</a>
-          <a href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
         </div>
       </div>
       <a href="03-boltz2.html" class="deferred-tab">Boltz‑2</a>
       <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
       <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
-      <div class="dropdown">
+      <a href="15-next-update.html">Next Update</a>
+<div class="dropdown">
         <button class="dropbtn">Papers</button>
         <div class="dropdown-content">
           <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
@@ -265,12 +265,12 @@
     </tr>
     <tr>
       <td><strong>Diabetes ORFs</strong></td>
-      <td><code>data/diabetes-cohort/raw-orfs/diabetes/orfs/</code></td>
+      <td><code>source-data/raw-orfs/diabetes/</code></td>
       <td>4,018 <code>*.seqs.noLC.txt</code> files and 4,018 <code>*.variants.txt</code> files. Named by Rv number (e.g. <code>Rv0001.seqs.noLC.txt</code>).</td>
     </tr>
     <tr>
       <td><strong>Non-diabetes ORFs</strong></td>
-      <td><code>data/diabetes-cohort/raw-orfs/nondiabetes/orfs/</code></td>
+      <td><code>source-data/raw-orfs/nondiabetes/</code></td>
       <td>Same structure: 4,018 <code>*.seqs.noLC.txt</code> + 4,018 <code>*.variants.txt</code>.</td>
     </tr>
     <tr>
@@ -411,7 +411,7 @@
 <ol class="step-list">
   <li><strong>Run one dry validation.</strong> Confirm <code>Rv0001</code> keeps 178 diabetes and 175 non-diabetes records.</li>
   <li><strong>Generate one real config pair.</strong> Create one filtered FASTA and XML for a single gene/cohort so you can inspect the exact paths.</li>
-  <li><strong>Trace the path assumptions.</strong> Decide whether the XML will be run from <code>Ioerger's Lab</code>, copied to Faster scratch, or rewritten with absolute paths.</li>
+  <li><strong>Trace the path assumptions.</strong> Decide whether the XML will be run from <code>cleaned-genes</code>, copied to Faster scratch, or rewritten with absolute paths.</li>
   <li><strong>Prepare a tiny job list.</strong> Pick 3-5 genes for the first array test; do not use all 4,018 as the first Slurm attempt.</li>
   <li><strong>Write down expected output shape.</strong> The trace table should include <code>iteration</code>, <code>loglikelihood</code>, <code>theta</code>, <code>kappa</code>, and <code>omega0</code>.</li>
 </ol>
@@ -517,7 +517,7 @@
         <div class="we-num">4</div>
         <div class="we-body">
           <strong>Write the XML.</strong> Save each modified XML to a per-gene config directory (e.g.
-          <code>configs/diabetes/Rv0001.constant.xml</code>).
+          <code>xml/diabetes/Rv0001.constant.xml</code>).
         </div>
       </div>
       <div class="we-step">
@@ -539,10 +539,10 @@
     <span class="demo-tag">dry-run first</span>
   </div>
 <pre><code><span class="tok-c"># From the repo root, validate one gene without writing outputs:</span>
-python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001
+python3 "cleaned-genes/generate_xml.py" --dry-run --gene Rv0001
 
 <span class="tok-c"># When ready, generate all filtered FASTAs and XML configs:</span>
-python3 "Ioerger's Lab/generate_xml.py"
+python3 "cleaned-genes/generate_xml.py"
 </code></pre>
   <p class="muted">
     The dry run checks the template path, sample lists, raw FASTA headers, and expected filtered
@@ -1099,7 +1099,7 @@ python3 "Ioerger's Lab/generate_xml.py"
 <ol class="step-list">
   <li><strong>Filtered sample lists confirmed.</strong> Verify that <code>diabetes.good.samples.txt</code> (178 samples) and <code>nondiabetes.good.samples.txt</code> (175 samples) match what Dr. Ioerger expects. Make sure no bad isolates slipped through.</li>
   <li><strong>XML template and settings confirmed.</strong> The local clone includes the constant Bayesian template; ask whether its iterations, thinning, priors, and model choice are right for the real run.</li>
-  <li><strong>Python generator dry-run tested.</strong> Run <code>python3 "Ioerger's Lab/generate_xml.py" --dry-run --gene Rv0001</code> before generating all XML configs.</li>
+  <li><strong>Python generator dry-run tested.</strong> Run <code>python3 "cleaned-genes/generate_xml.py" --dry-run --gene Rv0001</code> before generating all XML configs.</li>
   <li><strong>porB3 output reviewed.</strong> Be able to explain what each column means, what burn-in looks like, and what the ω distribution for porB3 tells you about selection.</li>
   <li><strong>Jun Liu paper concepts.</strong> Be able to explain priors, posteriors, the coin-flip example, and the difference between Gibbs and Metropolis-Hastings without looking at notes.</li>
 </ol>
@@ -1132,7 +1132,7 @@ python3 "Ioerger's Lab/generate_xml.py"
   </li>
   <li>
     <strong>Should the generator create relative paths or Faster absolute paths?</strong>
-    The local script currently writes paths relative to <code>Ioerger's Lab</code>. Confirm whether
+    The local script currently writes paths relative to <code>cleaned-genes</code>. Confirm whether
     that is acceptable on Faster or whether configs should be regenerated after copying data.
   </li>
   <li>
@@ -1277,7 +1277,7 @@ python3 "Ioerger's Lab/generate_xml.py"
 </div>
 
 <footer>
-  Wednesday June 3 meeting prep · <a href="index.html">back to overview</a> · <a href="06-monday-june-1-meeting.html">review Monday's meeting</a> · <a href="14-friday-june-5-meeting.html">next Slurm meeting</a>
+  Wednesday June 3 meeting prep · <a href="index.html">back to overview</a> · <a href="06-monday-june-1-meeting.html">review Monday's meeting</a> · <a href="12-bayesian-inference.html">Bayesian inference paper</a>
 </footer>
 
 <script src="assets/shared.js"></script>
