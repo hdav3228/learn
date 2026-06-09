@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Next Update &middot; Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">%CE%A9</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">&Omega;</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <a href="15-next-update.html" class="active">Next Update</a>
+      <div class="dropdown">
+        <button class="dropbtn">Meetings</button>
+        <div class="dropdown-content">
+          <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+          <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+          <a href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
+        </div>
+      </div>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>Morning read</h4>
+  <ol>
+    <li><a href="#short-update">Short update</a></li>
+    <li><a href="#email-checklist">Email checklist</a></li>
+    <li><a href="#completed">What I completed</a></li>
+    <li><a href="#slurm">Production Slurm run</a></li>
+    <li><a href="#adhoc-findings">Ad-hoc challenge findings</a></li>
+    <li><a href="#ppp">10-gene PPP test</a></li>
+    <li><a href="#settings">Settings I confirmed</a></li>
+    <li><a href="#questions">Questions to ask</a></li>
+    <li><a href="#after-run">After the run finishes</a></li>
+    <li><a href="#talk-track">What I can say</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where this update fits">
+  <a class="step done" href="index.html">Overview</a>
+  <span class="sep">&rarr;</span>
+  <a class="step done" href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
+  <span class="sep">&rarr;</span>
+  <span class="step here">Next Update</span>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Morning read &middot; Wednesday, June 10, 2026 at 1:00 PM &middot; next meeting with Dr. Ioerger</div>
+  <h1>Next update: production run submitted and the post-processing pipeline tested</h1>
+  <p class="lede">
+    I moved from the 10-gene Slurm test to the all-gene constant-model run. The production jobs
+    have been submitted and I am still waiting for them to finish. While they run, I used 10
+    early-completing genes from both cohorts to test the full post-processing pipeline and make sure I
+    know what I will do with the all-gene outputs.
+  </p>
+  <div class="quickstart">
+    <a class="qpill qpill-primary" href="#short-update">30-second update</a>
+    <a class="qpill" href="#email-checklist">Email requests</a>
+    <a class="qpill" href="#adhoc-findings">Ad-hoc answers</a>
+    <a class="qpill" href="#ppp">10-gene findings</a>
+    <a class="qpill" href="#questions">Questions to ask</a>
+    <a class="qpill" href="#after-run">Finish checklist</a>
+  </div>
+</section>
+
+<div class="callout warn">
+  <div class="callout-title">Current status</div>
+  I submitted the production Slurm requests, but I am not calling the all-gene run complete until
+  I confirm the expected output count, final iteration, row count, and failed-task status for both
+  cohorts.
+</div>
+
+<section id="short-update">
+<h2>Short Update
+  <button class="section-complete" data-section="short-update">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The version I can say first</span>
+  <p>
+    I submitted the all-gene diabetes and non-diabetes constant-model Slurm arrays on FASTER and
+    I am waiting for them to finish. I also got more comfortable editing and checking files with
+    Vim on the cluster. While the production run is going, I copied 10 early-completing genes
+    from both cohorts and ran my three-part post-processing pipeline on them. All 20 test traces
+    were structurally complete, and none had a 95% omega interval entirely above 1. That is a
+    reasonable result for this small engineering test, but it is not the all-gene result. I also
+    finished the emailed S/NS challenge: <code>Rv3317</code> has the highest DB NS/S score and
+    <code>Rv3104c</code> has the largest absolute DB-vs-NDB score difference.
+  </p>
+</div>
+
+<div class="study-dashboard">
+  <h3>Where things stand</h3>
+  <div class="metric-strip">
+    <div class="metric-tile warn">
+      <span class="kicker">Production run</span>
+      <span class="big">Waiting</span>
+      <span class="caption">Two all-gene cohort arrays were submitted.</span>
+    </div>
+    <div class="metric-tile good">
+      <span class="kicker">PPP test</span>
+      <span class="big">20 traces</span>
+      <span class="caption">10 genes from each cohort passed the row checks.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Strict test hits</span>
+      <span class="big">0</span>
+      <span class="caption">Every 95% omega interval overlapped 1.</span>
+    </div>
+    <div class="metric-tile">
+      <span class="kicker">Diagnostic plots</span>
+      <span class="big">22</span>
+      <span class="caption">20 traces plus one heatmap per cohort.</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="email-checklist">
+<h2>Email Checklist
+  <button class="section-complete" data-section="email-checklist">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Directly answering the June 5 and June 8 emails</span>
+  <p>
+    Dr. Ioerger's emails gave me a clear checklist for this update: run all genes on FASTER,
+    exclude bad isolates, become comfortable with a cluster text editor, complete the independent
+    S/NS challenge, and prepare post-processing plus the trace/heatmap visualizations.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Email request</th><th>Status</th><th>What I can report</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Run GenomegaMap on FASTER for all genes.</strong></td>
+      <td>Submitted; waiting for completion.</td>
+      <td>I submitted separate all-gene constant-model arrays for DB and NDB.</td>
+    </tr>
+    <tr>
+      <td><strong>Do not forget to filter bad isolates.</strong></td>
+      <td>Done.</td>
+      <td>Every generated gene input uses only <code>samplestatus=good</code>: 178 DB and 175 NDB isolates.</td>
+    </tr>
+    <tr>
+      <td><strong>Choose a text editor on FASTER and get proficient.</strong></td>
+      <td>In progress.</td>
+      <td>I chose Vim and used it while checking/editing cluster-side scripts and paths.</td>
+    </tr>
+    <tr>
+      <td><strong>Tally synonymous and non-synonymous mutations independently for DB and NDB.</strong></td>
+      <td>Done for all 4,018 genes.</td>
+      <td>I generated the full report and the two requested rankings.</td>
+    </tr>
+    <tr>
+      <td><strong>Prepare omega post-processing and visualizations.</strong></td>
+      <td>Tested on 20 traces.</td>
+      <td>The summary, comparison, trace-plot, and heatmap workflow is ready for the full outputs.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="completed">
+<h2>What I Completed
+  <button class="section-complete" data-section="completed">Mark complete</button>
+</h2>
+
+<table>
+  <thead>
+    <tr><th>Work</th><th>What I did</th><th>Why it matters</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Filtered inputs</strong></td>
+      <td>I prepared 4,018 gene inputs for each cohort using only the good-isolate lists.</td>
+      <td>Each diabetes gene uses 178 good samples and each non-diabetes gene uses 175.</td>
+    </tr>
+    <tr>
+      <td><strong>Production Slurm arrays</strong></td>
+      <td>I submitted separate diabetes and non-diabetes arrays covering all genes.</td>
+      <td>The jobs stay separated by cohort and use scratch storage plus conservative resources.</td>
+    </tr>
+    <tr>
+      <td><strong>Cluster workflow</strong></td>
+      <td>I got more comfortable using Vim, checking paths, reading logs, and monitoring Slurm jobs.</td>
+      <td>I can make small cluster-side fixes and inspect job behavior without moving everything back locally.</td>
+    </tr>
+    <tr>
+      <td><strong>Independent S/NS check</strong></td>
+      <td>I generated the ad-hoc mutation-count report and the three gene-ranking spreadsheets.</td>
+      <td>This gives me a separate ranking to compare against the GenomegaMap results.</td>
+    </tr>
+    <tr>
+      <td><strong>Post-processing pipeline</strong></td>
+      <td>I split it into three simple scripts: summary/CI, spreadsheet comparison, and plots.</td>
+      <td>I tested the exact workflow I will use after all production outputs arrive.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Main artifacts I have ready</div>
+    <span class="demo-tag">repo paths</span>
+  </div>
+<pre><code>cleaned-genes/constant_array_diabetes.slurm
+cleaned-genes/constant_array_nondiabetes.slurm
+
+cleaned-genes/scripts/genomegamap_summary.py
+cleaned-genes/scripts/genomegamap_compare.py
+cleaned-genes/scripts/genomegamap_plots.py
+
+ad-hoc-mutation-counts/ad_hoc_pnps_mutation_counts.txt
+ad-hoc-mutation-counts/spreadsheets/
+</code></pre>
+</div>
+</section>
+
+<section id="slurm">
+<h2>Production Slurm Run
+  <button class="section-complete" data-section="slurm">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What changed since the last meeting</span>
+  <p>
+    The all-gene work is no longer just a planned run. I prepared and submitted two production
+    arrays, one for diabetes and one for non-diabetes. I am still waiting for all tasks to finish,
+    so the correct status is <strong>submitted and running/waiting</strong>, not completed.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Production choice</th><th>Current setup</th><th>Reason</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Cohort separation</strong></td>
+      <td>One array for diabetes and one for non-diabetes.</td>
+      <td>This follows the meeting plan and prevents output-path collisions.</td>
+    </tr>
+    <tr>
+      <td><strong>Coverage</strong></td>
+      <td>Each cohort array covers all 4,018 genes exactly once.</td>
+      <td>The final comparison needs one posterior sample per gene per cohort.</td>
+    </tr>
+    <tr>
+      <td><strong>Concurrency</strong></td>
+      <td>At most 10 array tasks per cohort run at once.</td>
+      <td>This keeps service-unit use and filesystem pressure under control.</td>
+    </tr>
+    <tr>
+      <td><strong>Restart behavior</strong></td>
+      <td>Completed traces ending at iteration 10,000 are skipped on resubmission.</td>
+      <td>A partial rerun should not repeat genes that already finished correctly.</td>
+    </tr>
+    <tr>
+      <td><strong>Storage</strong></td>
+      <td>The production folder and outputs live under FASTER scratch.</td>
+      <td>This avoids the home-directory file-count quota.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">What I still need to verify</div>
+  When the arrays stop appearing in the queue, I still need to check for failed tasks and confirm
+  that both cohorts have all 4,018 finished MCMC traces. A finished Slurm job is not automatically
+  a complete scientific result.
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">How I used the emailed Slurm example</div>
+  Dr. Ioerger's emailed script was a useful scheduling pattern, but its command launches
+  <code>genomegaMap.sliding.*.xml</code> files with a 60-task exclusive node. My current production
+  run is the constant model, so I kept the scheduling ideas while using constant-model XMLs,
+  separate cohort arrays, and more conservative resources.
+</div>
+</section>
+
+<section id="adhoc-findings">
+<h2>Ad-Hoc Challenge Findings
+  <button class="section-complete" data-section="adhoc-findings">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Direct answers to the two questions in the email</span>
+  <p>
+    I completed the independent synonymous/non-synonymous count across all 4,018 genes using the
+    same good-isolate cohorts as GenomegaMap. This is an ad-hoc NS/S ranking, not a formal pN/pS
+    estimate. It uses <code>(NS + 0.5) / (S + 0.5)</code>, and the cohort comparison uses the
+    difference between the DB and NDB log2 scores.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Email question</th><th>Current answer</th><th>Important caution</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Which gene has the most enrichment of NS over S mutations in DB?</strong></td>
+      <td><code>Rv3317</code>: 235 observed NS, 0 observed S, DB score 471.</td>
+      <td>NDB is also very high for this gene: 218 NS, 0 S, score 437. It is high overall, but not strongly DB-specific.</td>
+    </tr>
+    <tr>
+      <td><strong>Which gene has the biggest pN/pS difference between DB and NDB?</strong></td>
+      <td><code>Rv3104c</code>: largest absolute difference by the current ad-hoc log2 score, +6.50779 toward DB.</td>
+      <td>This comes from small counts: DB has 6 NS/0 S and NDB has 0 NS/3 S, so it is a candidate to compare, not a final claim.</td>
+    </tr>
+    <tr>
+      <td><strong>Largest difference toward NDB</strong></td>
+      <td><code>Rv3818</code>: log2-score difference -5.78136.</td>
+      <td>The negative sign means the ad-hoc score is higher in NDB.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="study-dashboard">
+  <h3>Interesting overlap with Anthony's thesis list</h3>
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">Rv3104c</span>
+      <span class="big">Rank 1</span>
+      <span class="caption">Largest ad-hoc DB-vs-NDB difference and a thesis omega-difference hit.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Rv3372</span>
+      <span class="big">Rank 5</span>
+      <span class="caption">Top-five ad-hoc difference and second-highest thesis omega difference.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Interpretation</span>
+      <span class="big">Compare</span>
+      <span class="caption">The email calls this an independent check, not a GenomegaMap replacement.</span>
+    </div>
+  </div>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">How I should present these rankings</div>
+  Zero synonymous counts and small mutation counts can create very large ratios. I should show the
+  underlying counts beside every score and wait for the GenomegaMap comparison before treating a
+  high ad-hoc ranking as evidence of selection.
+</div>
+</section>
+
+<section id="ppp">
+<h2>10-Gene PPP Test
+  <button class="section-complete" data-section="ppp">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why I tested it before the full run finished</span>
+  <p>
+    I wanted to make sure the output format, burn-in handling, confidence interval calculation,
+    comparisons, and plots all worked before thousands of traces arrived. I ran the pipeline on
+    10 early genes that had finished in both cohorts.
+  </p>
+</div>
+
+<ol class="step-list priority-list">
+  <li><strong>Summary script.</strong> Reads the last <code>omega0</code> column, calculates mean, median, and the 2.5th to 97.5th percentile interval, and flags unexpected trace lengths.</li>
+  <li><strong>Comparison script.</strong> Compares strict omega-above-1 hits against the Anthony thesis genes, top diabetes NS/S genes, and top DB-vs-NDB difference genes.</li>
+  <li><strong>Plot script.</strong> Makes one omega trace plot per cohort/gene and one heatmap per cohort.</li>
+</ol>
+
+<table>
+  <thead>
+    <tr><th>Test result</th><th>What I found</th><th>Interpretation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Trace structure</strong></td>
+      <td>All 20 files had 1,600 rows, beginning at iteration 2,005 and ending at 10,000.</td>
+      <td>The XML burn-in and thinning behaved as expected.</td>
+    </tr>
+    <tr>
+      <td><strong>Positive-selection hits</strong></td>
+      <td>No gene/cohort trace had its full 95% omega interval above 1.</td>
+      <td>This is a reasonable small-test result and does not establish the all-gene result.</td>
+    </tr>
+    <tr>
+      <td><strong>Means above 1</strong></td>
+      <td>Some posterior means were above 1, but their intervals still crossed 1.</td>
+      <td>A mean above 1 by itself is not enough evidence for a strict hit.</td>
+    </tr>
+    <tr>
+      <td><strong>Spreadsheet overlap</strong></td>
+      <td>The strict-hit comparison table had no rows because there were no strict hits.</td>
+      <td>This is an expected empty result, not a comparison-script failure.</td>
+    </tr>
+    <tr>
+      <td><strong>Plots</strong></td>
+      <td>The pipeline generated 20 trace plots and two cohort heatmaps.</td>
+      <td>The plotting path is ready for the production outputs.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">Main conclusion from the test</div>
+  The small run did what it was supposed to do: it verified the engineering and analysis path.
+  It was not expected to produce an important biological hit.
+</div>
+</section>
+
+<section id="settings">
+<h2>Settings I Confirmed
+  <button class="section-complete" data-section="settings">Mark complete</button>
+</h2>
+
+<div class="study-dashboard">
+  <h3>Current constant-model settings</h3>
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">Iterations</span>
+      <span class="big">10,000</span>
+      <span class="caption">Correct for the current constant-model run.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Burn-in</span>
+      <span class="big">2,000</span>
+      <span class="caption">Already removed by the XML logging rule.</span>
+    </div>
+    <div class="metric-tile">
+      <span class="kicker">Thinning</span>
+      <span class="big">5</span>
+      <span class="caption">Produces 1,600 logged post-burn-in rows.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Window model</span>
+      <span class="big">Later</span>
+      <span class="caption">The 100,000 discussion applied to sliding/window work.</span>
+    </div>
+  </div>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Burn-in rule</div>
+  The current MCMC files already start after the 2,000-iteration XML burn-in. My post-processing
+  scripts therefore use every logged row and do not discard another 20%.
+</div>
+</section>
+
+<section id="questions">
+<h2>Questions To Ask
+  <button class="section-complete" data-section="questions">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Decisions worth confirming with Dr. Ioerger</span>
+  <p>
+    The production and first-pass summary paths are working. These questions determine what the
+    final statistical comparison should look like after all genes finish.
+  </p>
+</div>
+
+<ol class="step-list priority-list">
+  <li><strong>Ad-hoc ranking rule.</strong> Is the current pseudocount score acceptable, and should I rank observed per-isolate mutations, unique codon changes, or show both?</li>
+  <li><strong>DB-specific enrichment.</strong> For the first email question, should I prioritize a high DB NS/S score alone, or require that it is also clearly higher than NDB?</li>
+  <li><strong>Interval convention.</strong> I currently use the conventional 2.5th and 97.5th percentiles for a 95% interval. In the transcript, 5th to 95th was also said aloud, which would be a 90% interval. Which rule should I use in the final report?</li>
+  <li><strong>Hit definition.</strong> Should the first positive-selection list require the entire omega interval to be above 1, or should I also rank genes by posterior mean/probability above 1?</li>
+  <li><strong>Cohort comparison.</strong> After the separate runs, should I build a sampled diabetes-minus-non-diabetes omega difference distribution for each gene?</li>
+  <li><strong>Multiple testing.</strong> What ranking or false-discovery rule should I use before calling any all-gene result significant?</li>
+  <li><strong>Trace diagnostics.</strong> Are trace plots and row/final-iteration checks enough for the first pass, or should I add an ESS/autocorrelation threshold and rerun weak traces?</li>
+  <li><strong>Candidate follow-up.</strong> Should I prioritize genes such as <code>Rv3104c</code> and <code>Rv3372</code> when the all-gene omega results arrive because they overlap Anthony's thesis list?</li>
+  <li><strong>Next model.</strong> After the constant-model comparison is complete, should I move to sliding-window analysis only for selected candidate genes?</li>
+</ol>
+</section>
+
+<section id="after-run">
+<h2>After The Run Finishes
+  <button class="section-complete" data-section="after-run">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">My finish checklist</span>
+  <p>
+    I will audit the production outputs before interpreting any genes. The main risk now is not
+    the Python pipeline; it is silently treating missing or incomplete cluster outputs as results.
+  </p>
+</div>
+
+<ol class="step-list priority-list">
+  <li><strong>Check Slurm status.</strong> Confirm that no array tasks are still queued/running and inspect failures or timeouts.</li>
+  <li><strong>Check output counts.</strong> Confirm 4,018 diabetes and 4,018 non-diabetes MCMC trace files.</li>
+  <li><strong>Check completion.</strong> Confirm every trace ends at iteration 10,000 and has the expected 1,600 logged rows.</li>
+  <li><strong>Transfer the finished traces.</strong> Bring the outputs back from FASTER scratch without changing the XML files.</li>
+  <li><strong>Run PPP.</strong> Run the summary, comparison, and plotting scripts over every available trace.</li>
+  <li><strong>Audit before biology.</strong> Review missing/short traces, suspicious intervals, trace plots, and ad-hoc spreadsheet overlaps before calling hits.</li>
+</ol>
+</section>
+
+<section id="talk-track">
+<h2>What I Can Say
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>One-minute meeting version</h3>
+  <p>
+    Since our last meeting, I submitted separate all-gene constant-model Slurm arrays for the
+    diabetes and non-diabetes cohorts, and I am still waiting for the full jobs to finish. I also
+    got more comfortable using Vim and monitoring the cluster workflow. While the arrays run, I
+    tested my post-processing pipeline using 10 genes that had completed in both cohorts. All 20
+    traces had the expected 1,600 post-burn-in samples and ended at iteration 10,000. The pipeline
+    calculates the omega mean, median, and interval, compares strict hits to the independent
+    mutation-count spreadsheets, and makes trace plots and heatmaps. None of the 10 tested genes
+    had an interval entirely above 1. I also completed the ad-hoc challenge across all 4,018 genes:
+    <code>Rv3317</code> has the highest DB NS/S score, and <code>Rv3104c</code> has the largest
+    absolute DB-vs-NDB difference, although I am treating both as rankings to compare against
+    GenomegaMap rather than final biological claims. Once the full arrays finish, I will audit
+    every output and run the same pipeline across all genes.
+  </p>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Do not overstate this yet</div>
+  I can say that the production jobs were submitted and the post-processing path passed its small
+  test. I should not say the all-gene analysis is complete or that I found biological hits until
+  the production traces are finished, audited, and compared.
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Next meeting update &middot; <a href="14-friday-june-5-meeting.html">review June 5 notes</a> &middot; <a href="#questions">questions to ask</a> &middot; <a href="#talk-track">meeting talk track</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>

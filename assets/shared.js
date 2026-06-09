@@ -29,6 +29,11 @@
       href: 'index.html',
     },
     {
+      id: 'next-update',
+      label: 'Next Update',
+      href: '15-next-update.html',
+    },
+    {
       id: 'papers',
       label: 'Papers',
       links: [
