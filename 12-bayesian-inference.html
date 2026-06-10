@@ -47,10 +47,13 @@
   <ol>
     <li><a href="#intro">1. What this paper is saying</a></li>
     <li><a href="#project-relevance">2. Why this matters for us</a></li>
-    <li><a href="#learning-path">3. Methods decoder</a></li>
-    <li><a href="#key-results">4. Key results explained</a></li>
-    <li><a href="#talk-track">5. Talk track</a></li>
-    <li><a href="#limitations">6. What not to overclaim</a></li>
+    <li><a href="#formula-reference">3. Formula reference</a></li>
+    <li><a href="#coin-worked">4. Coin example</a></li>
+    <li><a href="#sampling">5. Gibbs and MCMC</a></li>
+    <li><a href="#learning-path">6. Methods decoder</a></li>
+    <li><a href="#key-results">7. Key results explained</a></li>
+    <li><a href="#talk-track">8. Talk track</a></li>
+    <li><a href="#limitations">9. What not to overclaim</a></li>
   </ol>
 </aside>
 
@@ -71,18 +74,25 @@
   <div class="eyebrow">Liu & Lawrence 1999 · Foundational Math</div>
   <h1>Bayesian Inference on Biopolymer Models</h1>
   <p class="lede">
-    Before GenomegaMap could use MCMC to sample &omega; across a genome, the computational biology field needed a formal way to handle uncertainty in sequence models. This 1999 paper is the mathematical ancestor to our entire approach.
+    This 1999 paper is a useful foundation for understanding how computational biology models
+    uncertainty, integrates over unknowns, and uses exact or MCMC sampling to obtain posterior
+    distributions.
   </p>
   <div class="quickstart">
     <a class="qpill" href="#intro">Plain English</a>
-    <a class="qpill" href="#learning-path">Methods</a>
-    <a class="qpill" href="#key-results">Results</a>
+    <a class="qpill" href="#formula-reference">Formula sheet</a>
+    <a class="qpill" href="#coin-worked">Coin example</a>
+    <a class="qpill" href="#sampling">Sampling</a>
+    <a class="qpill" href="16-wednesday-june-10-meeting.html">June 10 lesson</a>
   </div>
 </section>
 
 <div class="eli5">
   <span class="eli5-tag">Read this first — in plain English</span>
-  Instead of saying "the best alignment is exactly this one," or "the mutation rate is exactly 1.5," Bayesian statistics gives you a <strong>probability distribution</strong> of all possible answers. This paper showed how to use math tricks (like Dynamic Programming) and computational tricks (like MCMC/Gibbs sampling) to actually calculate those distributions for biology problems. It's the reason GenomegaMap gives us a 95% Credible Interval for selection, rather than just a single, fragile point estimate.
+  Instead of reporting only "the best alignment is exactly this one" or "the mutation rate is
+  exactly 1.5," Bayesian statistics represents uncertainty with a <strong>posterior
+  distribution</strong>. This paper shows how dynamic programming, exact sampling, and Gibbs
+  sampling can make those distributions computationally accessible for biology problems.
 </div>
 <div class="role-lens">
   <div class="role-lens-title">Personal research lens</div>
@@ -115,18 +125,25 @@
   <button class="section-complete" data-section="project-relevance">Mark complete</button>
 </h2>
 
-<p>Our entire workflow relies on <strong>GenomegaMap</strong>, which uses a Bayesian hidden Markov model and MCMC sampling to infer the &omega; (dN/dS) ratio. To trust GenomegaMap, you need to understand why it produces a <em>credible interval</em> rather than a single p-value.</p>
+<p>
+  Our workflow relies on <strong>GenomegaMap</strong>, which uses Bayesian inference and
+  Metropolis-Hastings MCMC to estimate &omega; (dN/dS) and other substitution parameters. This
+  paper is useful because it explains the general logic behind posterior distributions,
+  marginalization, conjugate priors, and iterative sampling. GenomegaMap's actual likelihood and
+  update moves come from its own method paper, so this is conceptual background rather than the
+  exact GenomegaMap model.
+</p>
 
 <div class="cards">
   <div class="card">
-    <div class="icon">🎲</div>
+    <div class="icon">1</div>
     <h3>The MCMC Engine</h3>
-    <p>This paper explains Gibbs sampling, the ancestor of the MCMC process GenomegaMap uses to explore different &omega; values.</p>
+    <p>This paper explains Gibbs sampling, one member of the MCMC family. GenomegaMap uses a different member, Metropolis-Hastings.</p>
   </div>
   <div class="card">
-    <div class="icon">📊</div>
+    <div class="icon">2</div>
     <h3>Posterior Distributions</h3>
-    <p>We don't get one &omega;. We get a distribution of &omega;s. This paper explains why that is mathematically superior.</p>
+    <p>We summarize many sampled &omega; values instead of relying only on one optimized estimate.</p>
   </div>
 </div>
 
@@ -141,21 +158,155 @@
   <div class="we-step">
     <span class="we-num">2</span>
     <div class="we-body">
-      <strong>The old way:</strong> A traditional Maximum Likelihood tool sees 1 nonsynonymous mutation and 0 synonymous mutations. It calculates dN/dS = 1/0 = Infinity. It reports a point estimate of &omega; = &infin;. This is practically useless and statistically unstable.
+      <strong>A naive count ratio:</strong> One nonsynonymous mutation and zero synonymous mutations
+      makes a raw N/S ratio undefined or infinite. A proper likelihood method is more careful than
+      this raw calculation, but any estimate from so little information will be uncertain.
     </div>
   </div>
   <div class="we-step">
     <span class="we-num">3</span>
     <div class="we-body">
-      <strong>The Bayesian way (this paper):</strong> A Bayesian tool (like GenomegaMap) sees the same data. But it integrates that weak data with a prior distribution. Because there's very little data, the posterior distribution stays very wide. It might say the mean &omega; is 1.5, with a 95% credible interval of [0.1, 8.0]. This honestly reflects the massive uncertainty rather than confidently reporting nonsense.
+      <strong>The Bayesian view:</strong> Weak data usually leave a broad posterior that remains
+      sensitive to the prior. The point is not a particular made-up interval; it is that the result
+      visibly carries uncertainty instead of hiding it behind one unstable count ratio.
     </div>
   </div>
 </div>
 
 </section>
 
+<section id="formula-reference">
+<h2>3. Formula reference
+  <button class="section-complete" data-section="formula-reference">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The equations worth keeping nearby</span>
+  <p>
+    These are the paper's reusable ideas. The symbols change across applications, but the
+    likelihood-prior-posterior structure stays the same.
+  </p>
+</div>
+
+<div class="formula-grid">
+  <div class="formula-card">
+    <h3>Joint distribution</h3>
+    <div class="math compact">p(y, &theta;) = p(y | &theta;) &pi;(&theta;)</div>
+    <p>Observed data and unknown parameters are described together.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Posterior distribution</h3>
+    <div class="math compact">
+      p(&theta; | y) =
+      <span class="frac"><span>p(y | &theta;) &pi;(&theta;)</span><span>&int;p(y | &theta;) &pi;(&theta;)d&theta;</span></span>
+    </div>
+    <p>The denominator is the marginal likelihood that normalizes the posterior.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Marginalization</h3>
+    <div class="math compact">p(&theta;<sub>1</sub> | y) = &int; p(&theta;<sub>1</sub>, &theta;<sub>2</sub> | y)d&theta;<sub>2</sub></div>
+    <p>Integrate out nuisance parameters or missing variables instead of fixing them arbitrarily.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Model evidence</h3>
+    <div class="math compact">p(y | M) = &int; p(y | &theta;, M)&pi;(&theta; | M)d&theta;</div>
+    <p>Average likelihood over a model's parameter uncertainty when comparing models.</p>
+  </div>
+</div>
+
+<h3>Conjugate-prior pattern</h3>
+<table>
+  <thead><tr><th>Observed-data model</th><th>Conjugate prior</th><th>Posterior update</th></tr></thead>
+  <tbody>
+    <tr><td>Bernoulli/binomial</td><td>Beta</td><td>Add heads and tails to the two Beta parameters.</td></tr>
+    <tr><td>Multinomial categories</td><td>Dirichlet</td><td>Add each observed category count to its Dirichlet parameter.</td></tr>
+    <tr><td>Normal mean with known variance</td><td>Normal</td><td>Combine prior and data by their precisions.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Why the Dirichlet row matters here</div>
+  Liu and Lawrence explain that the Beta-binomial example generalizes to a
+  Dirichlet-multinomial model for larger alphabets. GenomegaMap independently uses a
+  Dirichlet-multinomial approximation for codon allele counts, making this a useful conceptual
+  bridge to its likelihood.
+</div>
+</section>
+
+<section id="coin-worked">
+<h2>4. Coin example worked through
+  <button class="section-complete" data-section="coin-worked">Mark complete</button>
+</h2>
+
+<p>
+  For one coin, let <code>&theta;</code> be the probability of heads, <code>h</code> the observed
+  heads, and <code>t</code> the observed tails.
+</p>
+
+<div class="math">p(y | &theta;) = &theta;<sup>h</sup>(1-&theta;)<sup>t</sup></div>
+<div class="math">&pi;(&theta;) = Beta(&theta;; &alpha;, &beta;) &prop; &theta;<sup>&alpha;-1</sup>(1-&theta;)<sup>&beta;-1</sup></div>
+<div class="math">p(&theta; | y) = Beta(&theta;; &alpha;+h, &beta;+t)</div>
+
+<div class="worked-example">
+  <h4>The paper's 30-flip example</h4>
+  <div class="we-step"><span class="we-num">1</span><div class="we-body"><strong>Data:</strong> 12 heads and 18 tails, so the empirical proportion and MLE are <code>12/30 = 0.4</code>.</div></div>
+  <div class="we-step"><span class="we-num">2</span><div class="we-body"><strong>Prior:</strong> <code>Beta(1,1)</code>, a uniform density from zero to one.</div></div>
+  <div class="we-step"><span class="we-num">3</span><div class="we-body"><strong>Posterior:</strong> <code>Beta(13,19)</code>.</div></div>
+  <div class="we-step"><span class="we-num">4</span><div class="we-body"><strong>Posterior mean:</strong> <code>13/(13+19) = 13/32 = 0.40625</code>.</div></div>
+  <div class="we-step"><span class="we-num">5</span><div class="we-body"><strong>Interpretation:</strong> the distribution is centered near 0.4 but still leaves a range of plausible coin weights.</div></div>
+</div>
+
+<div class="math">
+  P(&theta; &ge; 0.5 | y) = &int;<sub>0.5</sub><sup>1</sup> Beta(&theta;; 13,19)d&theta;
+</div>
+
+<p>
+  This last integral answers a direct posterior question: after seeing these flips and using this
+  prior, how plausible is a fair-or-heads-biased coin? Numerically, the central 95% credible
+  interval is approximately <code>[0.245, 0.578]</code>, and
+  <code>P(&theta; &ge; 0.5 | y) &asymp; 0.141</code>. It is the kind of probability statement a
+  posterior distribution makes possible.
+</p>
+</section>
+
+<section id="sampling">
+<h2>5. Gibbs sampling and the MCMC connection
+  <button class="section-complete" data-section="sampling">Mark complete</button>
+</h2>
+
+<p>
+  In the paper's two-coin segmentation problem, the unknowns include two coin weights and a change
+  point <code>A</code>. Gibbs sampling repeatedly draws each unknown from its conditional posterior
+  while holding the others fixed:
+</p>
+
+<div class="math">
+  &theta;<sub>1</sub><sup>(s+1)</sup> &sim; p(&theta;<sub>1</sub> | &theta;<sub>2</sub><sup>(s)</sup>, A<sup>(s)</sup>, y)
+  &nbsp;&rarr;&nbsp;
+  &theta;<sub>2</sub><sup>(s+1)</sup> &sim; p(&theta;<sub>2</sub> | &theta;<sub>1</sub><sup>(s+1)</sup>, A<sup>(s)</sup>, y)
+  &nbsp;&rarr;&nbsp;
+  A<sup>(s+1)</sup> &sim; p(A | &theta;<sub>1</sub><sup>(s+1)</sup>, &theta;<sub>2</sub><sup>(s+1)</sup>, y)
+</div>
+
+<table>
+  <thead><tr><th>Method</th><th>How one update works</th><th>Project connection</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Exact conjugate update</strong></td><td>Use algebra to write the normalized posterior directly.</td><td>The one-coin <code>Beta(13,19)</code> posterior.</td></tr>
+    <tr><td><strong>Gibbs sampling</strong></td><td>Draw from a known full conditional for one variable at a time.</td><td>The Liu/Lawrence two-coin sampling lesson.</td></tr>
+    <tr><td><strong>Metropolis-Hastings</strong></td><td>Propose a move and accept/reject it using a posterior-density ratio.</td><td>The MCMC family used by GenomegaMap.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">The paper's explicit warning</div>
+  MCMC samples are approximate, and there is generally no guarantee that convergence has been
+  achieved. That is why trace diagnostics and independent-chain comparisons matter. Posterior
+  width and convergence are related questions, but they are not the same question.
+</div>
+</section>
+
 <section id="learning-path" class="detail-section" data-summary="Open section-by-section paper decoder" data-tag="Reference">
-<h2>3. Methods decoder: Section-by-section breakdown
+<h2>6. Methods decoder: Section-by-section breakdown
   <button class="section-complete" data-section="learning-path">Mark complete</button>
 </h2>
 
@@ -170,7 +321,7 @@
 </section>
 
 <section id="key-results" class="detail-section" data-summary="Open key paper results" data-tag="Stats depth">
-<h2>4. Key results explained
+<h2>7. Key results explained
   <button class="section-complete" data-section="key-results">Mark complete</button>
 </h2>
 
@@ -189,13 +340,16 @@
   <div class="we-step">
     <span class="we-num">1</span>
     <div class="we-body">
-      <strong>The GenomegaMap connection:</strong> GenomegaMap doesn't assume a gene has a single &omega; rate. It allows the rate to change across the sequence, using a sliding window.
+      <strong>The GenomegaMap connection:</strong> GenomegaMap has a sliding-window model that lets
+      adjacent codons share &omega; values in piecewise-constant blocks.
     </div>
   </div>
   <div class="we-step">
     <span class="we-num">2</span>
     <div class="we-body">
-      <strong>The Bayesian link:</strong> This is directly descended from the "Sequence Segmentation" result in this paper. Instead of hard-coding where the selection boundaries are, GenomegaMap uses MCMC to sum over all possible window boundary placements, giving us a smooth curve of posterior selection probability across the gene.
+      <strong>The Bayesian link:</strong> Both methods treat segment boundaries as uncertain rather
+      than fixing them in advance. Liu and Lawrence provide a useful conceptual analogy; the
+      specific GenomegaMap model and MCMC moves are defined in the Wilson 2020 paper.
     </div>
   </div>
 </div>
@@ -204,26 +358,36 @@
 
 
 <section id="talk-track">
-<h2>5. Talk track
+<h2>8. Talk track
   <button class="section-complete" data-section="talk-track">Mark complete</button>
 </h2>
 
 <div class="talk-track">
   <h3>What to say in a meeting</h3>
-  <p>"When interpreting our GenomegaMap results, we need to lean heavily on the Bayesian foundation described by Liu and Lawrence. If a gene has a high posterior mean &omega; but an extremely wide credible interval, we know the MCMC sampler struggled to converge or the sequence lacked enough SNPs to overcome the prior. The Bayesian approach protects us from overinterpreting noisy, short genes—a trap that traditional maximum-likelihood point estimators fall into."</p>
+  <p>
+    "Liu and Lawrence gives me the general Bayesian logic behind the GenomegaMap output. The coin
+    example shows how a likelihood and prior produce a full posterior rather than only one best
+    estimate, and Gibbs sampling shows how iterative draws can approximate a complicated joint
+    posterior. GenomegaMap uses a different MCMC method, Metropolis-Hastings, but the interpretation
+    is similar: its saved values approximate posterior uncertainty. I still need to diagnose
+    convergence separately and interpret every result within the model and cohort assumptions."
+  </p>
 </div>
 </section>
 
 <section id="limitations">
-<h2>6. What not to overclaim
+<h2>9. What not to overclaim
   <button class="section-complete" data-section="limitations">Mark complete</button>
 </h2>
 
 <div class="callout warn">
   <div class="callout-title">What NOT to overclaim</div>
   <ul style="margin:6px 0 0">
-    <li><strong>Bayesian != Perfect:</strong> Bayesian inference does not magically create data where none exists. If a sequence has no mutations, the posterior distribution will simply match the prior. The method handles uncertainty perfectly, but it cannot invent certainty.</li>
-    <li><strong>Priors matter:</strong> The results are still dependent on the choice of prior. A very strong, incorrect prior can overwhelm weak data. (This is why GenomegaMap's default priors are designed to be relatively uninformative/diffuse).</li>
+    <li><strong>Bayesian does not mean automatically correct.</strong> The posterior is only as useful as the likelihood, prior, data, and assumptions that produced it.</li>
+    <li><strong>Weak data leave prior sensitivity.</strong> With little information, different reasonable priors may produce meaningfully different posteriors.</li>
+    <li><strong>MCMC is approximate.</strong> A saved trace is not proof of convergence. Check chain behavior before interpreting summaries.</li>
+    <li><strong>A wide posterior is not automatically a failed chain.</strong> It may reflect genuine uncertainty; use trace diagnostics to distinguish the causes.</li>
+    <li><strong>This paper is conceptual background.</strong> Use Wilson 2020 for GenomegaMap's exact likelihood, priors, assumptions, and Metropolis-Hastings moves.</li>
   </ul>
 </div>
 </section>

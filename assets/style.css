@@ -477,6 +477,49 @@ code {
   float: right;
   font-family: inherit;
 }
+.math.compact {
+  margin: 10px 0;
+  padding: 10px 12px;
+  font-size: 15px;
+}
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  text-align: center;
+  line-height: 1.25;
+  margin: 0 0.16em;
+}
+.frac > span:first-child {
+  border-bottom: 1px solid currentColor;
+  padding: 0 0.18em 0.08em;
+}
+.frac > span:last-child {
+  padding: 0.08em 0.18em 0;
+}
+.formula-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+.formula-card {
+  min-width: 0;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.formula-card h3 {
+  margin-top: 0;
+}
+.formula-card p:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 760px) {
+  .formula-grid { grid-template-columns: 1fr; }
+}
 sup, sub { font-size: 0.78em; }
 
 /* Tables */

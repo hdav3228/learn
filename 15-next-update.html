@@ -50,9 +50,10 @@
 <div class="page">
 
 <aside class="toc">
-  <h4>Morning read</h4>
+  <h4>Project update</h4>
   <ol>
     <li><a href="#short-update">Short update</a></li>
+    <li><a href="#today-first-part">June 10 Bayesian lesson</a></li>
     <li><a href="#email-checklist">Email checklist</a></li>
     <li><a href="#completed">What I completed</a></li>
     <li><a href="#slurm">Production Slurm run</a></li>
@@ -72,7 +73,9 @@
   <span class="sep">&rarr;</span>
   <a class="step done" href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
   <span class="sep">&rarr;</span>
-  <span class="step here">Next Update</span>
+  <a class="step done" href="16-wednesday-june-10-meeting.html">June 10 Bayesian lesson</a>
+  <span class="sep">&rarr;</span>
+  <span class="step here">Project Update</span>
 </div>
 
 <div class="page-progress" aria-hidden="true">
@@ -81,16 +84,19 @@
 </div>
 
 <section class="hero">
-  <div class="eyebrow">Morning read &middot; Wednesday, June 10, 2026 at 1:00 PM &middot; next meeting with Dr. Ioerger</div>
-  <h1>Next update: production run submitted and the post-processing pipeline tested</h1>
+  <div class="eyebrow">Project update &middot; Wednesday, June 10, 2026 &middot; after the Bayesian whiteboard lesson</div>
+  <h1>Production run submitted, post-processing tested, and Bayesian formulas connected</h1>
   <p class="lede">
     I moved from the 10-gene Slurm test to the all-gene constant-model run. The production jobs
     have been submitted and I am still waiting for them to finish. While they run, I used 10
     early-completing genes from both cohorts to test the full post-processing pipeline and make sure I
-    know what I will do with the all-gene outputs.
+    know what I will do with the all-gene outputs. During the June 10 meeting, I also worked from
+    Normal likelihoods through conjugate posteriors and the beta-binomial coin example so I can
+    explain what those MCMC outputs mean.
   </p>
   <div class="quickstart">
     <a class="qpill qpill-primary" href="#short-update">30-second update</a>
+    <a class="qpill" href="#today-first-part">June 10 formulas</a>
     <a class="qpill" href="#email-checklist">Email requests</a>
     <a class="qpill" href="#adhoc-findings">Ad-hoc answers</a>
     <a class="qpill" href="#ppp">10-gene findings</a>
@@ -149,6 +155,108 @@
       <span class="caption">20 traces plus one heatmap per cohort.</span>
     </div>
   </div>
+</div>
+</section>
+
+<section id="today-first-part">
+<h2>June 10 Bayesian Lesson
+  <button class="section-complete" data-section="today-first-part">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What happened across the June 10 meeting</span>
+  <p>
+    The meeting became a full Bayesian statistics lesson to help me understand what GenomegaMap is
+    doing. We started by deriving Normal-distribution maximum-likelihood estimates, then added
+    priors, discussed conjugate posterior updates for unknown means and variances, and returned to
+    the Liu and Lawrence beta-binomial coin example.
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Step</th><th>What we did</th><th>Main result</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Choose a model</strong></td>
+      <td>We assumed the observations came from a Normal distribution with unknown <code>mu</code> and <code>sigma</code>.</td>
+      <td>The likelihood connects the observed data to possible parameter values.</td>
+    </tr>
+    <tr>
+      <td><strong>Build the likelihood</strong></td>
+      <td>We multiplied the probability of every observation, then took the log so the product became a sum.</td>
+      <td>The log-likelihood is easier to differentiate and maximize.</td>
+    </tr>
+    <tr>
+      <td><strong>Estimate mu</strong></td>
+      <td>We differentiated with respect to <code>mu</code> and set the derivative equal to zero.</td>
+      <td>The maximum-likelihood estimate is the sample mean: <code>mu_hat = sum(x_i) / n</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Estimate variance</strong></td>
+      <td>We kept the log-sigma term, differentiated with respect to <code>sigma</code>, and solved it.</td>
+      <td>The MLE is <code>sigma_hat^2 = sum((x_i - mu_hat)^2) / n</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Add a prior</strong></td>
+      <td>We combined the likelihood with a prior and discussed conjugate families.</td>
+      <td>The result is a posterior distribution, not only one best parameter value.</td>
+    </tr>
+    <tr>
+      <td><strong>Handle unknown mean and variance</strong></td>
+      <td>We discussed Normal-Gamma and Normal-inverse-chi-squared prior choices.</td>
+      <td>Conjugacy preserves the distribution family while updating its parameters with the data.</td>
+    </tr>
+    <tr>
+      <td><strong>Return to the paper</strong></td>
+      <td>We worked through the beta-binomial coin example from Liu and Lawrence.</td>
+      <td>With 12 heads, 18 tails, and a <code>Beta(1,1)</code> prior, the posterior is <code>Beta(13,19)</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">What I did during the derivation</div>
+  I recognized the maximum-likelihood process from my previous statistics class, suggested setting
+  the derivatives equal to zero, and caught that the first log term could not be dropped when we
+  switched from differentiating by <code>mu</code> to differentiating by <code>sigma</code>.
+</div>
+
+<h3>The main formulas I should remember</h3>
+<pre><code>likelihood:  p(data | parameter)
+prior:       p(parameter)
+posterior:   p(parameter | data)
+
+p(parameter | data) is proportional to p(data | parameter) * p(parameter)
+
+coin likelihood: theta^heads * (1 - theta)^tails
+Beta prior:      Beta(alpha, beta)
+posterior:       Beta(alpha + heads, beta + tails)
+</code></pre>
+
+<p>
+  The main connection to GenomegaMap is that an omega mean is only a point summary. The MCMC values
+  approximate a posterior distribution. Their spread describes model-based uncertainty, while
+  trace diagnostics separately help me judge whether the sampler explored that distribution well.
+</p>
+
+<div class="callout good">
+  <div class="callout-title">New learning assignment</div>
+  I should re-derive the formulas myself and write a small script that plots the beta-binomial
+  posterior for 12 heads and 18 tails. I should calculate the posterior spread and the probability
+  that the coin is fair-or-heads-biased, not only report the 0.4 MLE.
+</div>
+
+<p>
+  The full formula sheet, assumptions, GenomegaMap likelihood bridge, and assigned tasks are on the
+  <a href="16-wednesday-june-10-meeting.html">dedicated June 10 meeting page</a>.
+</p>
+
+<div class="callout warn">
+  <div class="callout-title">No new project settings were decided yet</div>
+  The lesson did not change the Slurm settings, the 10,000 iterations with 2,000 burn-in, or the
+  post-processing pipeline. It was preparation for understanding the Bayesian analysis behind them.
 </div>
 </section>
 
@@ -568,7 +676,7 @@ ad-hoc-mutation-counts/spreadsheets/
 </div>
 
 <footer>
-  Next meeting update &middot; <a href="14-friday-june-5-meeting.html">review June 5 notes</a> &middot; <a href="#questions">questions to ask</a> &middot; <a href="#talk-track">meeting talk track</a>
+  Project update &middot; <a href="16-wednesday-june-10-meeting.html">June 10 formulas</a> &middot; <a href="#questions">questions to ask</a> &middot; <a href="#talk-track">meeting talk track</a>
 </footer>
 
 <script src="assets/shared.js"></script>

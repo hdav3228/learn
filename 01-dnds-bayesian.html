@@ -399,10 +399,10 @@ Q<sub>ij</sub> =
 
 <div class="eli5">
   <span class="eli5-tag">In plain English</span>
-  Frequentist: "I think ω is 1.7." Bayesian: "Given the data, there's a 95% chance ω is
-  somewhere between 1.2 and 2.4 — and here's the full curve showing exactly how plausible
-  each value is." For genes with few mutations, that <em>curve</em> is wide; the Bayesian
-  output makes the uncertainty impossible to ignore. That's a <em>good</em> thing.
+  A point estimate says "&omega; is best estimated at 1.7." A posterior says, "conditional on
+  this model, prior, and data, here is the full distribution of plausible &omega; values." For
+  genes with little information, that distribution can remain wide. The width is part of the
+  result, not an inconvenience to hide.
 </div>
 
 <div class="worked-example">
@@ -455,8 +455,8 @@ Q<sub>ij</sub> =
 <p>
   The left‑hand side is what we report (mean, median, 95% credible interval). The right‑hand side
   is just the likelihood times the prior. The likelihood is determined by the codon model. Priors
-  in GenomegaMap are weakly informative log‑normals — wide enough not to push the posterior
-  around but tight enough to regularize:
+  used in Wilson's 10,209-genome application were calibrated from a preliminary hierarchical
+  analysis and then widened to avoid being overly informative:
 </p>
 
 <table>
@@ -521,9 +521,9 @@ Q<sub>ij</sub> =
 <div class="section-intro">
   <span class="intro-label">Why this section matters</span>
   <p>
-    We just wrote down the posterior we want — but that posterior is intractable to
-    compute directly. MCMC is the trick that lets us sample from <em>any</em> posterior
-    we can write down, even when we can't compute it. It's the engine inside GenomegaMap.
+    We just wrote down the posterior we want, but it is intractable to normalize and summarize
+    directly. MCMC builds an approximate sample from that posterior using repeated stochastic
+    updates. It is the inference engine inside GenomegaMap.
   </p>
 </div>
 
@@ -539,9 +539,9 @@ Q<sub>ij</sub> =
 <p>
   Computing the posterior in closed form is hopeless — there are 60 codons, three continuous
   parameters, and a likelihood that's a product over thousands of sites. But we can <em>sample</em>
-  from it. Markov Chain Monte Carlo (MCMC) builds a Markov chain whose stationary distribution
-  is exactly the posterior we want. Run it long enough, and the histogram of visited states
-  approximates the posterior to arbitrary precision.
+  from it. Markov Chain Monte Carlo (MCMC) is designed to build a Markov chain whose stationary
+  distribution is the posterior we want. In practice, finite chains can mix slowly or fail to
+  explore important regions, so diagnostics are part of the analysis.
 </p>
 
 <div class="callout note">
@@ -562,20 +562,21 @@ Q<sub>ij</sub> =
     <div class="math">α = min(1, [p(θ' | x) · q(θ<sub>t</sub> | θ')] / [p(θ<sub>t</sub> | x) · q(θ' | θ<sub>t</sub>)])</div>
   </li>
   <li>With probability α, accept (θ<sub>t+1</sub> = θ'). Otherwise stay (θ<sub>t+1</sub> = θ<sub>t</sub>).</li>
-  <li>Repeat. Discard the first ~20% as burn‑in.</li>
+  <li>Repeat. Use the configured burn-in period, then diagnose the retained chain.</li>
 </ol>
 
 <p>
-  The magic is in step&nbsp;3: because we use a <em>ratio</em> of posteriors, the intractable
-  normalization constant of the posterior cancels out. We only need to evaluate the
-  un‑normalized density (likelihood × prior). And because q is symmetric for random‑walk
-  proposals, q ratios cancel too — α reduces to min(1, posterior ratio).
+  The useful part of step&nbsp;3 is that the intractable posterior normalization constant cancels
+  in the ratio. We only need to evaluate the unnormalized density (likelihood &times; prior). If a
+  proposal is symmetric, its <code>q</code> terms also cancel; for asymmetric proposals, the
+  Hastings correction must remain.
 </p>
 
 <div class="callout good">
-  <div class="callout-title">Tuning rule of thumb</div>
-  Aim for ~23–30% acceptance rate. Too high (you're barely moving) → poor mixing. Too low
-  (proposals are too aggressive) → also poor mixing. Adjust the proposal step size accordingly.
+  <div class="callout-title">Acceptance is a diagnostic, not a pass/fail number</div>
+  Very high acceptance can mean proposals are too small, while very low acceptance can mean they
+  are too aggressive. There is no single ideal rate for every proposal and target distribution;
+  inspect acceptance together with trace behavior, autocorrelation, and independent chains.
 </div>
 
 <div class="demo">
@@ -584,9 +585,9 @@ Q<sub>ij</sub> =
     <span class="demo-tag">interactive</span>
   </div>
   <p class="muted">
-    The target distribution (gray) is a synthetic posterior on ω with two modes — bimodality is
-    common when there's both a "purifying" component (ω near 0.3) and a "diversifying" component
-    (ω near 2.5). Watch the chain (red dot) explore. Solid trail = accepted; X = rejected.
+    The target distribution (gray) is an intentionally synthetic two-mode posterior used to show
+    a difficult mixing problem. It is not a claim that a constant-model GenomegaMap posterior is
+    normally bimodal. Watch the chain (red dot) explore. Solid trail = accepted; X = rejected.
   </p>
 
   <div class="controls">
@@ -609,7 +610,7 @@ Q<sub>ij</sub> =
   <p class="faint" style="margin-top:10px">
     <strong>What to look for:</strong> at very small σ the chain creeps and never crosses the
     valley; at very large σ almost everything is rejected; at σ ≈ 0.4 you get fluid mixing across
-    both modes — that's "good MCMC".
+    both modes. The example shows why proposal scale affects exploration.
   </p>
 </div>
 
@@ -633,7 +634,7 @@ Q<sub>ij</sub> =
   <div class="cp-row">
     <div class="cp-trigger"><strong>If you see:</strong> Acceptance ~25%, trace fills both modes evenly</div>
     <div class="cp-arrow">→</div>
-    <div class="cp-action"><strong>Do:</strong> Nothing — that's good mixing. Discard burn‑in and report the posterior.</div>
+    <div class="cp-action"><strong>Do:</strong> Continue the remaining diagnostics, then summarize the retained samples if they agree.</div>
   </div>
 </div>
 

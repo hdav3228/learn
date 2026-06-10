@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Wednesday June 10 Meeting &middot; Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">%CE%A9</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">&Omega;</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="12-bayesian-inference.html">Bayesian Inference</a>
+      <a href="16-wednesday-june-10-meeting.html" class="active">June 10 Meeting</a>
+      <a href="15-next-update.html">Next Update</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#meeting-map">What I learned</a></li>
+    <li><a href="#bayes-rule">Bayes rule</a></li>
+    <li><a href="#normal-mle">Normal likelihood and MLE</a></li>
+    <li><a href="#normal-posterior">Normal posterior</a></li>
+    <li><a href="#unknown-variance">Unknown mean and variance</a></li>
+    <li><a href="#coin-example">Beta-binomial coin example</a></li>
+    <li><a href="#mcmc">MCMC and GenomegaMap</a></li>
+    <li><a href="#paper-map">Paper-to-project map</a></li>
+    <li><a href="#paper-reading">How to read the papers</a></li>
+    <li><a href="#tasks">What I need to do</a></li>
+    <li><a href="#talk-track">What I can say</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where this meeting fits">
+  <a class="step done" href="14-friday-june-5-meeting.html">June 5: Slurm</a>
+  <span class="sep">&rarr;</span>
+  <span class="step here">June 10: Bayesian whiteboard</span>
+  <span class="sep">&rarr;</span>
+  <a class="step" href="15-next-update.html">Project update</a>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Meeting notes &middot; Wednesday, June 10, 2026 &middot; Bayesian foundations</div>
+  <h1>June 10: from likelihoods to posterior distributions</h1>
+  <p class="lede">
+    This meeting connected the formulas I have seen in statistics classes to what GenomegaMap is
+    doing. We started with a Normal likelihood, derived maximum-likelihood estimates, added priors,
+    worked through conjugate posterior updates, and ended with a concrete beta-binomial exercise.
+  </p>
+  <div class="quickstart">
+    <a class="qpill qpill-primary" href="#meeting-map">Meeting map</a>
+    <a class="qpill" href="#normal-mle">Normal formulas</a>
+    <a class="qpill" href="#coin-example">Coin example</a>
+    <a class="qpill" href="#mcmc">GenomegaMap connection</a>
+    <a class="qpill" href="#tasks">My tasks</a>
+  </div>
+</section>
+
+<section id="meeting-map">
+<h2>What I Learned
+  <button class="section-complete" data-section="meeting-map">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The full path through the meeting</span>
+  <p>
+    The important shift was from finding one best parameter value to describing uncertainty over
+    every plausible value. The formulas below are a compact reference for that path.
+  </p>
+</div>
+
+<div class="pathway">
+  <div class="path-step"><strong>1. Model</strong><span>State how the observed data could have been generated.</span></div>
+  <div class="path-step"><strong>2. Likelihood</strong><span>Score parameter values by how well they explain the observations.</span></div>
+  <div class="path-step"><strong>3. Prior</strong><span>Represent what was plausible before seeing these observations.</span></div>
+  <div class="path-step"><strong>4. Posterior</strong><span>Combine the likelihood and prior, then normalize.</span></div>
+  <div class="path-step"><strong>5. Compute</strong><span>Derive the posterior exactly when possible; otherwise approximate it with MCMC.</span></div>
+  <div class="path-step"><strong>6. Interpret</strong><span>Use the distribution, not only its mean, to discuss evidence and uncertainty.</span></div>
+</div>
+
+<table>
+  <thead><tr><th>Question</th><th>Point estimate answer</th><th>Bayesian answer</th></tr></thead>
+  <tbody>
+    <tr><td>What is the parameter?</td><td>One best value, often the MLE.</td><td>A posterior distribution over plausible values.</td></tr>
+    <tr><td>How uncertain am I?</td><td>Requires a separate sampling-distribution argument.</td><td>Read uncertainty from the posterior, subject to the model and prior.</td></tr>
+    <tr><td>Can I solve it directly?</td><td>Sometimes optimization is straightforward.</td><td>Sometimes conjugacy gives a formula; otherwise use numerical integration or MCMC.</td></tr>
+    <tr><td>What does GenomegaMap save?</td><td>Not just one optimized &omega;.</td><td>MCMC draws that approximate the joint posterior for parameters such as <code>omega0</code>, <code>kappa</code>, and <code>theta</code>.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="bayes-rule">
+<h2>Bayes Rule
+  <button class="section-complete" data-section="bayes-rule">Mark complete</button>
+</h2>
+
+<div class="math">
+  p(&theta; | y) =
+  <span class="frac"><span>p(y | &theta;) &pi;(&theta;)</span><span>&int; p(y | &theta;) &pi;(&theta;) d&theta;</span></span>
+  =
+  <span class="frac"><span>likelihood &times; prior</span><span>marginal likelihood</span></span>
+</div>
+
+<table>
+  <thead><tr><th>Term</th><th>Meaning</th><th>Question it answers</th></tr></thead>
+  <tbody>
+    <tr><td><code>p(y | &theta;)</code></td><td>Likelihood</td><td>If the parameter were &theta;, how compatible would the observed data be?</td></tr>
+    <tr><td><code>&pi;(&theta;)</code></td><td>Prior</td><td>What parameter values were plausible before these data?</td></tr>
+    <tr><td><code>p(&theta; | y)</code></td><td>Posterior</td><td>After seeing the data, what values remain plausible and with what probability density?</td></tr>
+    <tr><td><code>p(y)</code></td><td>Marginal likelihood/evidence</td><td>What constant makes the posterior integrate to one? It also supports model comparison.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">The phrase to remember</div>
+  The posterior is proportional to likelihood times prior. The denominator does not depend on
+  &theta;, but it matters because it turns the proportional expression into a proper probability
+  distribution.
+</div>
+</section>
+
+<section id="normal-mle">
+<h2>Normal Likelihood And MLE
+  <button class="section-complete" data-section="normal-mle">Mark complete</button>
+</h2>
+
+<p>Assume independent observations <code>x_1, ..., x_n</code> come from a Normal distribution:</p>
+
+<div class="math">x<sub>i</sub> | &mu;, &sigma;<sup>2</sup> &sim; Normal(&mu;, &sigma;<sup>2</sup>)</div>
+
+<div class="formula-grid">
+  <div class="formula-card">
+    <h3>Likelihood</h3>
+    <div class="math compact">
+      L(&mu;, &sigma;<sup>2</sup>) =
+      &prod;<sub>i=1</sub><sup>n</sup>
+      <span class="frac"><span>1</span><span>&radic;(2&pi;&sigma;<sup>2</sup>)</span></span>
+      exp[-(x<sub>i</sub>-&mu;)<sup>2</sup>/(2&sigma;<sup>2</sup>)]
+    </div>
+    <p>Every observation contributes one density value, so independence turns the joint likelihood into a product.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Log-likelihood</h3>
+    <div class="math compact">
+      &ell; = -<span class="frac"><span>n</span><span>2</span></span>log(2&pi;)
+      - n log(&sigma;)
+      - <span class="frac"><span>1</span><span>2&sigma;<sup>2</sup></span></span>
+      &sum;(x<sub>i</sub>-&mu;)<sup>2</sup>
+    </div>
+    <p>The log changes products into sums and makes differentiation and numerical computation easier.</p>
+  </div>
+</div>
+
+<div class="math">
+  &mu;&#770;<sub>MLE</sub> = x&#772; =
+  <span class="frac"><span>1</span><span>n</span></span>&sum;x<sub>i</sub>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  &sigma;&#770;<sup>2</sup><sub>MLE</sub> =
+  <span class="frac"><span>1</span><span>n</span></span>&sum;(x<sub>i</sub>-x&#772;)<sup>2</sup>
+</div>
+
+<div class="callout warn">
+  <div class="callout-title">Easy derivation mistake from the meeting</div>
+  Terms that are constant with respect to <code>&mu;</code> can be dropped while differentiating by
+  <code>&mu;</code>, but the <code>-n log(&sigma;)</code> term cannot be dropped when differentiating
+  by <code>&sigma;</code>. What counts as a constant depends on the parameter being optimized.
+</div>
+</section>
+
+<section id="normal-posterior">
+<h2>Normal Posterior With Known Variance
+  <button class="section-complete" data-section="normal-posterior">Mark complete</button>
+</h2>
+
+<p>
+  The clean first Bayesian extension treats <code>&sigma;<sup>2</sup></code> as known and places a
+  Normal prior on the unknown mean.
+</p>
+
+<div class="math">
+  x<sub>i</sub> | &mu; &sim; Normal(&mu;, &sigma;<sup>2</sup>)
+  &nbsp;&nbsp;&nbsp;
+  &mu; &sim; Normal(&mu;<sub>0</sub>, &tau;<sub>0</sub><sup>2</sup>)
+</div>
+
+<div class="math">
+  &mu; | x &sim; Normal(&mu;<sub>n</sub>, &tau;<sub>n</sub><sup>2</sup>)
+</div>
+
+<div class="formula-grid">
+  <div class="formula-card">
+    <h3>Posterior variance</h3>
+    <div class="math compact">
+      &tau;<sub>n</sub><sup>2</sup> =
+      (<span class="frac"><span>1</span><span>&tau;<sub>0</sub><sup>2</sup></span></span>
+      + <span class="frac"><span>n</span><span>&sigma;<sup>2</sup></span></span>)<sup>-1</sup>
+    </div>
+    <p>Precisions add. More data increases precision and narrows the posterior.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Posterior mean</h3>
+    <div class="math compact">
+      &mu;<sub>n</sub> = &tau;<sub>n</sub><sup>2</sup>
+      (<span class="frac"><span>&mu;<sub>0</sub></span><span>&tau;<sub>0</sub><sup>2</sup></span></span>
+      + <span class="frac"><span>n x&#772;</span><span>&sigma;<sup>2</sup></span></span>)
+    </div>
+    <p>The posterior mean is a precision-weighted compromise between the prior mean and sample mean.</p>
+  </div>
+</div>
+
+<div class="callout good">
+  <div class="callout-title">Why conjugacy is useful</div>
+  A Normal prior combined with this Normal likelihood gives a Normal posterior. The distribution
+  family stays the same; only its parameters are updated.
+</div>
+</section>
+
+<section id="unknown-variance">
+<h2>Unknown Mean And Variance
+  <button class="section-complete" data-section="unknown-variance">Mark complete</button>
+</h2>
+
+<p>
+  When both the mean and variance are unknown, the prior has to describe them jointly. One common
+  conjugate choice uses the precision <code>&lambda; = 1/&sigma;<sup>2</sup></code>.
+</p>
+
+<div class="math">
+  &mu; | &lambda; &sim; Normal(&mu;<sub>0</sub>, (&kappa;<sub>0</sub>&lambda;)<sup>-1</sup>)
+  &nbsp;&nbsp;&nbsp;
+  &lambda; &sim; Gamma(&alpha;<sub>0</sub>, &beta;<sub>0</sub>)
+</div>
+
+<table>
+  <thead><tr><th>Updated parameter</th><th>Formula</th><th>What changed</th></tr></thead>
+  <tbody>
+    <tr><td><code>&kappa;<sub>n</sub></code></td><td><code>&kappa;<sub>0</sub> + n</code></td><td>Prior effective sample size plus observed sample size.</td></tr>
+    <tr><td><code>&mu;<sub>n</sub></code></td><td><code>(&kappa;<sub>0</sub>&mu;<sub>0</sub> + n x&#772;) / &kappa;<sub>n</sub></code></td><td>Weighted prior and observed means.</td></tr>
+    <tr><td><code>&alpha;<sub>n</sub></code></td><td><code>&alpha;<sub>0</sub> + n/2</code></td><td>Gamma shape updated by the amount of data.</td></tr>
+    <tr>
+      <td><code>&beta;<sub>n</sub></code></td>
+      <td><code>&beta;<sub>0</sub> + 0.5&sum;(x<sub>i</sub>-x&#772;)<sup>2</sup> + [&kappa;<sub>0</sub>n(x&#772;-&mu;<sub>0</sub>)<sup>2</sup>]/[2&kappa;<sub>n</sub>]</code></td>
+      <td>Combines within-sample variation and disagreement between the prior mean and sample mean.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">Parameterization warning</div>
+  Gamma distributions can be written with a rate or a scale parameter, so formulas can look
+  different across papers and notes. Before using an update equation, check exactly how
+  <code>Gamma(&alpha;, &beta;)</code> is defined. A Normal-inverse-chi-squared prior is an analogous
+  alternative written in terms of variance instead of precision.
+</div>
+</section>
+
+<section id="coin-example">
+<h2>Beta-Binomial Coin Example
+  <button class="section-complete" data-section="coin-example">Mark complete</button>
+</h2>
+
+<p>
+  Liu and Lawrence use coin flips because the full posterior can be derived exactly. Let
+  <code>&theta;</code> be the probability of heads, with <code>h</code> observed heads and
+  <code>t</code> observed tails.
+</p>
+
+<div class="formula-grid">
+  <div class="formula-card">
+    <h3>Likelihood</h3>
+    <div class="math compact">p(y | &theta;) = &theta;<sup>h</sup>(1-&theta;)<sup>t</sup></div>
+    <p>The order is ignored in this version; only the numbers of heads and tails matter.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Beta prior</h3>
+    <div class="math compact">&theta; &sim; Beta(&alpha;, &beta;) &prop; &theta;<sup>&alpha;-1</sup>(1-&theta;)<sup>&beta;-1</sup></div>
+    <p><code>&alpha;</code> and <code>&beta;</code> act like prior pseudo-counts.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Posterior</h3>
+    <div class="math compact">&theta; | y &sim; Beta(&alpha;+h, &beta;+t)</div>
+    <p>The Beta prior is conjugate to the Bernoulli/binomial likelihood.</p>
+  </div>
+  <div class="formula-card">
+    <h3>Posterior mean</h3>
+    <div class="math compact">E[&theta; | y] = <span class="frac"><span>&alpha;+h</span><span>&alpha;+&beta;+h+t</span></span></div>
+    <p>The answer combines prior counts and observed counts.</p>
+  </div>
+</div>
+
+<div class="worked-example">
+  <h4>The assigned example: 12 heads and 18 tails</h4>
+  <div class="we-step"><span class="we-num">1</span><div class="we-body"><strong>MLE:</strong> <code>12/30 = 0.4</code>. This is one best point estimate.</div></div>
+  <div class="we-step"><span class="we-num">2</span><div class="we-body"><strong>Uniform prior:</strong> choose <code>Beta(1,1)</code>, which gives equal prior density across 0 to 1.</div></div>
+  <div class="we-step"><span class="we-num">3</span><div class="we-body"><strong>Posterior:</strong> <code>Beta(13,19)</code>.</div></div>
+  <div class="we-step"><span class="we-num">4</span><div class="we-body"><strong>Posterior mean:</strong> <code>13/32 = 0.40625</code>. More important than this one number is the distribution's spread.</div></div>
+  <div class="we-step"><span class="we-num">5</span><div class="we-body"><strong>Posterior uncertainty:</strong> the central 95% credible interval is approximately <code>[0.245, 0.578]</code>, and <code>P(&theta; &ge; 0.5 | y) &asymp; 0.141</code>.</div></div>
+</div>
+
+<div class="math">
+  P(&theta; &ge; 0.5 | y) = &int;<sub>0.5</sub><sup>1</sup> Beta(&theta;; 13, 19) d&theta;
+</div>
+
+<div class="callout good">
+  <div class="callout-title">Why this example matters for GenomegaMap</div>
+  The coin problem has a closed-form posterior, while GenomegaMap's joint posterior is too
+  complicated to normalize analytically. The goal is still the same: represent plausible parameter
+  values and their uncertainty. MCMC supplies the approximation when conjugate algebra does not.
+</div>
+</section>
+
+<section id="mcmc">
+<h2>MCMC And GenomegaMap
+  <button class="section-complete" data-section="mcmc">Mark complete</button>
+</h2>
+
+<p>
+  GenomegaMap uses Metropolis-Hastings updates to explore its posterior. The acceptance ratio
+  balances the proposed and current posterior densities with the forward and reverse proposal
+  probabilities. This can accept some lower-density moves, preventing the chain from becoming a
+  simple optimizer.
+</p>
+
+<div class="math">
+  a = min(1,
+  <span class="frac">
+    <span>p(&theta;' | y) q(&theta; | &theta;')</span>
+    <span>p(&theta; | y) q(&theta;' | &theta;)</span>
+  </span>)
+</div>
+
+<table>
+  <thead><tr><th>Trace feature</th><th>What it means</th><th>What I should do</th></tr></thead>
+  <tbody>
+    <tr><td>Repeated values</td><td>A proposed update was rejected, so the chain kept its previous state.</td><td>Do not treat repeated rows as a file error by themselves.</td></tr>
+    <tr><td>Stable wandering</td><td>The chain is exploring a consistent high-posterior region.</td><td>Inspect trace plots and compare independent chains when available.</td></tr>
+    <tr><td>Trend or long drift</td><td>The chain may not have reached its stationary distribution.</td><td>Question convergence before interpreting intervals.</td></tr>
+    <tr><td>Wide posterior</td><td>The model/data leave substantial parameter uncertainty.</td><td>Do not automatically call this failed convergence; diagnose the trace separately.</td></tr>
+    <tr><td>Narrower posterior with more data</td><td>The likelihood contributes more information.</td><td>Expect stronger concentration, while remembering model assumptions still matter.</td></tr>
+  </tbody>
+</table>
+
+<h3>The GenomegaMap likelihood bridge</h3>
+<p>
+  GenomegaMap models allele counts at each codon using a Dirichlet-multinomial approximation.
+  Conditional on a possible oldest allele <code>A</code>, the per-site likelihood has this form:
+</p>
+
+<div class="math">
+  Pr(x | A) =
+  <span class="frac"><span>n!</span><span>&prod;<sub>j</sub>x<sub>j</sub>!</span></span>
+  <span class="frac"><span>B(x + a<sub>A</sub>)</span><span>B(a<sub>A</sub>)</span></span>
+  &nbsp;&nbsp;&nbsp;
+  Pr(x) = &sum;<sub>A</sub> p<sub>A</sub> Pr(x | A)
+</div>
+
+<p>
+  Here <code>x</code> is the vector of observed allele counts at a codon and <code>B</code> is the
+  multivariate beta function. The method combines site likelihoods under an independence
+  approximation and samples substitution parameters by MCMC. This is why the output log-likelihood
+  is a large negative number: software sums log probabilities across many sites instead of
+  multiplying many tiny probabilities directly.
+</p>
+
+<div class="callout warn">
+  <div class="callout-title">What the posterior cannot prove</div>
+  A posterior is conditional on the model, prior, data quality, and cohort design. A clean MCMC
+  trace does not remove lineage, resistance, geography, or sampling confounding, and a high
+  <code>omega0</code> does not by itself prove adaptation to diabetes.
+</div>
+</section>
+
+<section id="paper-map">
+<h2>Paper-To-Project Map
+  <button class="section-complete" data-section="paper-map">Mark complete</button>
+</h2>
+
+<table>
+  <thead><tr><th>Source</th><th>Formula or idea to remember</th><th>How I use it</th></tr></thead>
+  <tbody>
+    <tr><td><strong><a href="12-bayesian-inference.html">Liu &amp; Lawrence 1999</a></strong></td><td>Posterior = likelihood &times; prior / evidence; Beta-binomial conjugacy; Gibbs sampling.</td><td>Use the coin example to explain why uncertainty is a distribution and why MCMC can approximate one.</td></tr>
+    <tr><td><strong><a href="01-dnds-bayesian.html">Wilson 2020 GenomegaMap</a></strong></td><td>NY98 codon-rate model, Dirichlet-multinomial allele-count likelihood, Metropolis-Hastings inference.</td><td>Use it to explain what the trace columns represent and what assumptions support the estimate.</td></tr>
+    <tr><td><strong><a href="02-tb-selection.html">Ioerger/Shatby TB scan</a></strong></td><td>Compare selection at gene, codon, and window scales; audit false positives and cohort structure.</td><td>Use it as the closest analysis pattern for ranking TB selection signals.</td></tr>
+    <tr><td><strong><a href="10-tandem-tb-diabetes.html">TANDEM 2020</a></strong></td><td>Clinical rationale for TB-diabetes grouping across multiple settings.</td><td>Use it for cohort context, not as a GenomegaMap methods source.</td></tr>
+    <tr><td><strong><a href="11-mexico-mtb-genomics.html">Mexico 2023</a></strong></td><td>Lineage and resistance background of the Mexico isolates.</td><td>Use it when checking whether a diabetes/non-diabetes difference could be confounded.</td></tr>
+    <tr><td><strong><a href="08-cole-h37rv-genome.html">Cole 1998 + erratum</a></strong></td><td>H37Rv reference genome organization and corrected gene labels.</td><td>Use it when interpreting Rv genes and genome context.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="paper-reading">
+<h2>How To Read The Papers
+  <button class="section-complete" data-section="paper-reading">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">A research skill emphasized in the meeting</span>
+  <p>
+    The goal is not to read every paper linearly or memorize every equation. I need to build a
+    knowledge structure that lets me recognize which sentence, assumption, or formula answers the
+    question in front of me.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th>Pass</th><th>What I look for</th><th>Question I should be able to answer</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1. Purpose</strong></td><td>Abstract, introduction, final discussion.</td><td>What problem does this paper solve, and why does it matter to my project?</td></tr>
+    <tr><td><strong>2. Model</strong></td><td>Observed data, unknown parameters, likelihood, and priors.</td><td>What is random, what is assumed, and what is inferred?</td></tr>
+    <tr><td><strong>3. Computation</strong></td><td>Closed-form derivation, dynamic programming, Gibbs, or Metropolis-Hastings.</td><td>How does the paper turn the model into an answer?</td></tr>
+    <tr><td><strong>4. Evidence</strong></td><td>Figures, tables, diagnostics, comparisons, and validation.</td><td>What result supports the main claim, and what would weaken it?</td></tr>
+    <tr><td><strong>5. Project link</strong></td><td>One formula, one assumption, and one limitation worth carrying forward.</td><td>How does this change what I run, inspect, or say about my data?</td></tr>
+  </tbody>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">My formula-reading checklist</div>
+  For each important equation, identify the left-hand-side target, every symbol on the right,
+  which terms come from the data, which terms come from assumptions or priors, and whether the
+  expression is normalized, proportional, or only an approximation.
+</div>
+</section>
+
+<section id="tasks">
+<h2>What I Need To Do
+  <button class="section-complete" data-section="tasks">Mark complete</button>
+</h2>
+
+<ol class="step-list priority-list">
+  <li><strong>Re-derive the Normal examples by hand.</strong> Follow the likelihood-to-log-likelihood-to-posterior steps instead of only reading the finished equations.</li>
+  <li><strong>Write the beta-binomial exercise.</strong> Plot the <code>Beta(1,1)</code> prior, normalized likelihood, and <code>Beta(13,19)</code> posterior for 12 heads and 18 tails.</li>
+  <li><strong>Compute posterior questions.</strong> Report the posterior mean, a 95% credible interval, and <code>P(&theta; &ge; 0.5 | y)</code>.</li>
+  <li><strong>Read Liu and Lawrence again.</strong> Focus on the one-coin example, two-coin segmentation, and Gibbs sampling rather than every dynamic-programming derivation.</li>
+  <li><strong>Connect the simple examples to GenomegaMap.</strong> Be able to explain why GenomegaMap needs MCMC instead of a closed-form update.</li>
+  <li><strong>Prepare for the next sampling lesson.</strong> Dr. Ioerger may provide simulated data so I can compare Gibbs sampling and Metropolis-Hastings and see how posterior concentration changes with sample size.</li>
+</ol>
+
+<div class="callout note">
+  <div class="callout-title">Next scheduled meeting from the transcript</div>
+  Friday, June 12, 2026 at 12:00 PM, before Dr. Ioerger's 1:00 PM PhD defense. The transcript file
+  does not yet contain notes from that meeting.
+</div>
+</section>
+
+<section id="talk-track">
+<h2>What I Can Say
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>One-minute version</h3>
+  <p>
+    The June 10 lesson connected maximum likelihood to Bayesian inference. With a Normal example,
+    I can derive the MLEs for the mean and variance, then show how a prior changes the result from
+    one best value into a posterior distribution. Conjugate examples such as Normal-Normal and
+    Beta-binomial have direct update formulas. For the paper's coin example, 12 heads and 18 tails
+    with a uniform prior gives a <code>Beta(13,19)</code> posterior, so I can quantify uncertainty
+    around the 0.4 observed proportion. GenomegaMap has the same inferential goal, but its
+    Dirichlet-multinomial codon model and joint parameter space are too complicated for a closed
+    form, so it uses Metropolis-Hastings MCMC. The traces are approximate posterior samples, and I
+    need to interpret their spread separately from convergence diagnostics and biological
+    confounding.
+  </p>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  June 10 Bayesian meeting reference &middot; <a href="12-bayesian-inference.html">formula guide</a> &middot; <a href="01-dnds-bayesian.html">GenomegaMap mechanics</a> &middot; <a href="15-next-update.html">project update</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>
