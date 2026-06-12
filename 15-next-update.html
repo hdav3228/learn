@@ -22,13 +22,15 @@
           <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
           <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
           <a href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
+          <a href="16-wednesday-june-10-meeting.html">Wednesday June 10 Meeting</a>
+          <a href="17-friday-june-12-meeting.html">Friday June 12 Meeting</a>
         </div>
       </div>
       <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
       <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
       <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
       <a href="15-next-update.html" class="active">Next Update</a>
-<div class="dropdown">
+      <div class="dropdown">
         <button class="dropbtn">Papers</button>
         <div class="dropdown-content">
           <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
@@ -53,6 +55,7 @@
   <h4>Project update</h4>
   <ol>
     <li><a href="#short-update">Short update</a></li>
+    <li><a href="#june-12">June 12 interpretation checks</a></li>
     <li><a href="#today-first-part">June 10 Bayesian lesson</a></li>
     <li><a href="#email-checklist">Email checklist</a></li>
     <li><a href="#completed">What I completed</a></li>
@@ -75,6 +78,8 @@
   <span class="sep">&rarr;</span>
   <a class="step done" href="16-wednesday-june-10-meeting.html">June 10 Bayesian lesson</a>
   <span class="sep">&rarr;</span>
+  <a class="step done" href="17-friday-june-12-meeting.html">June 12 interpretation checks</a>
+  <span class="sep">&rarr;</span>
   <span class="step here">Project Update</span>
 </div>
 
@@ -84,18 +89,17 @@
 </div>
 
 <section class="hero">
-  <div class="eyebrow">Project update &middot; Wednesday, June 10, 2026 &middot; after the Bayesian whiteboard lesson</div>
-  <h1>Production run submitted, post-processing tested, and Bayesian formulas connected</h1>
+  <div class="eyebrow">Project update &middot; Friday, June 12, 2026 &middot; after the interpretation meeting</div>
+  <h1>FASTER workflow works; now make candidate genes explainable</h1>
   <p class="lede">
-    I moved from the 10-gene Slurm test to the all-gene constant-model run. The production jobs
-    have been submitted and I am still waiting for them to finish. While they run, I used 10
-    early-completing genes from both cohorts to test the full post-processing pipeline and make sure I
-    know what I will do with the all-gene outputs. During the June 10 meeting, I also worked from
-    Normal likelihoods through conjugate posteriors and the beta-binomial coin example so I can
-    explain what those MCMC outputs mean.
+    The cluster workflow and post-processing scripts are now working well enough to move from
+    engineering checks into interpretation checks. The next job is to audit complete traces, print
+    mutation-level details for candidate genes, annotate those genes, and make <code>omega0</code>
+    histograms so I can explain why a hit is interesting instead of only pointing to a ranked table.
   </p>
   <div class="quickstart">
     <a class="qpill qpill-primary" href="#short-update">30-second update</a>
+    <a class="qpill" href="#june-12">June 12 checks</a>
     <a class="qpill" href="#today-first-part">June 10 formulas</a>
     <a class="qpill" href="#email-checklist">Email requests</a>
     <a class="qpill" href="#adhoc-findings">Ad-hoc answers</a>
@@ -107,9 +111,9 @@
 
 <div class="callout warn">
   <div class="callout-title">Current status</div>
-  I submitted the production Slurm requests, but I am not calling the all-gene run complete until
-  I confirm the expected output count, final iteration, row count, and failed-task status for both
-  cohorts.
+  I can report that FASTER and the post-processing path are working, but I should not call
+  candidate genes biologically meaningful until I check complete output counts, exact mutations,
+  resistance/lineage explanations, and posterior histograms.
 </div>
 
 <section id="short-update">
@@ -120,14 +124,13 @@
 <div class="section-intro">
   <span class="intro-label">The version I can say first</span>
   <p>
-    I submitted the all-gene diabetes and non-diabetes constant-model Slurm arrays on FASTER and
-    I am waiting for them to finish. I also got more comfortable editing and checking files with
-    Vim on the cluster. While the production run is going, I copied 10 early-completing genes
-    from both cohorts and ran my three-part post-processing pipeline on them. All 20 test traces
-    were structurally complete, and none had a 95% omega interval entirely above 1. That is a
-    reasonable result for this small engineering test, but it is not the all-gene result. I also
-    finished the emailed S/NS challenge: <code>Rv3317</code> has the highest DB NS/S score and
-    <code>Rv3104c</code> has the largest absolute DB-vs-NDB score difference.
+    I got the FASTER array workflow and the GenomegaMap post-processing scripts working. The
+    ad-hoc mutation-count table is useful as an independent check, but I need to print exact
+    codon and amino-acid changes before interpreting candidates. I should start with
+    <code>Rv0006</code> / <code>gyrA</code>, then use the same mutation-detail view for genes
+    that appear in the ad-hoc or GenomegaMap lists. I also need to annotate candidate genes with
+    the H37Rv protein table and make <code>omega0</code> histograms for genes whose posterior
+    intervals look interesting.
   </p>
 </div>
 
@@ -135,26 +138,56 @@
   <h3>Where things stand</h3>
   <div class="metric-strip">
     <div class="metric-tile warn">
-      <span class="kicker">Production run</span>
-      <span class="big">Waiting</span>
-      <span class="caption">Two all-gene cohort arrays were submitted.</span>
+      <span class="kicker">Interpretation</span>
+      <span class="big">Guarded</span>
+      <span class="caption">Do not call biology from ranked tables alone.</span>
     </div>
     <div class="metric-tile good">
-      <span class="kicker">PPP test</span>
-      <span class="big">20 traces</span>
-      <span class="caption">10 genes from each cohort passed the row checks.</span>
+      <span class="kicker">FASTER</span>
+      <span class="big">Working</span>
+      <span class="caption">Array setup and small-job learning paid off.</span>
     </div>
     <div class="metric-tile note">
-      <span class="kicker">Strict test hits</span>
-      <span class="big">0</span>
-      <span class="caption">Every 95% omega interval overlapped 1.</span>
+      <span class="kicker">Next code step</span>
+      <span class="big">Rv0006</span>
+      <span class="caption">Print mutation-level details for gyrA first.</span>
     </div>
     <div class="metric-tile">
-      <span class="kicker">Diagnostic plots</span>
-      <span class="big">22</span>
-      <span class="caption">20 traces plus one heatmap per cohort.</span>
+      <span class="kicker">Next plot</span>
+      <span class="big">omega0</span>
+      <span class="caption">Make posterior histograms for candidate genes.</span>
     </div>
   </div>
+</div>
+</section>
+
+<section id="june-12">
+<h2>June 12 Interpretation Checks
+  <button class="section-complete" data-section="june-12">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What changed in the June 12 meeting</span>
+  <p>
+    The meeting moved the project from "the scripts run" toward "the results can be explained."
+    Dr. Ioerger's main point was that a high non-synonymous count can come from known resistance
+    genes, lineage markers, small-count ratios, or real selection. I need to show the evidence
+    behind each candidate before treating it as a hit.
+  </p>
+</div>
+
+<ol class="step-list priority-list">
+  <li><strong>Print exact mutations for one candidate gene.</strong> Start with <code>Rv0006</code> / <code>gyrA</code> and show codon position, reference codon, alternate codon, reference amino acid, alternate amino acid, cohort, and count.</li>
+  <li><strong>Use the H37Rv reference explicitly.</strong> Make it clear where the reference codon and amino-acid sequence come from.</li>
+  <li><strong>Annotate candidate tables.</strong> Use the H37Rv protein table when available so <code>Rv</code> IDs have gene names, descriptions, lengths, and coordinates.</li>
+  <li><strong>Check resistance and lineage explanations.</strong> Treat <code>gyrA</code> and <code>rpoB</code> as examples of why drug-resistance genes can have high non-synonymous counts.</li>
+  <li><strong>Plot posterior samples.</strong> Add histograms of <code>omega0</code> values, not only trace plots and summary intervals.</li>
+</ol>
+
+<div class="callout good">
+  <div class="callout-title">Dedicated notes page</div>
+  I wrote the full cleaned-up meeting notes here:
+  <a href="17-friday-june-12-meeting.html">Friday June 12 interpretation checks</a>.
 </div>
 </section>
 
@@ -676,7 +709,7 @@ ad-hoc-mutation-counts/spreadsheets/
 </div>
 
 <footer>
-  Project update &middot; <a href="16-wednesday-june-10-meeting.html">June 10 formulas</a> &middot; <a href="#questions">questions to ask</a> &middot; <a href="#talk-track">meeting talk track</a>
+  Project update &middot; <a href="17-friday-june-12-meeting.html">June 12 checks</a> &middot; <a href="#questions">questions to ask</a> &middot; <a href="#talk-track">meeting talk track</a>
 </footer>
 
 <script src="assets/shared.js"></script>

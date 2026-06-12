@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Friday June 12 Meeting &middot; Ioerger Lab</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b5cd6"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="white">%CE%A9</text></svg>' />
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark">&Omega;</span>Ioerger Lab</a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="01-dnds-bayesian.html">GenomegaMap</a>
+      <a href="02-tb-selection.html">Ioerger TB Scans</a>
+      <div class="dropdown">
+        <button class="dropbtn">Meetings</button>
+        <div class="dropdown-content">
+          <a href="06-monday-june-1-meeting.html">Monday June 1 Meeting</a>
+          <a href="13-wednesday-june-3-meeting.html">Wednesday June 3 Meeting</a>
+          <a href="14-friday-june-5-meeting.html">Friday June 5 Meeting</a>
+          <a href="16-wednesday-june-10-meeting.html">Wednesday June 10 Meeting</a>
+          <a href="17-friday-june-12-meeting.html">Friday June 12 Meeting</a>
+        </div>
+      </div>
+      <a href="03-boltz2.html" class="deferred-tab">Boltz-2</a>
+      <a href="04-keras-cheminformatics.html" class="deferred-tab">Keras MPNN</a>
+      <a href="05-smiles-permeability.html" class="deferred-tab">SMILES</a>
+      <a href="15-next-update.html">Next Update</a>
+      <div class="dropdown">
+        <button class="dropbtn">Papers</button>
+        <div class="dropdown-content">
+          <a href="07-shatby-diabetes-thesis.html">Shatby Thesis</a>
+          <a href="08-cole-h37rv-genome.html">Cole H37Rv</a>
+          <a href="09-ballell-tb-drugs.html">Ballell TB Drugs</a>
+          <a href="10-tandem-tb-diabetes.html">TANDEM</a>
+          <a href="11-mexico-mtb-genomics.html">Mexico Mtb</a>
+          <a href="12-bayesian-inference.html">Bayesian Inference</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#meeting-map">What changed</a></li>
+    <li><a href="#progress">Progress I can report</a></li>
+    <li><a href="#adhoc-vs-gom">Ad-hoc vs GenomegaMap</a></li>
+    <li><a href="#mutation-detail">Mutation detail check</a></li>
+    <li><a href="#resistance-examples">Resistance examples</a></li>
+    <li><a href="#mcmc-histograms">MCMC histograms</a></li>
+    <li><a href="#next-actions">What I need to do</a></li>
+    <li><a href="#talk-track">What I can say</a></li>
+  </ol>
+</aside>
+
+<main class="content">
+
+<div class="breadcrumb" aria-label="Where this meeting tab fits">
+  <a class="step done" href="index.html">Overview</a>
+  <span class="sep">&rarr;</span>
+  <a class="step done" href="14-friday-june-5-meeting.html">June 5: Slurm</a>
+  <span class="sep">&rarr;</span>
+  <a class="step done" href="16-wednesday-june-10-meeting.html">June 10: Bayes</a>
+  <span class="sep">&rarr;</span>
+  <span class="step here">June 12: interpretation checks</span>
+</div>
+
+<div class="page-progress" aria-hidden="true">
+  <div class="bar"></div>
+  <div class="label">0 / 0 sections complete</div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">Meeting notes &middot; Friday, June 12, 2026 &middot; mutation checks + posterior plots</div>
+  <h1>June 12: make the results explainable before calling hits</h1>
+  <p class="lede">
+    This meeting was mainly a reality check on the work I had just finished: the FASTER array setup
+    worked, the post-processing scripts worked, and the ad-hoc mutation counts were useful, but I
+    still need to connect those summaries back to actual amino-acid changes, resistance genes,
+    lineage markers, and the shape of the GenomegaMap posterior.
+  </p>
+  <div class="quickstart">
+    <a class="qpill qpill-primary" href="#progress">Progress</a>
+    <a class="qpill" href="#adhoc-vs-gom">Compare methods</a>
+    <a class="qpill" href="#mutation-detail">Mutation detail</a>
+    <a class="qpill" href="#mcmc-histograms">Histograms</a>
+    <a class="qpill" href="#next-actions">Tasks</a>
+  </div>
+</section>
+
+<div class="eli5">
+  <span class="eli5-tag">In plain English</span>
+  A gene can look interesting for several reasons: real positive selection, drug-resistance
+  pressure, lineage structure, or a fragile ratio from small counts. The next step is to print the
+  actual mutations and inspect the posterior distributions, not just sort spreadsheets.
+</div>
+
+<section id="meeting-map">
+<h2>What Changed
+  <button class="section-complete" data-section="meeting-map">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The shift from running to explaining</span>
+  <p>
+    The project is now past the first "can I run this?" stage. Dr. Ioerger emphasized that I had
+    made the FASTER array and post-processing work, but the useful research step is to make the
+    output interpretable. That means checking exact mutations, annotating genes, and plotting
+    posterior samples for the genes that look interesting.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th>Before this meeting</th><th>After this meeting</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>I had ad-hoc NS/S counts and GenomegaMap summaries.</td>
+      <td>I need mutation-level printouts for candidate genes, not only gene-level totals.</td>
+    </tr>
+    <tr>
+      <td>I was looking for overlap between two ranked lists.</td>
+      <td>I should expect imperfect overlap because the two methods summarize different evidence.</td>
+    </tr>
+    <tr>
+      <td>I had confidence intervals in tables.</td>
+      <td>I should also make histograms of <code>omega0</code> samples so the posterior shape is visible.</td>
+    </tr>
+    <tr>
+      <td>I could identify gene IDs such as <code>Rv1490</code>.</td>
+      <td>I should annotate hits with gene names, descriptions, lengths, and known resistance context.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="progress">
+<h2>Progress I Can Report
+  <button class="section-complete" data-section="progress">Mark complete</button>
+</h2>
+
+<div class="study-dashboard">
+  <h3>Meeting status</h3>
+  <div class="metric-strip">
+    <div class="metric-tile good">
+      <span class="kicker">FASTER</span>
+      <span class="big">Working</span>
+      <span class="caption">The array setup is running instead of just being planned.</span>
+    </div>
+    <div class="metric-tile good">
+      <span class="kicker">Post-processing</span>
+      <span class="big">Working</span>
+      <span class="caption">The summary and comparison scripts are producing usable tables.</span>
+    </div>
+    <div class="metric-tile note">
+      <span class="kicker">Ad-hoc counts</span>
+      <span class="big">Useful</span>
+      <span class="caption">They are a check on GenomegaMap, not a replacement for it.</span>
+    </div>
+    <div class="metric-tile warn">
+      <span class="kicker">Interpretation</span>
+      <span class="big">Careful</span>
+      <span class="caption">Drug resistance and lineage can explain high NS counts.</span>
+    </div>
+  </div>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">What Dr. Ioerger liked</div>
+  The important progress was practical: I figured out how to make the array run on FASTER, got the
+  post-processing scripts working, and generated independent mutation-count summaries. That is the
+  base I need before the full interpretation.
+</div>
+</section>
+
+<section id="adhoc-vs-gom">
+<h2>Ad-Hoc Vs GenomegaMap
+  <button class="section-complete" data-section="adhoc-vs-gom">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">Why no overlap is not automatically bad</span>
+  <p>
+    I showed that the ad-hoc mutation-count ranking and the GenomegaMap confidence-interval hits
+    did not overlap much in the small comparison I had ready. Dr. Ioerger's point was that the
+    ad-hoc method is intentionally rough. It counts observed synonymous and non-synonymous changes,
+    while GenomegaMap is estimating a posterior distribution for a model parameter.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th>Question</th><th>Ad-hoc counts</th><th>GenomegaMap</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>What is summarized?</strong></td>
+      <td>Observed S and NS mutation counts per gene/cohort.</td>
+      <td>Posterior samples for parameters such as <code>omega0</code>, <code>kappa</code>, and <code>theta</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>What can inflate it?</strong></td>
+      <td>Zero denominators, small counts, lineage markers, and resistance mutations.</td>
+      <td>Model assumptions, trace quality, and how much signal exists in the aligned sequences.</td>
+    </tr>
+    <tr>
+      <td><strong>How should I use it?</strong></td>
+      <td>As a quick independent screen and sanity check.</td>
+      <td>As the main Bayesian selection summary for the current workflow.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">How to avoid overclaiming</div>
+  A large NS/S score is a lead, not an answer. For every candidate, I should show the raw counts,
+  the exact amino-acid changes, whether known resistance sites are involved, and whether the
+  GenomegaMap posterior supports the same story.
+</div>
+</section>
+
+<section id="mutation-detail">
+<h2>Mutation Detail Check
+  <button class="section-complete" data-section="mutation-detail">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">The coding task from the meeting</span>
+  <p>
+    Dr. Ioerger asked me to make the ad-hoc script print the mutations found in a given gene, not
+    only totals. The key is to compare each isolate codon against the H37Rv reference codon and
+    translated reference amino acid. Reading a variant summary can help, but I need to be clear
+    about where the reference sequence comes from.
+  </p>
+</div>
+
+<ol class="step-list priority-list">
+  <li><strong>Start with one gene.</strong> Rerun the ad-hoc code on <code>Rv0006</code> only, because <code>gyrA</code> is a useful known-resistance example.</li>
+  <li><strong>Print mutation details.</strong> For each non-synonymous change, print codon position, reference codon, alternate codon, reference amino acid, alternate amino acid, and count.</li>
+  <li><strong>Confirm the reference.</strong> Use the H37Rv reference sequence from the variant/ORF files or make a small reference-sequence table so the comparison is explicit.</li>
+  <li><strong>Then generalize.</strong> Once the one-gene output looks right, use the same mode for candidate genes from the ad-hoc and GenomegaMap lists.</li>
+</ol>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">Fields I should be able to print</div>
+    <span class="demo-tag">mutation detail</span>
+  </div>
+<pre><code>gene
+codon_position
+reference_codon
+alternate_codon
+reference_amino_acid
+alternate_amino_acid
+cohort
+count
+</code></pre>
+</div>
+
+<div class="callout note">
+  <div class="callout-title">Organization habit</div>
+  Keep a small notes file in working directories with dates, commands, file meanings, and decisions.
+  This is not busywork; it is how I make the project recoverable months later.
+</div>
+</section>
+
+<section id="resistance-examples">
+<h2>Resistance Examples
+  <button class="section-complete" data-section="resistance-examples">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">What the examples are supposed to teach</span>
+  <p>
+    The examples were not random biology facts. They explain why some genes can have many
+    non-synonymous mutations for reasons that are already known, especially drug resistance or
+    lineage structure.
+  </p>
+</div>
+
+<table>
+  <thead><tr><th>Gene</th><th>Why it came up</th><th>What I should remember</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>Rv0006</code> / <strong>gyrA</strong></td>
+      <td>Large gene with many non-synonymous changes; target of fluoroquinolone drugs.</td>
+      <td>Known resistance sites include changes around A90 and D94. A high-frequency position 95 change can be lineage-related, so high counts are not automatically new diabetes biology.</td>
+    </tr>
+    <tr>
+      <td><code>Rv0001</code> / <strong>dnaA</strong></td>
+      <td>Conserved essential gene used as a contrast.</td>
+      <td>More synonymous than non-synonymous changes is what I expect under purifying selection.</td>
+    </tr>
+    <tr>
+      <td><code>Rv0667</code> / <strong>rpoB</strong></td>
+      <td>Classic rifampicin-resistance gene.</td>
+      <td>Many important resistance mutations are around amino acids 435-460, especially S450L.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <div class="callout-title">Annotation file to ask for/use</div>
+  Dr. Ioerger mentioned an H37Rv protein table with gene IDs, gene names, descriptions, lengths,
+  and coordinates. I should use it to annotate candidate lists so I am not interpreting anonymous
+  <code>Rv</code> numbers by hand.
+</div>
+</section>
+
+<section id="mcmc-histograms">
+<h2>MCMC Histograms
+  <button class="section-complete" data-section="mcmc-histograms">Mark complete</button>
+</h2>
+
+<div class="section-intro">
+  <span class="intro-label">How to make the posterior visible</span>
+  <p>
+    For a candidate gene, the table mean and 95% interval are useful, but a histogram of the
+    <code>omega0</code> samples makes the posterior shape much easier to explain. In the meeting,
+    we looked at a candidate whose distribution was shifted above 1, with a lower interval bound
+    just above 1.
+  </p>
+</div>
+
+<div class="demo">
+  <div class="demo-header">
+    <div class="demo-title">R commands from the meeting</div>
+    <span class="demo-tag">omega0</span>
+  </div>
+<pre><code>data &lt;- read.table("GENE.mcmc.txt", sep = "\t", header = TRUE)
+head(data)
+hist(data$omega0, breaks = 40)
+</code></pre>
+</div>
+
+<table>
+  <thead><tr><th>Plot</th><th>What it tells me</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Trace plot</strong></td>
+      <td>Whether the sampler is wandering around a stable region instead of drifting or failing.</td>
+    </tr>
+    <tr>
+      <td><strong>Histogram</strong></td>
+      <td>Where most posterior mass is, how wide the uncertainty is, and whether 1 is inside the high-density region.</td>
+    </tr>
+    <tr>
+      <td><strong>Credible interval</strong></td>
+      <td>Whether the lower bound is above 1 for positive selection, or whether the interval overlaps neutral evolution.</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<section id="next-actions">
+<h2>What I Need To Do
+  <button class="section-complete" data-section="next-actions">Mark complete</button>
+</h2>
+
+<ol class="step-list priority-list">
+  <li><strong>Add a one-gene mutation-detail mode.</strong> Start with <code>Rv0006</code> and print every observed non-synonymous change with codon and amino-acid details.</li>
+  <li><strong>Use the H37Rv reference explicitly.</strong> Do not leave the reference codon/amino acid source implicit in the code.</li>
+  <li><strong>Annotate candidate gene tables.</strong> Add gene names and descriptions from the H37Rv protein table once I have it.</li>
+  <li><strong>Make omega histograms for candidate genes.</strong> Add histogram plots beside trace plots for genes with intervals above 1 or strong cohort differences.</li>
+  <li><strong>Compare candidate explanations.</strong> For each hit, check whether it looks like drug resistance, lineage structure, or a less obvious selection signal.</li>
+  <li><strong>Keep the full-run audit first.</strong> Before interpreting all genes, confirm every production trace is complete and no failed tasks were silently missed.</li>
+</ol>
+</section>
+
+<section id="talk-track">
+<h2>What I Can Say
+  <button class="section-complete" data-section="talk-track">Mark complete</button>
+</h2>
+
+<div class="talk-track">
+  <h3>One-minute meeting version</h3>
+  <p>
+    Since the last update, I got the FASTER array workflow and the post-processing scripts working.
+    The ad-hoc mutation-count table is useful, but I should treat it as a rough independent check
+    instead of a final selection test. My next coding step is to make the ad-hoc script print
+    mutation-level details for one gene, starting with <code>Rv0006</code> / <code>gyrA</code>, so
+    I can see the actual codon and amino-acid changes behind the counts. I also need to annotate
+    candidate genes with names/descriptions and make histograms of the <code>omega0</code> posterior
+    samples for genes that look interesting. The main interpretation warning is that known drug
+    resistance genes and lineage markers can produce many non-synonymous changes, so I should not
+    call a diabetes-specific signal until the mutation details and GenomegaMap posterior agree.
+  </p>
+</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Friday June 12 meeting &middot; <a href="15-next-update.html">project update</a> &middot; <a href="#next-actions">next actions</a> &middot; <a href="#talk-track">talk track</a>
+</footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>
